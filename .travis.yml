@@ -9,9 +9,6 @@ env:
   global:
   - REGISTRY_USER="nfvperobot"
   - secure: pv9Ti1pifBsF9Gv1RKqO6H0lR7/YtiHCWnQHIukVfAzKd3tDHK+xDW5AjnO9fmuy8XAxDwTvFuIYPboJwI1a24nGgDD+bU1OSBJzHvZydnQrUi0AI14w7kHnN6gSGrxlP98d6y69S6ZDTeAO88N6qudyfsjc7GUJ7GiXuqmCGv3cqfwccYO4ZSivVIGtQA0iEndrhurmBSStGD4lviFavshNqixC4EgJNE0p6r3wEnDlchEiH0a5g8My6GFgfKynNGgSgMVGDkAbBVgFFt9vcs58dF/zuhrt5H0yDL29e/EwGTijQ02/w+xeMZpLdg/WLBc4bdhEmKj8Ee/HLBFjY52QNZwomp0gaLIJXfG/F+uxOu41BZd7nDaOr9G7uIhIoZqQj0P/EHGq6fHvpYtGxQU9p9vguzDuBaEZddiekrE+X/5aMEf0oVGTEb6fAn7zs6BRwYx8AEuB2/I+dfbJMLnClDv67gVYYTRQdNtey/8hGEpRggVdd0vQw7FX6c8pRNhhBCZk2tRlDrzdkY2hftaJHALlOB7FVHaPjmUTf1MfzlEORlwt79XbtJeYL6VivgOOREk8ZhVJdqzSzbSNRkkzw7/K6x7SWEd0z+lRBcRxzsxG3uRxi7BNmI8jWIWYaRbaqw9TAxLKPSvNAG2lemDvlIt9Em0JWPIF/NoZi8Q=
-before_install:
-- sudo apt-get update -qq
-- sudo apt-get install libqpidmessaging2-dev python-qpid qpidd
 install:
 - go get github.com/golang/lint/golint
 - go get -u github.com/golang/dep/...
@@ -20,9 +17,6 @@ before_script:
 - go vet ./cmd/metrics/metrics.go
 - go vet ./cmd/events/events.go
 - golint . | xargs -r false
-script:
-- go build -o metrics_consumer cmd/metrics/metrics.go
-- go build -o events_consumer cmd/events/events.go
 before_deploy:
 - docker login -u $REGISTRY_USER -p $REGISTRY_PASS
 - docker build --tag nfvpe/metrics_consumer:latest -f build/docker/metrics/Dockerfile .
