@@ -1,3 +1,5 @@
+git:
+  depth: 1
 language: go
 go:
 - 1.9.7
@@ -12,7 +14,7 @@ env:
 install:
 - go get github.com/golang/lint/golint
 - go get -u github.com/golang/dep/...
-before_script:
+script:
 - "$GOPATH/bin/dep ensure -v --vendor-only"
 - go vet ./cmd/metrics/metrics.go
 - go vet ./cmd/events/events.go
