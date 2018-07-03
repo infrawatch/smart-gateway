@@ -1,0 +1,41 @@
+# vim: set tabstop=2 shiftwidth=2:
+language: go
+sudo: required
+dist: trusty
+services:
+  - docker
+env:
+  global:
+    - REGISTRY_USER=nfvperobot
+    - secure: "hnpq0zfQgJ+7oyQ0dXkdNianpzvhPIFPlVFxQmuSCqYx7ItVlLHokb5KSBAhYXgNT/1q5twbZpSdPsdiHAf3mJFFJJ4CPkJ4IphRTZgkDqxjQhoYcpMzJXoKMmVNwTM0pCVz8Rm24eIjj5qxZKxuv/YbcIfn4gmYHfeuuRzioWDwG2lYrGJbUmThGNkbNdbicu603GzCi1qNquBTapbY7yItfbZTtsv4eTEDBuld3Vn6QtfFVRoU6u6xjLbcTgju15sO+WZX5eLhFz1mrJHh5TCe1ju/jl7IP3njFhlddxi9jOIWXLGD9+7i0hTi3ET+x4COkz+DyvuSlBfb7pvEmCB2wJZbEKdV3ZRso6YhTq8cc0YyRDN18k6qzCvq5c3V12AoGLZ3TUr2zrVYAllF/ubS76edf1GpgCcldk5K0qIarqP0l6RvJqcVggVBL7KBYOuF9JqkiiWuKBhohUOgzwgx89TqFjsl8KD06gt5fnWf9wmG7poekvfL363679XwQiXPArl/wUBKxKtOny71eLwl6ZRduHGuanKtlGzuPdUL016/dyK/HMO3pShZvhF1mbnMEEpSOgLFX3k4RFSobgIklfX1PgK5k4FiedMWop2unE6rR6E40Lz2MetWzwClXM+6qIuJGdBRR1v8tRD7aN5KUl2aWTyGtD5cTCbwu4o="
+
+before_install:
+  - sudo apt-get update -qq
+  - sudo apt-get install
+
+install:
+  - go get github.com/golang/lint/golint
+  - go get -u github.com/golang/dep/...
+
+before_script:
+  - $GOPATH/bin/dep ensure -v --vendor-only     # only populate vendor from Gopkg.lock
+  - go vet ./cmd/metrics/metrics.go
+  - go vet ./cmd/metrics/events.go
+  - go vet ./tools/sa-bench
+  - golint . | xargs -r false
+
+script:
+  - go build -o metric-listener cmd/metrics/metrics.go
+  - go build -o event-listener cmd/events/events.go
+
+before_deploy:
+  - docker login -u "$REGISTRY_USER" -p "$REGISTRY_PASS"
+  - docker build --tag nfvpe/metrics_consumer:latest -f docker/metrics/Dockerfile .
+  - docker build --tag nfvpe/events_consumer:latest -f docker/events/Dockerfile .
+  - docker images
+
+deploy:
+  provider: script
+  script: docker push nfvpe/metrics_consumer:latest && docker push nfvpe/events_consumer:latest
+  on:
+    branch: master
