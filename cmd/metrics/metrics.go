@@ -5,7 +5,6 @@ import (
 
 	"github.com/MakeNowJust/heredoc"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/redhat-nfvpe/service-assurance-poc/amqp"
 	"github.com/redhat-nfvpe/service-assurance-poc/api"
 	"github.com/redhat-nfvpe/service-assurance-poc/cacheutil"
 	"github.com/redhat-nfvpe/service-assurance-poc/config"
