@@ -39,8 +39,7 @@
 
 [[constraint]]
   name = "github.com/satori/go.uuid"
-  version = "1.2.0"
-
+  branch = "master"
 [[constraint]]
   branch = "go1"
   name = "qpid.apache.org"

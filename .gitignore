@@ -1,2 +1,4 @@
 vendor/*
 !vendor/.keep
+events
+metrics
