@@ -21,6 +21,7 @@ script:
 - golint . | xargs -r false
 before_deploy:
 - docker login -u $REGISTRY_USER -p $REGISTRY_PASS
+- docker build --tag nfvpe/smart_agent_builder:latest -f build/docker/builder/Dockerfile .
 - docker build --tag nfvpe/metrics_consumer:latest -f build/docker/metrics/Dockerfile .
 - docker build --tag nfvpe/events_consumer:latest -f build/docker/events/Dockerfile .
 - docker images
