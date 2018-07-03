@@ -11,7 +11,7 @@ import (
 
 // MAXTTL to remove plugin is stale for 5
 var MAXTTL int64 = 300
-var freeList = make(chan *IncomingBuffer, 100)
+var freeList = make(chan *IncomingBuffer, 1000)
 var quitCacheServerCh = make(chan struct{})
 var debugc = func(format string, data ...interface{}) {} // Default no debugging output
 
@@ -186,7 +186,7 @@ func (cs *CacheServer) GetCache() *IncomingDataCache {
 func NewCacheServer(maxTTL int64, debug bool) *CacheServer {
 	server := &CacheServer{
 		cache: NewCache(maxTTL),
-		ch:    make(chan *IncomingBuffer),
+		ch:    make(chan *IncomingBuffer, 1000),
 	}
 	if debug {
 		debugc = func(format string, data ...interface{}) { log.Printf(format, data...) }
