@@ -1,5 +1,7 @@
 # vim: set tabstop=2 shiftwidth=2:
 language: go
+go:
+  - "1.9.7"
 sudo: required
 dist: trusty
 services:
