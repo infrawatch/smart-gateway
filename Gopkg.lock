@@ -86,21 +86,6 @@
   revision = "40f013a808ec4fa79def444a1a56de4d1727efcb"
 
 [[projects]]
-  branch = "master"
-  name = "github.com/redhat-nfvpe/service-assurance-poc"
-  packages = [
-    "alerts",
-    "amqp",
-    "api",
-    "cacheutil",
-    "config",
-    "elasticsearch",
-    "incoming",
-    "tsdb"
-  ]
-  revision = "771c5c26618a454855d090b0b34b4a6222487584"
-
-[[projects]]
   name = "github.com/satori/go.uuid"
   packages = ["."]
   revision = "f58768cc1a7a7e77a3bd49e98cdd21419399b6a3"
@@ -119,6 +104,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "5e403dc7a3f0d337bca74daa5802f6dc028cfaebdf6c6ab05eb38ae70d0ad479"
+  inputs-digest = "a4ef87fe616d38aa0b04299a834866bf60a45d9eeb87aebdf2140305b1940203"
   solver-name = "gps-cdcl"
   solver-version = 1

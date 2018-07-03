@@ -30,12 +30,16 @@
   name = "github.com/MakeNowJust/heredoc"
 
 [[constraint]]
+  name = "github.com/olivere/elastic"
+  version = "6.1.24"
+
+[[constraint]]
   name = "github.com/prometheus/client_golang"
   version = "0.8.0"
 
 [[constraint]]
-  branch = "master"
-  name = "github.com/redhat-nfvpe/service-assurance-poc"
+  name = "github.com/satori/go.uuid"
+  version = "1.2.0"
 
 [[constraint]]
   branch = "go1"

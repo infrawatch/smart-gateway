@@ -1,0 +1,24 @@
+{
+            "settings": {
+                "index": {
+                    "analysis": {
+                        "analyzer": {
+                            "autocomplete": {
+                                "tokenizer": "whitespace",
+                                "filter": [
+                                    "lowercase",
+                                    "engram"
+                                ]
+                            }
+                        },
+                        "filter": {
+                            "engram": {
+                                "type": "edgeNGram",
+                                "min_gram": 1,
+                                "max_gram": 10
+                            }
+                        }
+                    }
+                }
+            }
+}

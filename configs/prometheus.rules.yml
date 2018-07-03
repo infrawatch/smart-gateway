@@ -1,0 +1,152 @@
+ groups:
+ - name: test-node
+   interval: 30s
+   rules:
+   - record: job:svc_1_documents_loaded_count:avg_rate1s
+     expr: avg(rate(svc_1_documents_loaded_count[1s])) by (job)
+   - record: job:svc_2_documents_loaded_count:avg_rate1s
+     expr: avg(rate(svc_2_documents_loaded_count[1s])) by (job)
+   - record: job:svc_3_documents_loaded_count:avg_rate1s
+     expr: avg(rate(svc_3_documents_loaded_count[1s])) by (job)
+   - record: job:svc_4_documents_loaded_count:avg_rate1s
+     expr: avg(rate(svc_4_documents_loaded_count[1s])) by (job)
+   - record: job:svc_5_documents_loaded_count:avg_rate1s
+     expr: avg(rate(svc_5_documents_loaded_count[1s])) by (job)
+   - record: job:svc_6_documents_loaded_count:avg_rate1s
+     expr: avg(rate(svc_6_documents_loaded_count[1s])) by (job)
+   - record: job:svc_7_documents_loaded_count:avg_rate1s
+     expr: avg(rate(svc_7_documents_loaded_count[1s])) by (job)
+   - record: job:svc_8_documents_loaded_count:avg_rate1s
+     expr: avg(rate(svc_8_documents_loaded_count[1s])) by (job)
+   - record: job:svc_9_documents_loaded_count:avg_rate1s
+     expr: avg(rate(svc_9_documents_loaded_count[1s])) by (job)
+   - record: job:svc_10_documents_loaded_count:avg_rate1s
+     expr: avg(rate(svc_10_documents_loaded_count[1s])) by (job)
+
+ - name: openstack_exporter_status
+   interval: 5s
+   rules:
+   - alert: openstack exporter down
+     expr: absent(up{job="openstack"}) or sum(up{job="openstack"}) < 1
+     for: 10s
+     labels:
+       severity: critical
+     annotations:
+       summary: Openstack monitoring service is down for 10s
+       description: "{{ $labels.instance }} of job {{ $labels.job }} has been down for more than 10 secs."
+
+ - name: COLLECTD_DOWN
+   interval: 1s
+   rules:
+   # Alert for any instance that is unreachable for >5 minutes.
+   - alert: Collectd_down
+     #expr: absent(sa_collectd_uptime) // this cant be predicted
+     expr: sa_collectd_last_metric_for_host_status==0
+     for: 20s
+     labels:
+       severity: critical
+     annotations:
+       summary: "collectd in {{ $labels.source}} is down or no data"
+       description: "collectd  is not sending data from {{ $labels.source }} is has been down for more than 20s secs."
+
+ - name: QPID_DOWN
+   interval: 1s
+   rules:
+   # Alert for any instance that is unreachable for >5 minutes.
+   - alert: qpid_router_down
+     #expr: absent(sa_collectd_uptime)
+     expr: sa_collectd_qpid_router_status==0
+     for: 10s
+     labels:
+       severity: critical
+     annotations:
+       summary: "qpid dispatch router in  {{ $labels.instance}} is down"
+       description: "qpid dispatch router may have connection error is not sending data from {{ $labels.instance }} is has been down for more than 10s minutes."
+
+ - name: ElasticSearch_Down
+   interval: 1s
+   rules:
+   # Alert for any instance that is unreachable for >5 minutes.
+   - alert: elasticsearch_down
+     #expr: absent(sa_collectd_uptime)
+     expr: sa_collectd_elasticsearch_status==0
+     for: 10s
+     labels:
+       severity: critical
+     annotations:
+       summary: "ElasticSearch {{ $labels.instance}} is down"
+       description: "ElasticSearch may have connection error in  {{ $labels.instance }} is has been down for more than 10s"
+
+ - name: SmartGateway_listener_high_latency
+   interval: 1s
+   rules:
+   # Alert for any instance that is unreachable for >5 minutes.
+   - alert: smartgateway_listerner_slow
+     #expr: absent(sa_collectd_uptime)
+     expr: floor(sa_collectd_last_pull_timestamp_seconds)-time()>6
+     for: 10s
+     labels:
+       severity: critical
+     annotations:
+       summary: "{{$labels.source}} running in {{ $labels.instance}}  is slow "
+       description: "{{$labels.source}}  running in {{ $labels.instance }}  having high latency "
+
+ - name: SmartGateway_listener_high_down
+   interval: 1s
+   rules:
+   # Alert for any instance that is unreachable for >5 minutes.
+   - alert: smartgateway_listerner_down
+     #expr: absent(sa_collectd_uptime)
+     expr: absent(sa_collectd_last_pull_timestamp_seconds)
+     for: 20s
+     labels:
+       severity: critical
+     annotations:
+       summary: "Either metirc or event listener running in {{ $labels.instance}} is dead"
+       description: "Either metirc or event listener running in {{ $labels.instance }} is dead"
+
+ - name: InstanceDown
+   interval: 5s
+   rules:
+   # Alert for any instance that is unreachable for >5 minutes.
+   - alert: InstanceDown
+     expr: up == 0
+     for: 5m
+     labels:
+       severity: page
+     annotations:
+       summary: "Instance {{ $labels.instance }} down"
+       description: "{{ $labels.instance }} of job {{ $labels.job }} has been down for more than 5 minutes."
+
+ - name: API_status
+   interval: 5s
+   rules:
+   - alert: Openstack Service is down
+     expr: avg_over_time({__name__=~".*api" ,job="openstack"}[5s])==0
+     for: 10s
+     labels:
+       severity: critical
+     annotations:
+       summary: openstack service {{$labels.service}} is down
+       description: "openstack  {{$labels.service}} api service (host :{{ $labels.instance }} of job {{ $labels.job }}) has been DOWN for more than 10 secs."
+
+ - name: Node CPU Usage
+   interval: 5s
+   rules:
+   - alert: High CPU usage
+     expr:  (avg by (exported_instance) (irate(sa_collectd_cpu_total[5m]))) > 75
+     for: 20s
+     labels:
+       severity: critical
+     annotations:
+       summary: "{{$labels.exported_instance}}: High CPU usage detected"
+       description: "{{$labels.exported_instance}}: CPU usage is above 75% (current value is: {{ $value }})"
+
+   #- alert: Openstack Service is up
+   #  expr: avg_over_time({__name__=~".*api" ,job="openstack"}[5s])==1
+   #  for: 10s
+   #  labels:
+   #    severity: info
+   #  annotations:
+   #    summary: openstack service {{$labels.service}} is up
+   #    description: "openstack  {{$labels.service}} api service (host :{{ $labels.instance }} of job {{ $labels.job }}) is UP."
