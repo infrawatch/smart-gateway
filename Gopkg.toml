@@ -37,6 +37,10 @@
   branch = "master"
   name = "github.com/redhat-nfvpe/service-assurance-poc"
 
+[[constraint]]
+  branch = "go1"
+  name = "qpid.apache.org"
+
 [prune]
   go-tests = true
   unused-packages = true

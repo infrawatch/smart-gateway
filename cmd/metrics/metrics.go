@@ -1,6 +1,7 @@
 package main
 
 import (
+	"amqp10"
 	"os/signal"
 
 	"github.com/MakeNowJust/heredoc"
