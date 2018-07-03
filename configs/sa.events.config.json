@@ -1,0 +1,11 @@
+{
+		"AMQP1EventURL": "10.19.110.5:5672/collectd/notify",
+		"ElasticHostURL": "http://10.19.110.5:9200",
+		"AlertManagerURL": "http://10.19.110.5:9093/api/v1/alerts",
+		"ResetIndex": false,
+		"Debug": false,
+		"API":  {
+		 "APIEndpointURL": "10.18.81.40:9999",
+		 "AMQP1PublishURL": "10.19.110.5:5672/collectd/alert2"
+		 }
+}
