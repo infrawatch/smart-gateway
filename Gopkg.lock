@@ -87,23 +87,32 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/redhat-nfvpe/service-assurance-poc"
+  packages = [
+    "cacheutil",
+    "incoming",
+    "tsdb"
+  ]
+  revision = "117e019e5f0bd5e83e4646427fd636aa67eaebf0"
+
+[[projects]]
+  branch = "master"
   name = "github.com/satori/go.uuid"
   packages = ["."]
   revision = "36e9d2ebbde5e3f13ab2e25625fd453271d6522e"
 
 [[projects]]
-  branch = "go1"
   name = "qpid.apache.org"
   packages = [
     "amqp",
     "electron",
     "proton"
   ]
-  revision = "6f799990cdf739b3caacf66eb2a9a29b14c9abeb"
+  revision = "b25d21e6779a011e972a5f00e433e2034b793da1"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "7d5c286788fcb8e3e529fdd215c916a92de1dd530397d2a10b42ddaf5f44e6c8"
+  inputs-digest = "73dd99a368c5cff48a0857691d95718c69519d63a1f4b8cf03aca6bd3810d55d"
   solver-name = "gps-cdcl"
   solver-version = 1
