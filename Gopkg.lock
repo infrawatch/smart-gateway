@@ -83,17 +83,23 @@
     "nfs",
     "xfs"
   ]
-  revision = "40f013a808ec4fa79def444a1a56de4d1727efcb"
+  revision = "ae68e2d4c00fed4943b5f6698d504a5fe083da8a"
 
 [[projects]]
   branch = "master"
-  name = "github.com/redhat-nfvpe/service-assurance-poc"
+  name = "github.com/redhat-nfvpe/telemetry-consumers"
   packages = [
-    "cacheutil",
-    "incoming",
-    "tsdb"
+    "internal/pkg/alerts",
+    "internal/pkg/amqp",
+    "internal/pkg/api",
+    "internal/pkg/cacheutil",
+    "internal/pkg/config",
+    "internal/pkg/elasticsearch",
+    "internal/pkg/elasticsearch/mapping",
+    "internal/pkg/incoming",
+    "internal/pkg/tsdb"
   ]
-  revision = "117e019e5f0bd5e83e4646427fd636aa67eaebf0"
+  revision = "7ca113a956edb7c747ad920b91515519586c5410"
 
 [[projects]]
   branch = "master"
@@ -113,6 +119,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "73dd99a368c5cff48a0857691d95718c69519d63a1f4b8cf03aca6bd3810d55d"
+  inputs-digest = "2e6b6cc7676886e3ac720ec9cf85c3ffc896a57cf05f7e347d04f1c61d368d8d"
   solver-name = "gps-cdcl"
   solver-version = 1
