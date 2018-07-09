@@ -153,6 +153,13 @@ func (c Collectd) GetItemKey() string {
 	if c.Plugin == c.Type {
 		name = c.Type
 	}
+
+	if c.PluginInstance != "" {
+		name += "_" + c.PluginInstance
+	}
+	if c.TypeInstance != "" {
+		name += "_" + c.TypeInstance
+	}
 	return name
 }
 
