@@ -87,22 +87,6 @@
 
 [[projects]]
   branch = "master"
-  name = "github.com/redhat-nfvpe/telemetry-consumers"
-  packages = [
-    "internal/pkg/alerts",
-    "internal/pkg/amqp",
-    "internal/pkg/api",
-    "internal/pkg/cacheutil",
-    "internal/pkg/config",
-    "internal/pkg/elasticsearch",
-    "internal/pkg/elasticsearch/mapping",
-    "internal/pkg/incoming",
-    "internal/pkg/tsdb"
-  ]
-  revision = "7ca113a956edb7c747ad920b91515519586c5410"
-
-[[projects]]
-  branch = "master"
   name = "github.com/satori/go.uuid"
   packages = ["."]
   revision = "36e9d2ebbde5e3f13ab2e25625fd453271d6522e"
@@ -119,6 +103,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "2e6b6cc7676886e3ac720ec9cf85c3ffc896a57cf05f7e347d04f1c61d368d8d"
+  inputs-digest = "774b858936273cdc8afc99f06a3326286e427938d0738f89529898455b7a6bf3"
   solver-name = "gps-cdcl"
   solver-version = 1
