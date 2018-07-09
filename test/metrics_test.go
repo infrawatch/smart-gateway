@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 
-	"github.com/redhat-nfvpe/service-assurance-poc/cacheutil"
-	"github.com/redhat-nfvpe/service-assurance-poc/incoming"
+	"github.com/redhat-nfvpe/telemetry-consumers/internal/pkg/cacheutil"
+	"github.com/redhat-nfvpe/telemetry-consumers/internal/pkg/incoming"
 
 	"sync"
 	"testing"
