@@ -6,6 +6,7 @@
 	"DataCount": -1,
 	"UseSample": false,
 	"Debug": false,
+	"prefetch": 100,
 	"Sample": {
 		"HostCount": 10,
 		"PluginCount": 100,

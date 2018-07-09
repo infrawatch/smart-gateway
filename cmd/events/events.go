@@ -58,6 +58,7 @@ func main() {
 	fAPIEndpointURL := flag.String("apiurl", "", "(Optional)API endpoint localhost:8082")
 	fAMQP1PublishURL := flag.String("amqppublishurl", "", "(Optional) AMQP1.0 event publish address 127.0.0.1:5672/collectd/alert")
 	fResetIndex := flag.Bool("resetIndex", false, "Optional Clean all index before on start (default false)")
+	fPrefetch := flag.Int("prefetch", 0, "AMQP1.0 option: Enable prefetc and set capacity(0 is disabled,>0 enabled with capacity of >0) (OPTIONAL)")
 
 	flag.Parse()
 	var serverConfig saconfig.EventConfiguration
@@ -71,6 +72,7 @@ func main() {
 			AMQP1EventURL:   *fAMQP1EventURL,
 			ElasticHostURL:  *fElasticHostURL,
 			AlertManagerURL: *fAlertManagerURL,
+			Prefetch:        *fPrefetch,
 			API: saconfig.EventAPIConfig{
 				APIEndpointURL:  *fAPIEndpointURL,
 				AMQP1PublishURL: *fAMQP1PublishURL,
@@ -135,7 +137,7 @@ func main() {
 	///Metric Listener
 	amqpEventsurl := fmt.Sprintf("amqp://%s", serverConfig.AMQP1EventURL)
 	log.Printf("Connecting to AMQP1 : %s\n", amqpEventsurl)
-	amqpEventServer = amqp10.NewAMQPServer(amqpEventsurl, serverConfig.Debug, -1)
+	amqpEventServer = amqp10.NewAMQPServer(amqpEventsurl, serverConfig.Debug, -1, serverConfig.Prefetch)
 
 	log.Printf("Listening.....\n")
 	var elasticClient *saelastic.ElasticClient
