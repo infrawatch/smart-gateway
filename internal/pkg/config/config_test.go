@@ -10,6 +10,9 @@ func TestMetricConfig(t *testing.T) {
 	if len(configuration.AMQP1MetricURL) == 0 {
 		t.Error("Empty configuration generated")
 	}
+	if configuration.Prefetch != 100 {
+		t.Error("Error loading prefetch")
+	}
 
 }
 
@@ -21,5 +24,8 @@ func TestEventConfig(t *testing.T) {
 	}
 	if len(configuration.AlertManagerURL) == 0 {
 		t.Error("Empty configuration generated")
+	}
+	if configuration.Prefetch != 100 {
+		t.Error("Error loading prefetch")
 	}
 }

@@ -48,6 +48,7 @@ type AMQPServer struct {
 	msgcount    int
 	notifier    chan string
 	status      chan int
+	prefetch    int
 	connections chan electron.Connection
 }
 
@@ -60,7 +61,7 @@ func MockAmqpServer(notifier chan string) *AMQPServer {
 }
 
 //NewAMQPServer   ...
-func NewAMQPServer(urlStr string, debug bool, msgcount int) *AMQPServer {
+func NewAMQPServer(urlStr string, debug bool, msgcount int, prefetch int) *AMQPServer {
 	if len(urlStr) == 0 {
 		log.Println("No URL provided")
 		//usage()
@@ -72,6 +73,7 @@ func NewAMQPServer(urlStr string, debug bool, msgcount int) *AMQPServer {
 		notifier:    make(chan string),
 		status:      make(chan int),
 		msgcount:    msgcount,
+		prefetch:    prefetch,
 		connections: make(chan electron.Connection, 1),
 	}
 	if debug {
@@ -204,9 +206,11 @@ func (s *AMQPServer) connect() (electron.Receiver, error) {
 	s.connections <- c // Save connection so we can Close() when start() ends
 	addr := strings.TrimPrefix(url.Path, "/")
 	opts := []electron.LinkOption{electron.Source(addr)}
-	/*if *prefetch > 0 {
-		opts = append(opts, electron.Capacity(*prefetch), electron.Prefetch(true))
-	}*/
+	if s.prefetch > 0 {
+		debugr("Amqp Prefetch set to %d\n", s.prefetch)
+		opts = append(opts, electron.Capacity(s.prefetch), electron.Prefetch(true))
+	}
+
 	r, err := c.Receiver(opts...)
 	return r, err
 }

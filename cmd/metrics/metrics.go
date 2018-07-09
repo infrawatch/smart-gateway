@@ -96,6 +96,7 @@ func main() {
 	fExporterport := flag.Int("mport", 8081, "Metrics port for Prometheus to export (http://localhost:<port>/metrics) ")
 	fAMQP1MetricURL := flag.String("amqp1MetricURL", "", "AMQP1.0 metrics listener example 127.0.0.1:5672/collectd/telemetry")
 	fCount := flag.Int("count", -1, "Stop after receiving this many messages in total(-1 forever) (OPTIONAL)")
+	fPrefetch := flag.Int("prefetch", 0, "AMQP1.0 option: Enable prefetc and set capacity(0 is disabled,>0 enabled with capacity of >0) (OPTIONAL)")
 
 	fSampledata := flag.Bool("usesample", false, "Use sample data instead of amqp.This will not fetch any data from amqp (OPTIONAL)")
 	fHosts := flag.Int("h", 1, "No of hosts : Sample hosts required (default 1).")
@@ -118,6 +119,7 @@ func main() {
 			DataCount:      *fCount, //-1 for ever which is default
 			UseSample:      *fSampledata,
 			Debug:          *fDebug,
+			Prefetch:       *fPrefetch,
 			Sample: saconfig.SampleDataConfig{
 				HostCount:   *fHosts,   //no of host to simulate
 				PluginCount: *fPlugins, //No of plugin count per hosts
@@ -227,7 +229,7 @@ func main() {
 		///Metric Listener
 		amqpMetricsurl := fmt.Sprintf("amqp://%s", serverConfig.AMQP1MetricURL)
 		log.Printf("Connecting to AMQP1 : %s\n", amqpMetricsurl)
-		amqpMetricServer = amqp10.NewAMQPServer(amqpMetricsurl, serverConfig.Debug, serverConfig.DataCount)
+		amqpMetricServer = amqp10.NewAMQPServer(amqpMetricsurl, serverConfig.Debug, serverConfig.DataCount, serverConfig.Prefetch)
 		log.Printf("Listening.....\n")
 
 		for {
