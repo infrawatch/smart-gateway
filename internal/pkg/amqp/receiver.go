@@ -111,7 +111,7 @@ func NewAMQPHandler(source string) *AMQPHandler {
 		totalCount:     0,
 		totalProcessed: 0,
 		totalCountDesc: prometheus.NewDesc("sa_collectd_total_amqp_message_recv_count",
-			"Total count of amqp message recievd.",
+			"Total count of amqp message received.",
 			nil, plabels,
 		),
 		totalProcessedDesc: prometheus.NewDesc("sa_collectd_total_amqp_processed_message_count",
