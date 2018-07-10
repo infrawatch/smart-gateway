@@ -17,6 +17,7 @@ func AddHeartBeat(instance string, value float64, ch chan<- prometheus.Metric) {
 	ch <- m
 }
 
+//AddMetricsByHostCount ...
 func AddMetricsByHostCount(instance string, value float64, ch chan<- prometheus.Metric) {
 	m, err := tsdb.AddMetricsByHost(instance, value)
 	if err != nil {
