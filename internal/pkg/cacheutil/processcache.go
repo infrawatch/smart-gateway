@@ -17,11 +17,19 @@ func AddHeartBeat(instance string, value float64, ch chan<- prometheus.Metric) {
 	ch <- m
 }
 
+func AddMetricsByHostCount(instance string, value float64, ch chan<- prometheus.Metric) {
+	m, err := tsdb.AddMetricsByHost(instance, value)
+	if err != nil {
+		log.Printf("AddMetricsByHost: %v for %s", err, instance)
+	}
+	ch <- m
+}
+
 //FlushPrometheusMetric   generate Prometheus metrics
-func (shard *ShardedIncomingDataCache) FlushPrometheusMetric(ch chan<- prometheus.Metric) bool {
+func (shard *ShardedIncomingDataCache) FlushPrometheusMetric(ch chan<- prometheus.Metric) int {
 	shard.lock.Lock()
 	defer shard.lock.Unlock()
-	minMetricCreated := false //..minimum of one metrics created
+	minMetricCreated := 0 //..minimum of one metrics created
 	for _, IncomingDataInterface := range shard.plugin {
 		if collectd, ok := IncomingDataInterface.(*incoming.Collectd); ok {
 			if collectd.ISNew() {
@@ -33,7 +41,7 @@ func (shard *ShardedIncomingDataCache) FlushPrometheusMetric(ch chan<- prometheu
 						continue
 					}
 					ch <- m
-					minMetricCreated = true
+					minMetricCreated++
 				}
 			} else {
 				//clean up if data is not access for max TTL specified

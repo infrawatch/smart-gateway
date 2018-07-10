@@ -21,7 +21,15 @@ import (
 	"time"
 )
 
-var debugm = func(format string, data ...interface{}) {} // Default no debugging output
+var (
+	cacheServer      cacheutil.CacheServer
+	amqpMetricServer *amqp10.AMQPServer
+	debugm           = func(format string, data ...interface{}) {} // Default no debugging output
+	serverConfig     saconfig.MetricConfiguration
+	amqpHandler      *amqp10.AMQPHandler
+	myHandler        *cacheHandler
+	hostwaitgroup    sync.WaitGroup
+)
 
 /*************** HTTP HANDLER***********************/
 type cacheHandler struct {
@@ -39,20 +47,23 @@ func (c *cacheHandler) Describe(ch chan<- *prometheus.Desc) {
 func (c *cacheHandler) Collect(ch chan<- prometheus.Metric) {
 	//lastPull.Set(float64(time.Now().UnixNano()) / 1e9)
 	c.appstate.Collect(ch)
+	var metricCount int
 	//ch <- lastPull
 	allHosts := c.cache.GetHosts()
 	debugm("Debug:Prometheus is requesting to scrape metrics...")
 	for key, plugin := range allHosts {
 		//fmt.Fprintln(w, hostname)
 		debugm("Debug:Getting metrics for host %s  with total plugin size %d\n", key, plugin.Size())
-		if plugin.FlushPrometheusMetric(ch) == true {
+		metricCount = plugin.FlushPrometheusMetric(ch)
+		if metricCount > 0 {
 			// add heart if there is atleast one new metrics for the host
 			debugm("Debug:Adding heartbeat for host %s.", key)
 			cacheutil.AddHeartBeat(key, 1.0, ch)
 		} else {
 			cacheutil.AddHeartBeat(key, 0.0, ch)
 		}
-
+		//add count of metrics
+		cacheutil.AddMetricsByHostCount(key, float64(metricCount), ch)
 		//this will clean up all zero plugins
 		if plugin.Size() == 0 {
 			debugm("Debug:Cleaning all empty plugins.")
@@ -104,7 +115,7 @@ func main() {
 	fIterations := flag.Int("t", 1, "No of times to run sample data (default 1) -1 for ever.")
 
 	flag.Parse()
-	var serverConfig saconfig.MetricConfiguration
+
 	if len(*fConfigLocation) > 0 { //load configuration
 		serverConfig = saconfig.LoadMetricConfig(*fConfigLocation)
 		if *fDebug {
@@ -154,16 +165,11 @@ func main() {
 
 	//Cache sever to process and serve the exporter
 	cacheServer := cacheutil.NewCacheServer(cacheutil.MAXTTL, serverConfig.Debug)
-	type MetricHandler struct {
-		applicationHealth *cacheutil.ApplicationHealthCache
-		lastPull          *prometheus.Desc
-		qpidRouterState   *prometheus.Desc
-	}
-
 	applicationHealth := cacheutil.NewApplicationHealthCache()
 	appStateHandler := apihandler.NewAppStateMetricHandler(applicationHealth)
 	myHandler := &cacheHandler{cache: cacheServer.GetCache(), appstate: appStateHandler}
-	prometheus.MustRegister(myHandler)
+	amqpHandler := amqp10.NewAMQPHandler("Metric Consumer")
+	prometheus.MustRegister(myHandler, amqpHandler)
 
 	if serverConfig.CPUStats == false {
 		// Including these stats kills performance when Prometheus polls with multiple targets
@@ -205,7 +211,7 @@ func main() {
 		if serverConfig.Sample.DataCount == -1 {
 			serverConfig.Sample.DataCount = 9999999
 		}
-		var hostwaitgroup sync.WaitGroup
+
 		fmt.Printf("Test data  will run for %d times ", serverConfig.Sample.DataCount)
 		for times := 1; times <= serverConfig.Sample.DataCount; times++ {
 			hostwaitgroup.Add(serverConfig.Sample.HostCount)
@@ -225,16 +231,16 @@ func main() {
 
 	} else {
 		//aqp listener if sample is requested then amqp will not be used but random sample data will be used
-		var amqpMetricServer *amqp10.AMQPServer
 		///Metric Listener
 		amqpMetricsurl := fmt.Sprintf("amqp://%s", serverConfig.AMQP1MetricURL)
 		log.Printf("Connecting to AMQP1 : %s\n", amqpMetricsurl)
-		amqpMetricServer = amqp10.NewAMQPServer(amqpMetricsurl, serverConfig.Debug, serverConfig.DataCount, serverConfig.Prefetch)
+		amqpMetricServer = amqp10.NewAMQPServer(amqpMetricsurl, serverConfig.Debug, serverConfig.DataCount, serverConfig.Prefetch, amqpHandler)
 		log.Printf("Listening.....\n")
 
 		for {
 			select {
 			case data := <-amqpMetricServer.GetNotifier():
+				amqpMetricServer.GetHandler().IncTotalMsgProcessed()
 				debugm("Debug: Getting incoming data from notifier channel : %#v\n", data)
 				incomingType := incoming.NewInComing(incoming.COLLECTD)
 				incomingType.ParseInputJSON(data)
