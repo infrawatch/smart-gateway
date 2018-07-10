@@ -122,7 +122,7 @@ func main() {
 		log.Println("AlertManager disabled")
 	}
 	if len(serverConfig.API.APIEndpointURL) > 0 {
-		log.Printf("API availble at %s\n", serverConfig.API.APIEndpointURL)
+		log.Printf("API available at %s\n", serverConfig.API.APIEndpointURL)
 		serverConfig.APIEnabled = true
 	} else {
 		log.Println("API disabled")
@@ -134,7 +134,7 @@ func main() {
 		log.Println("AMQP1.0 Publish address disabled")
 	}
 
-	/* Print Configuration detials */
+	/* Print Configuration details */
 	//mertic handler for event mertics to check health status
 	applicationHealth := cacheutil.NewApplicationHealthCache()
 	metricHandler := apihandler.NewAppStateEventMetricHandler(applicationHealth)
@@ -190,7 +190,7 @@ func main() {
 		select {
 		case event := <-amqpEventServer.GetNotifier():
 			amqpEventServer.GetHandler().IncTotalMsgProcessed()
-			//log.Printf("Event occured : %#v\n", event)
+			//log.Printf("Event occurred : %#v\n", event)
 			indexName, indexType, err := saelastic.GetIndexNameType(event)
 			if err != nil {
 				log.Printf("Failed to read event %s type in main %s\n", event, err)
