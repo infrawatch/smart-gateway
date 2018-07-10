@@ -1,6 +1,5 @@
 package saelastic
 
-
 //SyseventMapping ...
 const SyseventMapping = `
 {
