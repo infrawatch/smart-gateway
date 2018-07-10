@@ -1,4 +1,4 @@
-# telemetry-consumers ![build status](https://travis-ci.org/redhat-nfvpe/telemetry-consumers.svg?branch=master)
+# telemetry-consumers ![build status](https://travis-ci.org/redhat-nfvpe/telemetry-consumers.svg?branch=master) [![Go Report Card](https://goreportcard.com/badge/github.com/redhat-nfvpe/telemetry-consumers)](https://goreportcard.com/report/github.com/redhat-nfvpe/telemetry-consumers)
 
 Telemetry consumers for service assurance. Includes applications for both metrics and events gathering.
 
