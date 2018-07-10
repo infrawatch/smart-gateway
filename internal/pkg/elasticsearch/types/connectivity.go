@@ -1,7 +1,9 @@
 package saelastic
+
 import (
-  "time"
+	"time"
 )
+
 /** generated using https://mholt.github.io/json-to-go*/
 
 //Connectivity .....
