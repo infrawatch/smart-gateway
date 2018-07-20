@@ -10,7 +10,11 @@ func TestPut(t *testing.T) {
 	}
 	var url = "amqp://10.19.110.5:5672/collectd/telemetry"
 	var amqpServer *AMQPServer
-	amqpServer = NewAMQPServer(url, true, 10, 0, nil)
+
+	done := make(chan bool)
+
+	amqpServer = NewAMQPServer(url, true, 10, 0, nil, done, false)
+
 	for i := 0; i < 10; i++ {
 		data := <-amqpServer.notifier
 		t.Logf("%s\n", data)

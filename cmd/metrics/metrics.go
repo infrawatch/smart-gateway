@@ -25,6 +25,7 @@ var (
 	cacheServer      cacheutil.CacheServer
 	amqpMetricServer *amqp10.AMQPServer
 	debugm           = func(format string, data ...interface{}) {} // Default no debugging output
+	debugs           = func(count int) {}                          // Default no debugging output
 	serverConfig     saconfig.MetricConfiguration
 	amqpHandler      *amqp10.AMQPHandler
 	myHandler        *cacheHandler
@@ -97,10 +98,30 @@ func metricusage() {
 	flag.PrintDefaults()
 }
 
+func getLoopStater(q chan string, everyCount int) func(count int) {
+	lastCounted := time.Now()
+	showCount := everyCount
+	var lenSum float64
+	var countSent int64
+
+	return func(count int) {
+		countSent = countSent + int64(count)
+		lenSum = lenSum + float64(len(q))
+		if showCount != -1 && countSent%int64(showCount+1) == 0 {
+			lastCounted = time.Now()
+		}
+		if showCount != -1 && countSent%int64(showCount) == 0 {
+			deltaTime := time.Now().Sub(lastCounted)
+			msPerMetric := float64(deltaTime/time.Microsecond) / float64(showCount)
+			log.Printf("Rcv: %d Rcv'd (%v %.4v us), queue depth %v\n", countSent, deltaTime, msPerMetric, lenSum/float64(countSent))
+		}
+	}
+}
 func main() {
 	// set flags for parsing options
 	flag.Usage = metricusage
 	fDebug := flag.Bool("debug", false, "Enable debug")
+	fTestServer := flag.Bool("testclient", false, "Enable Test Receiver for use with AMQP test client")
 	fConfigLocation := flag.String("config", "", "Path to configuration file(optional).if provided ignores all command line options")
 	fIncludeStats := flag.Bool("cpustats", false, "Include cpu usage info in http requests (degrades performance)")
 	fExporterhost := flag.String("mhost", "localhost", "Metrics url for Prometheus to export. ")
@@ -130,6 +151,7 @@ func main() {
 			DataCount:      *fCount, //-1 for ever which is default
 			UseSample:      *fSampledata,
 			Debug:          *fDebug,
+			TestServer:     *fTestServer,
 			Prefetch:       *fPrefetch,
 			Sample: saconfig.SampleDataConfig{
 				HostCount:   *fHosts,   //no of host to simulate
@@ -143,7 +165,8 @@ func main() {
 		debugm = func(format string, data ...interface{}) { log.Printf(format, data...) }
 	}
 
-	if serverConfig.UseSample == false && (len(serverConfig.AMQP1MetricURL) == 0) {
+	if serverConfig.TestServer == false &&
+		serverConfig.UseSample == false && (len(serverConfig.AMQP1MetricURL) == 0) {
 		log.Println("AMQP1 Metrics URL is required")
 		metricusage()
 		os.Exit(1)
@@ -231,25 +254,38 @@ func main() {
 
 	} else {
 		//aqp listener if sample is requested then amqp will not be used but random sample data will be used
+		var amqpMetricServer *amqp10.AMQPServer
+
+		// done channel is used during serverTest
+		done := make(chan bool)
+
 		///Metric Listener
 		amqpMetricsurl := fmt.Sprintf("amqp://%s", serverConfig.AMQP1MetricURL)
 		log.Printf("Connecting to AMQP1 : %s\n", amqpMetricsurl)
-		amqpMetricServer = amqp10.NewAMQPServer(amqpMetricsurl, serverConfig.Debug, serverConfig.DataCount, serverConfig.Prefetch, amqpHandler)
+		amqpMetricServer = amqp10.NewAMQPServer(amqpMetricsurl, serverConfig.Debug, serverConfig.DataCount, serverConfig.Prefetch, amqpHandler, done, *fTestServer)
 		log.Printf("Listening.....\n")
 
+		if serverConfig.TestServer == true {
+			debugs = getLoopStater(amqpMetricServer.GetNotifier(), 10000)
+		}
+
+	msgloop:
 		for {
 			select {
 			case data := <-amqpMetricServer.GetNotifier():
 				amqpMetricServer.GetHandler().IncTotalMsgProcessed()
 				debugm("Debug: Getting incoming data from notifier channel : %#v\n", data)
 				incomingType := incoming.NewInComing(incoming.COLLECTD)
-				incomingType.ParseInputJSON(data)
-				cacheServer.Put(incomingType)
+				metrics, _ := incomingType.ParseInputJSON(data)
+				for _, m := range metrics {
+					cacheServer.Put(m)
+				}
+				debugs(len(metrics))
 				continue // priority channel
 			case status := <-amqpMetricServer.GetStatus():
 				applicationHealth.QpidRouterState = status
-			default:
-				//no activity
+			case <-done:
+				break msgloop
 			}
 		}
 	}

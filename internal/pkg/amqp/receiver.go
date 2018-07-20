@@ -22,6 +22,8 @@ package amqp10
 import (
 	"fmt"
 	"log"
+	"math"
+	"net"
 	"os"
 	"strings"
 	"time"
@@ -49,8 +51,10 @@ type AMQPServer struct {
 	msgcount    int
 	notifier    chan string
 	status      chan int
-	prefetch    int
+	done        chan bool
 	connections chan electron.Connection
+	method      func(s *AMQPServer) (electron.Receiver, error)
+	prefetch    int
 	amqpHandler *AMQPHandler
 }
 
@@ -71,22 +75,40 @@ func MockAmqpServer(notifier chan string) *AMQPServer {
 }
 
 //NewAMQPServer   ...
-func NewAMQPServer(urlStr string, debug bool, msgcount int, prefetch int, amqpHanlder *AMQPHandler) *AMQPServer {
+func NewAMQPServer(urlStr string, debug bool, msgcount int, prefetch int, amqpHanlder *AMQPHandler, done chan bool, isTest bool) *AMQPServer {
 	if len(urlStr) == 0 {
 		log.Println("No URL provided")
 		//usage()
 		os.Exit(1)
 	}
-	server := &AMQPServer{
-		urlStr:      urlStr,
-		debug:       debug,
-		notifier:    make(chan string),
-		status:      make(chan int),
-		msgcount:    msgcount,
-		prefetch:    prefetch,
-		connections: make(chan electron.Connection, 1),
-		amqpHandler: amqpHanlder,
+	var server *AMQPServer
+
+	if isTest == true {
+		server = &AMQPServer{
+			urlStr:      "127.0.0.1:5672",
+			debug:       debug,
+			notifier:    make(chan string, 100),
+			status:      make(chan int),
+			msgcount:    msgcount,
+			connections: make(chan electron.Connection, 1),
+			method:      (*AMQPServer).serverTest,
+			done:        done,
+			amqpHandler: amqpHanlder,
+		}
+	} else {
+		server = &AMQPServer{
+			urlStr:      urlStr,
+			debug:       debug,
+			notifier:    make(chan string),
+			status:      make(chan int),
+			msgcount:    msgcount,
+			connections: make(chan electron.Connection, 1),
+			method:      (*AMQPServer).connect,
+			done:        done,
+			amqpHandler: amqpHanlder,
+		}
 	}
+
 	if debug {
 		debugr = func(format string, data ...interface{}) {
 			log.Printf(format, data...)
@@ -94,7 +116,8 @@ func NewAMQPServer(urlStr string, debug bool, msgcount int, prefetch int, amqpHa
 	}
 	// Spawn off the server's main loop immediately
 	// not exported
-	go server.start()
+	go server.start(isTest)
+
 	return server
 }
 
@@ -170,7 +193,7 @@ func (s *AMQPServer) GetStatus() chan int {
 func (s *AMQPServer) Close() {
 	select {
 	case c := <-s.connections:
-		log.Printf("%s\n", c)
+		log.Printf("Closing...%s\n", c)
 		debugr("Debug:close %s", c)
 		c.Close(nil)
 	default:
@@ -179,9 +202,11 @@ func (s *AMQPServer) Close() {
 }
 
 //start  starts amqp server
-func (s *AMQPServer) start() {
-	messages := make(chan amqp.Message) // Channel for messages from goroutines to main()
+func (s *AMQPServer) start(isTest bool) {
+	messages := make(chan amqp.Message, 10) // Channel for messages from goroutines to main()
 	connectionStatus := make(chan int)
+	done := make(chan bool)
+
 	defer close(messages)
 	defer close(connectionStatus)
 	//var wait sync.WaitGroup // Used by main() to wait for all goroutines to end.
@@ -190,13 +215,14 @@ func (s *AMQPServer) start() {
 		/*if *prefetch > 0 {
 		  opts = append(opts, electron.Capacity(*prefetch), electron.Prefetch(true))
 		}*/
-		r, err := s.connect()
+		r, err := s.method(s)
 		if err != nil {
 			log.Fatalf("Could not connect to Qpid-dispatch router. is it running? : %v", err)
 		}
-		s.status <- 1
+		//s.status <- 1
+		connectionStatus <- 1
 		// Loop receiving messages and sending them to the main() goroutine
-		if s.msgcount == -1 {
+		if isTest == false && s.msgcount == -1 {
 			for {
 				if rm, err := r.Receive(); err == nil {
 					rm.Accept()
@@ -228,21 +254,30 @@ func (s *AMQPServer) start() {
 				}
 			}
 		} else {
-			for i := 0; i < s.msgcount; i++ {
+			untilCount := s.msgcount
+			if s.msgcount == -1 {
+				untilCount = math.MaxInt32
+			}
+			for i := 0; i < untilCount; i++ {
 				if rm, err := r.Receive(); err == nil {
 					rm.Accept()
 					messages <- rm.Message
 				} else if err == electron.Closed {
+					log.Printf("Channel closed...\n")
 					return
 				} else {
-					log.Fatalf("receive error %v: %v", s.urlStr, err)
+					log.Fatalf("receive error %v: %v, %d", s.urlStr, err, i)
 				}
 			}
 			s.Close()
+			log.Println("Closed AMQP...letting loop know")
+			done <- true
+			s.done <- true
 		}
 	}()
 	//outside go routin reciveve and process
 	//var firstmsg=0
+msgloop:
 	for {
 		select {
 		case m := <-messages:
@@ -254,9 +289,14 @@ func (s *AMQPServer) start() {
 			continue //priority to process exiting messages
 		case status := <-connectionStatus:
 			s.status <- status
-		default: //default makes this non-blocking
+		case <-done:
+			log.Println("Done Received...")
+			break msgloop
+
+			//		default: //default makes this non-blocking
 		}
 	}
+
 	//wait.Wait() // Wait for all goroutines to finish.
 }
 
@@ -274,6 +314,7 @@ func (s *AMQPServer) connect() (electron.Receiver, error) {
 	}
 
 	s.connections <- c // Save connection so we can Close() when start() ends
+
 	addr := strings.TrimPrefix(url.Path, "/")
 	opts := []electron.LinkOption{electron.Source(addr)}
 	if s.prefetch > 0 {
@@ -282,6 +323,61 @@ func (s *AMQPServer) connect() (electron.Receiver, error) {
 	}
 
 	r, err := c.Receiver(opts...)
+	return r, err
+}
+
+//
+// serverTest -- Creates a local listening endpoint
+//    that allows a single test client to attach and send
+//    amqp / collectd test data
+//
+func (s *AMQPServer) serverTest() (electron.Receiver, error) {
+	l, err := net.Listen("tcp", s.urlStr) // tcp4 so example will work on ipv6-disabled platforms
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	cont := electron.NewContainer(fmt.Sprintf("receive[%v]", os.Getpid()))
+
+	log.Printf("Listening for connection at...%s\n", s.urlStr)
+
+	c, err := cont.Accept(l)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	l.Close()
+
+	// Process incoming endpoints till we get a Receiver link
+	var r electron.Receiver
+	for r == nil {
+		in := <-c.Incoming()
+		switch in := in.(type) {
+		case *electron.IncomingSession, *electron.IncomingConnection:
+			in.Accept() // Accept the incoming connection and session for the receiver
+			log.Printf("Accepted incomming session...%v\n", in)
+
+		case *electron.IncomingReceiver:
+			in.SetCapacity(10)
+			in.SetPrefetch(true) // Automatic flow control for a buffer of 10 messages.
+			r = in.Accept().(electron.Receiver)
+			log.Printf("Accepted incomming receiever...%v", r)
+		case nil:
+			return nil, err // Connection is closed
+		default:
+			in.Reject(amqp.Errorf("example-server", "unexpected endpoint %v", in))
+		}
+	}
+	go func() { // Reject any further incoming endpoints
+		for in := range c.Incoming() {
+			in.Reject(amqp.Errorf("example-server", "unexpected endpoint %v", in))
+		}
+	}()
+
+	s.connections <- c // Save connection so we can Close() when start() ends
+
+	log.Println("Start processing messages...")
+
 	return r, err
 }
 

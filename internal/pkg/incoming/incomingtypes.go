@@ -4,7 +4,7 @@ package incoming
 type DataTypeInterface interface {
 	GetName() string
 	SetData(data DataTypeInterface)
-	ParseInputJSON(json string) error
+	ParseInputJSON(json string) ([]DataTypeInterface, error)
 	GetKey() string
 	GetItemKey() string
 	GenerateSampleData(key string, itemkey string) DataTypeInterface

@@ -144,7 +144,9 @@ func main() {
 	///Metric Listener
 	amqpEventsurl := fmt.Sprintf("amqp://%s", serverConfig.AMQP1EventURL)
 	log.Printf("Connecting to AMQP1 : %s\n", amqpEventsurl)
-	amqpEventServer = amqp10.NewAMQPServer(amqpEventsurl, serverConfig.Debug, -1, serverConfig.Prefetch, amqpHandler)
+	// done channel is used during testing
+	done := make(chan bool)
+	amqpEventServer = amqp10.NewAMQPServer(amqpEventsurl, serverConfig.Debug, -1, serverConfig.Prefetch, amqpHandler, done, false)
 
 	log.Printf("Listening.....\n")
 
