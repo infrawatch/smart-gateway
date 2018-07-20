@@ -28,6 +28,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"qpid.apache.org/amqp"
 	"qpid.apache.org/electron"
 )
@@ -53,6 +54,16 @@ type AMQPServer struct {
 	done        chan bool
 	connections chan electron.Connection
 	method      func(s *AMQPServer) (electron.Receiver, error)
+	prefetch    int
+	amqpHandler *AMQPHandler
+}
+
+//AMQPHandler ...
+type AMQPHandler struct {
+	totalCount         int64
+	totalProcessed     int64
+	totalCountDesc     *prometheus.Desc
+	totalProcessedDesc *prometheus.Desc
 }
 
 //MockAmqpServer  Create Mock AMQP server
@@ -64,7 +75,7 @@ func MockAmqpServer(notifier chan string) *AMQPServer {
 }
 
 //NewAMQPServer   ...
-func NewAMQPServer(urlStr string, debug bool, msgcount int, isTest bool, done chan bool) *AMQPServer {
+func NewAMQPServer(urlStr string, debug bool, msgcount int, prefetch int, amqpHanlder *AMQPHandler, done chan bool, isTest bool) *AMQPServer {
 	if len(urlStr) == 0 {
 		log.Println("No URL provided")
 		//usage()
@@ -82,6 +93,7 @@ func NewAMQPServer(urlStr string, debug bool, msgcount int, isTest bool, done ch
 			connections: make(chan electron.Connection, 1),
 			method:      (*AMQPServer).serverTest,
 			done:        done,
+			amqpHandler: amqpHanlder,
 		}
 	} else {
 		server = &AMQPServer{
@@ -93,8 +105,10 @@ func NewAMQPServer(urlStr string, debug bool, msgcount int, isTest bool, done ch
 			connections: make(chan electron.Connection, 1),
 			method:      (*AMQPServer).connect,
 			done:        done,
+			amqpHandler: amqpHanlder,
 		}
 	}
+
 	if debug {
 		debugr = func(format string, data ...interface{}) {
 			log.Printf(format, data...)
@@ -105,6 +119,64 @@ func NewAMQPServer(urlStr string, debug bool, msgcount int, isTest bool, done ch
 	go server.start(isTest)
 
 	return server
+}
+
+//GetHandler  ...
+func (s *AMQPServer) GetHandler() *AMQPHandler {
+	return s.amqpHandler
+}
+
+//NewAMQPHandler  ...
+func NewAMQPHandler(source string) *AMQPHandler {
+	plabels := prometheus.Labels{}
+	plabels["source"] = source
+	return &AMQPHandler{
+		totalCount:     0,
+		totalProcessed: 0,
+		totalCountDesc: prometheus.NewDesc("sa_collectd_total_amqp_message_recv_count",
+			"Total count of amqp message received.",
+			nil, plabels,
+		),
+		totalProcessedDesc: prometheus.NewDesc("sa_collectd_total_amqp_processed_message_count",
+			"Total count of amqp message processed.",
+			nil, plabels,
+		),
+	}
+}
+
+//IncTotalMsgRcv ...
+func (a *AMQPHandler) IncTotalMsgRcv() {
+	a.totalCount++
+}
+
+//IncTotalMsgProcessed ...
+func (a *AMQPHandler) IncTotalMsgProcessed() {
+	a.totalProcessed++
+}
+
+//GetTotalMsgRcv ...
+func (a *AMQPHandler) GetTotalMsgRcv() int64 {
+	return a.totalCount
+}
+
+//GetTotalMsgProcessed ...
+func (a *AMQPHandler) GetTotalMsgProcessed() int64 {
+	return a.totalProcessed
+}
+
+//Describe ...
+func (a *AMQPHandler) Describe(ch chan<- *prometheus.Desc) {
+
+	ch <- a.totalCountDesc
+	ch <- a.totalProcessedDesc
+}
+
+//Collect implements prometheus.Collector.
+func (a *AMQPHandler) Collect(ch chan<- prometheus.Metric) {
+
+	ch <- prometheus.MustNewConstMetric(a.totalCountDesc, prometheus.CounterValue, float64(a.totalCount))
+	ch <- prometheus.MustNewConstMetric(a.totalProcessedDesc, prometheus.CounterValue, float64(a.totalProcessed))
+
 }
 
 //GetNotifier  Get notifier
@@ -209,6 +281,7 @@ msgloop:
 	for {
 		select {
 		case m := <-messages:
+			s.GetHandler().IncTotalMsgRcv()
 			debugr("Debug: Getting message from AMQP%v\n", m.Body())
 			amqpBinary := m.Body().(amqp.Binary)
 			debugr("Debug: Sending message to Notifier channel")
@@ -244,9 +317,11 @@ func (s *AMQPServer) connect() (electron.Receiver, error) {
 
 	addr := strings.TrimPrefix(url.Path, "/")
 	opts := []electron.LinkOption{electron.Source(addr)}
-	/*if *prefetch > 0 {
-		opts = append(opts, electron.Capacity(*prefetch), electron.Prefetch(true))
-	}*/
+	if s.prefetch > 0 {
+		debugr("Amqp Prefetch set to %d\n", s.prefetch)
+		opts = append(opts, electron.Capacity(s.prefetch), electron.Prefetch(true))
+	}
+
 	r, err := c.Receiver(opts...)
 	return r, err
 }

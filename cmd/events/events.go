@@ -44,7 +44,14 @@ func eventusage() {
 	flag.PrintDefaults()
 }
 
-var debuge = func(format string, data ...interface{}) {} // Default no debugging output
+var (
+	debuge          = func(format string, data ...interface{}) {} // Default no debugging output
+	amqpEventServer *amqp10.AMQPServer
+	amqpHandler     *amqp10.AMQPHandler
+	serverConfig    saconfig.EventConfiguration
+	elasticClient   *saelastic.ElasticClient
+)
+
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
@@ -58,9 +65,10 @@ func main() {
 	fAPIEndpointURL := flag.String("apiurl", "", "(Optional)API endpoint localhost:8082")
 	fAMQP1PublishURL := flag.String("amqppublishurl", "", "(Optional) AMQP1.0 event publish address 127.0.0.1:5672/collectd/alert")
 	fResetIndex := flag.Bool("resetIndex", false, "Optional Clean all index before on start (default false)")
+	fPrefetch := flag.Int("prefetch", 0, "AMQP1.0 option: Enable prefetc and set capacity(0 is disabled,>0 enabled with capacity of >0) (OPTIONAL)")
 
 	flag.Parse()
-	var serverConfig saconfig.EventConfiguration
+
 	if len(*fConfigLocation) > 0 { //load configuration
 		serverConfig = saconfig.LoadEventConfig(*fConfigLocation)
 		if *fDebug {
@@ -71,6 +79,7 @@ func main() {
 			AMQP1EventURL:   *fAMQP1EventURL,
 			ElasticHostURL:  *fElasticHostURL,
 			AlertManagerURL: *fAlertManagerURL,
+			Prefetch:        *fPrefetch,
 			API: saconfig.EventAPIConfig{
 				APIEndpointURL:  *fAPIEndpointURL,
 				AMQP1PublishURL: *fAMQP1PublishURL,
@@ -113,7 +122,7 @@ func main() {
 		log.Println("AlertManager disabled")
 	}
 	if len(serverConfig.API.APIEndpointURL) > 0 {
-		log.Printf("API availble at %s\n", serverConfig.API.APIEndpointURL)
+		log.Printf("API available at %s\n", serverConfig.API.APIEndpointURL)
 		serverConfig.APIEnabled = true
 	} else {
 		log.Println("API disabled")
@@ -125,23 +134,22 @@ func main() {
 		log.Println("AMQP1.0 Publish address disabled")
 	}
 
-	/* Print Configuration detials */
+	/* Print Configuration details */
 	//mertic handler for event mertics to check health status
 	applicationHealth := cacheutil.NewApplicationHealthCache()
 	metricHandler := apihandler.NewAppStateEventMetricHandler(applicationHealth)
+	amqpHandler := amqp10.NewAMQPHandler("Event Consumer")
 	debuge("Debug:Config %#v\n", serverConfig)
 
-	var amqpEventServer *amqp10.AMQPServer
 	///Metric Listener
 	amqpEventsurl := fmt.Sprintf("amqp://%s", serverConfig.AMQP1EventURL)
 	log.Printf("Connecting to AMQP1 : %s\n", amqpEventsurl)
-
 	// done channel is used during testing
 	done := make(chan bool)
-	amqpEventServer = amqp10.NewAMQPServer(amqpEventsurl, serverConfig.Debug, -1, done)
+	amqpEventServer = amqp10.NewAMQPServer(amqpEventsurl, serverConfig.Debug, -1, serverConfig.Prefetch, amqpHandler, done, false)
 
 	log.Printf("Listening.....\n")
-	var elasticClient *saelastic.ElasticClient
+
 	log.Printf("Connecting to ElasticSearch : %s\n", serverConfig.ElasticHostURL)
 	elasticClient = saelastic.CreateClient(serverConfig.ElasticHostURL, serverConfig.ResetIndex, serverConfig.Debug)
 	applicationHealth.ElasticSearchState = 1
@@ -152,7 +160,7 @@ func main() {
 	********************************************************************************/
 	//configure http alert route to amqp1.0
 	if serverConfig.APIEnabled {
-		prometheus.MustRegister(metricHandler)
+		prometheus.MustRegister(metricHandler, amqpHandler)
 		// Including these stats kills performance when Prometheus polls with multiple targets
 		prometheus.Unregister(prometheus.NewProcessCollector(os.Getpid(), ""))
 		prometheus.Unregister(prometheus.NewGoCollector())
@@ -183,7 +191,8 @@ func main() {
 	for {
 		select {
 		case event := <-amqpEventServer.GetNotifier():
-			//log.Printf("Event occured : %#v\n", event)
+			amqpEventServer.GetHandler().IncTotalMsgProcessed()
+			//log.Printf("Event occurred : %#v\n", event)
 			indexName, indexType, err := saelastic.GetIndexNameType(event)
 			if err != nil {
 				log.Printf("Failed to read event %s type in main %s\n", event, err)

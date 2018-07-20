@@ -1,6 +1,5 @@
 package saelastic
 
-
 //ConnectivityMapping ...
 const ConnectivityMapping = `
 {

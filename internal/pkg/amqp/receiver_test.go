@@ -13,7 +13,8 @@ func TestPut(t *testing.T) {
 
 	done := make(chan bool)
 
-	amqpServer = NewAMQPServer(url, true, 10, true, done)
+	amqpServer = NewAMQPServer(url, true, 10, 0, nil, done, false)
+
 	for i := 0; i < 10; i++ {
 		data := <-amqpServer.notifier
 		t.Logf("%s\n", data)

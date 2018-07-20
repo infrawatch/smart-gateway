@@ -17,6 +17,7 @@ type EventConfiguration struct {
 	APIEnabled          bool
 	PublishEventEnabled bool
 	ResetIndex          bool
+	Prefetch            int
 	IgnoreString        string `json:"-"`
 }
 
@@ -34,6 +35,7 @@ type MetricConfiguration struct {
 	CPUStats       bool
 	Exporterhost   string
 	Exporterport   int
+	Prefetch       int
 	DataCount      int //-1 for ever which is default
 	UseSample      bool
 	Sample         SampleDataConfig

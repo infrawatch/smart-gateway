@@ -83,17 +83,7 @@
     "nfs",
     "xfs"
   ]
-  revision = "40f013a808ec4fa79def444a1a56de4d1727efcb"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/redhat-nfvpe/service-assurance-poc"
-  packages = [
-    "cacheutil",
-    "incoming",
-    "tsdb"
-  ]
-  revision = "117e019e5f0bd5e83e4646427fd636aa67eaebf0"
+  revision = "ae68e2d4c00fed4943b5f6698d504a5fe083da8a"
 
 [[projects]]
   branch = "master"
@@ -113,6 +103,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "73dd99a368c5cff48a0857691d95718c69519d63a1f4b8cf03aca6bd3810d55d"
+  inputs-digest = "774b858936273cdc8afc99f06a3326286e427938d0738f89529898455b7a6bf3"
   solver-name = "gps-cdcl"
   solver-version = 1

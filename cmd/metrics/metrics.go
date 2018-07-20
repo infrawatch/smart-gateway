@@ -22,8 +22,14 @@ import (
 )
 
 var (
-	debugm = func(format string, data ...interface{}) {} // Default no debugging output
-	debugs = func(count int) {}                          // Default no debugging output
+	cacheServer      cacheutil.CacheServer
+	amqpMetricServer *amqp10.AMQPServer
+	debugm           = func(format string, data ...interface{}) {} // Default no debugging output
+	debugs           = func(count int) {}                          // Default no debugging output
+	serverConfig     saconfig.MetricConfiguration
+	amqpHandler      *amqp10.AMQPHandler
+	myHandler        *cacheHandler
+	hostwaitgroup    sync.WaitGroup
 )
 
 /*************** HTTP HANDLER***********************/
@@ -42,20 +48,23 @@ func (c *cacheHandler) Describe(ch chan<- *prometheus.Desc) {
 func (c *cacheHandler) Collect(ch chan<- prometheus.Metric) {
 	//lastPull.Set(float64(time.Now().UnixNano()) / 1e9)
 	c.appstate.Collect(ch)
+	var metricCount int
 	//ch <- lastPull
 	allHosts := c.cache.GetHosts()
 	debugm("Debug:Prometheus is requesting to scrape metrics...")
 	for key, plugin := range allHosts {
 		//fmt.Fprintln(w, hostname)
 		debugm("Debug:Getting metrics for host %s  with total plugin size %d\n", key, plugin.Size())
-		if plugin.FlushPrometheusMetric(ch) == true {
+		metricCount = plugin.FlushPrometheusMetric(ch)
+		if metricCount > 0 {
 			// add heart if there is atleast one new metrics for the host
 			debugm("Debug:Adding heartbeat for host %s.", key)
 			cacheutil.AddHeartBeat(key, 1.0, ch)
 		} else {
 			cacheutil.AddHeartBeat(key, 0.0, ch)
 		}
-
+		//add count of metrics
+		cacheutil.AddMetricsByHostCount(key, float64(metricCount), ch)
 		//this will clean up all zero plugins
 		if plugin.Size() == 0 {
 			debugm("Debug:Cleaning all empty plugins.")
@@ -112,13 +121,14 @@ func main() {
 	// set flags for parsing options
 	flag.Usage = metricusage
 	fDebug := flag.Bool("debug", false, "Enable debug")
-	fTestServer := flag.Bool("test", false, "Enable Test Receiver for use with AMQP test client")
+	fTestServer := flag.Bool("testclient", false, "Enable Test Receiver for use with AMQP test client")
 	fConfigLocation := flag.String("config", "", "Path to configuration file(optional).if provided ignores all command line options")
 	fIncludeStats := flag.Bool("cpustats", false, "Include cpu usage info in http requests (degrades performance)")
 	fExporterhost := flag.String("mhost", "localhost", "Metrics url for Prometheus to export. ")
 	fExporterport := flag.Int("mport", 8081, "Metrics port for Prometheus to export (http://localhost:<port>/metrics) ")
 	fAMQP1MetricURL := flag.String("amqp1MetricURL", "", "AMQP1.0 metrics listener example 127.0.0.1:5672/collectd/telemetry")
 	fCount := flag.Int("count", -1, "Stop after receiving this many messages in total(-1 forever) (OPTIONAL)")
+	fPrefetch := flag.Int("prefetch", 0, "AMQP1.0 option: Enable prefetc and set capacity(0 is disabled,>0 enabled with capacity of >0) (OPTIONAL)")
 
 	fSampledata := flag.Bool("usesample", false, "Use sample data instead of amqp.This will not fetch any data from amqp (OPTIONAL)")
 	fHosts := flag.Int("h", 1, "No of hosts : Sample hosts required (default 1).")
@@ -128,6 +138,7 @@ func main() {
 	flag.Parse()
 
 	var serverConfig saconfig.MetricConfiguration
+
 	if len(*fConfigLocation) > 0 { //load configuration
 		serverConfig = saconfig.LoadMetricConfig(*fConfigLocation)
 		if *fDebug {
@@ -143,6 +154,7 @@ func main() {
 			UseSample:      *fSampledata,
 			Debug:          *fDebug,
 			TestServer:     *fTestServer,
+			Prefetch:       *fPrefetch,
 			Sample: saconfig.SampleDataConfig{
 				HostCount:   *fHosts,   //no of host to simulate
 				PluginCount: *fPlugins, //No of plugin count per hosts
@@ -178,16 +190,11 @@ func main() {
 
 	//Cache sever to process and serve the exporter
 	cacheServer := cacheutil.NewCacheServer(cacheutil.MAXTTL, serverConfig.Debug)
-	type MetricHandler struct {
-		applicationHealth *cacheutil.ApplicationHealthCache
-		lastPull          *prometheus.Desc
-		qpidRouterState   *prometheus.Desc
-	}
-
 	applicationHealth := cacheutil.NewApplicationHealthCache()
 	appStateHandler := apihandler.NewAppStateMetricHandler(applicationHealth)
 	myHandler := &cacheHandler{cache: cacheServer.GetCache(), appstate: appStateHandler}
-	prometheus.MustRegister(myHandler)
+	amqpHandler := amqp10.NewAMQPHandler("Metric Consumer")
+	prometheus.MustRegister(myHandler, amqpHandler)
 
 	if serverConfig.CPUStats == false {
 		// Including these stats kills performance when Prometheus polls with multiple targets
@@ -229,7 +236,7 @@ func main() {
 		if serverConfig.Sample.DataCount == -1 {
 			serverConfig.Sample.DataCount = 9999999
 		}
-		var hostwaitgroup sync.WaitGroup
+
 		fmt.Printf("Test data  will run for %d times ", serverConfig.Sample.DataCount)
 		for times := 1; times <= serverConfig.Sample.DataCount; times++ {
 			hostwaitgroup.Add(serverConfig.Sample.HostCount)
@@ -257,7 +264,7 @@ func main() {
 		///Metric Listener
 		amqpMetricsurl := fmt.Sprintf("amqp://%s", serverConfig.AMQP1MetricURL)
 		log.Printf("Connecting to AMQP1 : %s\n", amqpMetricsurl)
-		amqpMetricServer = amqp10.NewAMQPServer(amqpMetricsurl, serverConfig.Debug, serverConfig.DataCount, serverConfig.TestServer, done)
+		amqpMetricServer = amqp10.NewAMQPServer(amqpMetricsurl, serverConfig.Debug, serverConfig.DataCount, serverConfig.Prefetch, amqpHandler, done, *fTestServer)
 		log.Printf("Listening.....\n")
 
 		if serverConfig.TestServer == true {
@@ -268,6 +275,7 @@ func main() {
 		for {
 			select {
 			case data := <-amqpMetricServer.GetNotifier():
+				amqpMetricServer.GetHandler().IncTotalMsgProcessed()
 				debugm("Debug: Getting incoming data from notifier channel : %#v\n", data)
 				incomingType := incoming.NewInComing(incoming.COLLECTD)
 				metrics, _ := incomingType.ParseInputJSON(data)
