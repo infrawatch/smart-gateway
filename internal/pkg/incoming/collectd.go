@@ -1,7 +1,8 @@
 package incoming
 
 import (
-	"encoding/json"
+	"github.com/json-iterator/go"
+
 	"fmt"
 	"log"
 	"math/rand"
@@ -44,6 +45,7 @@ func (c Collectd) GetKey() string {
 func (c *Collectd) ParseInputByte(data []byte) error {
 	cparse := make([]Collectd, 1)
 	//var jsonBlob = []byte(collectdJson)
+	var json = jsoniter.ConfigCompatibleWithStandardLibrary
 	err := json.Unmarshal(data, &cparse)
 	if err != nil {
 		log.Printf("Error parsing InputByte:%v", err)
@@ -148,10 +150,25 @@ func (c Collectd) GetMetricName(index int) string {
 }
 
 //GetItemKey  ...
+/* func (c Collectd) GetItemKey() string {
+	name := c.Plugin + "_" + c.Type
+	if c.Plugin == c.Type {
+		name = c.Type
+	}
+	return name
+}
+*/
+//GetItemKey  ...
 func (c Collectd) GetItemKey() string {
 	name := c.Plugin + "_" + c.Type
 	if c.Plugin == c.Type {
 		name = c.Type
+	}
+	if c.PluginInstance != "" {
+		name += "_" + c.PluginInstance
+	}
+	if c.TypeInstance != "" {
+		name += "_" + c.TypeInstance
 	}
 	return name
 }
@@ -172,18 +189,20 @@ func (c *Collectd) GenerateSampleData(hostname string, pluginname string) DataTy
 }
 
 //ParseInputJSON   ...
-func (c *Collectd) ParseInputJSON(jsonString string) error {
-	collect := make([]Collectd, 1)
+func (c *Collectd) ParseInputJSON(jsonString string) ([]DataTypeInterface, error) {
+	collect := []Collectd{}
 	jsonBlob := []byte(jsonString)
+	var json = jsoniter.ConfigCompatibleWithStandardLibrary
 	err := json.Unmarshal(jsonBlob, &collect)
 	if err != nil {
 		log.Println("Error parsing json:", err)
-		return err
+		return nil, err
 	}
-	c1 := collect[0]
-	c1.SetNew(true)
-	c.SetData(&c1)
-	return nil
+	retDtype := make([]DataTypeInterface, len(collect))
+	for index, rt := range collect {
+		retDtype[index] = &rt
+	}
+	return retDtype, nil
 }
 
 //GenerateSampleJSON  ... for samples

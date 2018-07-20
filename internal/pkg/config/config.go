@@ -29,6 +29,7 @@ type EventAPIConfig struct {
 //MetricConfiguration   ....
 type MetricConfiguration struct {
 	Debug          bool
+	TestServer     bool
 	AMQP1MetricURL string
 	CPUStats       bool
 	Exporterhost   string

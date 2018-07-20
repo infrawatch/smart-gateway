@@ -78,7 +78,7 @@ func TestCollectedMetrics(t *testing.T) {
 	if len(GetFieldStr(c1, "Plugin")) == 0 {
 		t.Errorf("Collectd data was not populated by ParseInputJSON %#v", c1)
 	}
-	errors := c1.ParseInputJSON("Error Json")
+	_, errors := c1.ParseInputJSON("Error Json")
 	if errors == nil {
 		t.Errorf("Excepted error got nil%v", errors)
 	}
