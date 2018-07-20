@@ -137,8 +137,6 @@ func main() {
 
 	flag.Parse()
 
-	var serverConfig saconfig.MetricConfiguration
-
 	if len(*fConfigLocation) > 0 { //load configuration
 		serverConfig = saconfig.LoadMetricConfig(*fConfigLocation)
 		if *fDebug {
