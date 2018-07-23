@@ -34,7 +34,7 @@
     "jlexer",
     "jwriter"
   ]
-  revision = "3fdea8d05856a0c8df22ed4bc71b3219245e4485"
+  revision = "efc7eb8984d6655c26b5c9d2e65c024e5767c37c"
 
 [[projects]]
   name = "github.com/matttproud/golang_protobuf_extensions"
@@ -61,8 +61,8 @@
     "config",
     "uritemplates"
   ]
-  revision = "d06c9338b70fa11ac48eb82d8a84090a8d7dfd8d"
-  version = "v6.1.24"
+  revision = "229adca7643e572e471ea3e8e018d651b728713d"
+  version = "v6.1.25"
 
 [[projects]]
   name = "github.com/pkg/errors"
@@ -80,7 +80,7 @@
   branch = "master"
   name = "github.com/prometheus/client_model"
   packages = ["go"]
-  revision = "99fa1f4be8e564e8a6b613da7fa6f46c9edafc6c"
+  revision = "5c3871d89910bfb32f5fcab2aa4b9ec68e65a99f"
 
 [[projects]]
   branch = "master"
