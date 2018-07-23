@@ -93,6 +93,7 @@ func NewAMQPServer(urlStr string, debug bool, msgcount int, prefetch int, amqpHa
 			connections: make(chan electron.Connection, 1),
 			method:      (*AMQPServer).serverTest,
 			done:        done,
+			prefetch:    prefetch,
 			amqpHandler: amqpHanlder,
 		}
 	} else {
@@ -105,6 +106,7 @@ func NewAMQPServer(urlStr string, debug bool, msgcount int, prefetch int, amqpHa
 			connections: make(chan electron.Connection, 1),
 			method:      (*AMQPServer).connect,
 			done:        done,
+			prefetch:    prefetch,
 			amqpHandler: amqpHanlder,
 		}
 	}
@@ -358,8 +360,10 @@ func (s *AMQPServer) serverTest() (electron.Receiver, error) {
 			log.Printf("Accepted incomming session...%v\n", in)
 
 		case *electron.IncomingReceiver:
-			in.SetCapacity(10)
-			in.SetPrefetch(true) // Automatic flow control for a buffer of 10 messages.
+			if s.prefetch > 0 {
+				in.SetCapacity(s.prefetch)
+				in.SetPrefetch(true) // Automatic flow control for a buffer of 10 messages.
+			}
 			r = in.Accept().(electron.Receiver)
 			log.Printf("Accepted incomming receiever...%v", r)
 		case nil:
