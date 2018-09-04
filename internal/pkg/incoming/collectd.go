@@ -117,12 +117,13 @@ func (c Collectd) GetLabels() map[string]string {
 			labels["type"] = c.TypeInstance
 		}
 	}
-	_, found := labels["type"]
-	if found == false {
+	// Make sure that "type" and c.Plugin labels always
+	// exists.  Otherwise, Prometheus checks fail
+	//
+	if _, typeexist := labels["type"]; !typeexist {
 		labels["type"] = "base"
 	}
-	_, foundPlugin := labels[c.Plugin]
-	if foundPlugin == false {
+	if _, typeexist := labels[c.Plugin]; !typeexist {
 		labels[c.Plugin] = "base"
 	}
 
