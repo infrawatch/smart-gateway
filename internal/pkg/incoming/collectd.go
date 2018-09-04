@@ -117,6 +117,15 @@ func (c Collectd) GetLabels() map[string]string {
 			labels["type"] = c.TypeInstance
 		}
 	}
+	_, found := labels["type"]
+	if found == false {
+		labels["type"] = "base"
+	}
+	_, foundPlugin := labels[c.Plugin]
+	if foundPlugin == false {
+		labels[c.Plugin] = "base"
+	}
+
 	labels["instance"] = c.Host
 
 	return labels
