@@ -304,7 +304,8 @@ msgloop:
 
 func (s *AMQPServer) connect() (electron.Receiver, error) {
 	// Wait for one goroutine per URL
-	container := electron.NewContainer(fmt.Sprintf("receive[%v]", os.Getpid()))
+	// Make name unique-ish
+	container := electron.NewContainer(fmt.Sprintf("rcv[%v]", os.Args[0]))
 	//connections := make(chan electron.Connection, 1) // Connections to close on exit
 	url, err := amqp.ParseURL(s.urlStr)
 	debugr("Parsing %s\n", s.urlStr)
