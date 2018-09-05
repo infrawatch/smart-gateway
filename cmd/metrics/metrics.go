@@ -1,7 +1,9 @@
 package main
 
 import (
+	"math/rand"
 	"os/signal"
+	"strconv"
 
 	"github.com/MakeNowJust/heredoc"
 	"github.com/prometheus/client_golang/prometheus"
@@ -134,6 +136,7 @@ func main() {
 	fHosts := flag.Int("h", 1, "No of hosts : Sample hosts required (default 1).")
 	fPlugins := flag.Int("p", 100, "No of plugins: Sample plugins per host(default 100).")
 	fIterations := flag.Int("t", 1, "No of times to run sample data (default 1) -1 for ever.")
+	fUniqueName := flag.String("uname", "metrics-"+strconv.Itoa(rand.Intn(100)), "Unique name across application")
 
 	flag.Parse()
 
@@ -158,6 +161,7 @@ func main() {
 				PluginCount: *fPlugins, //No of plugin count per hosts
 				DataCount:   *fIterations,
 			},
+			UniqueName: *fUniqueName,
 		}
 
 	}
@@ -262,7 +266,7 @@ func main() {
 		///Metric Listener
 		amqpMetricsurl := fmt.Sprintf("amqp://%s", serverConfig.AMQP1MetricURL)
 		log.Printf("Connecting to AMQP1 : %s\n", amqpMetricsurl)
-		amqpMetricServer = amqp10.NewAMQPServer(amqpMetricsurl, serverConfig.Debug, serverConfig.DataCount, serverConfig.Prefetch, amqpHandler, done, *fTestServer)
+		amqpMetricServer = amqp10.NewAMQPServer(amqpMetricsurl, serverConfig.Debug, serverConfig.DataCount, serverConfig.Prefetch, amqpHandler, done, *fTestServer, *fUniqueName)
 		log.Printf("Listening.....\n")
 
 		if serverConfig.TestServer == true {

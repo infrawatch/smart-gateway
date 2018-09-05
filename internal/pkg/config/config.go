@@ -18,6 +18,7 @@ type EventConfiguration struct {
 	PublishEventEnabled bool
 	ResetIndex          bool
 	Prefetch            int
+	UniqueName          string
 	IgnoreString        string `json:"-"`
 }
 
@@ -39,6 +40,7 @@ type MetricConfiguration struct {
 	DataCount      int //-1 for ever which is default
 	UseSample      bool
 	Sample         SampleDataConfig
+	UniqueName     string
 	IgnoreString   string `json:"-"`
 }
 

@@ -56,6 +56,7 @@ type AMQPServer struct {
 	method      func(s *AMQPServer) (electron.Receiver, error)
 	prefetch    int
 	amqpHandler *AMQPHandler
+	uniqueName  string
 }
 
 //AMQPHandler ...
@@ -75,7 +76,7 @@ func MockAmqpServer(notifier chan string) *AMQPServer {
 }
 
 //NewAMQPServer   ...
-func NewAMQPServer(urlStr string, debug bool, msgcount int, prefetch int, amqpHanlder *AMQPHandler, done chan bool, isTest bool) *AMQPServer {
+func NewAMQPServer(urlStr string, debug bool, msgcount int, prefetch int, amqpHanlder *AMQPHandler, done chan bool, isTest bool, uniqueName string) *AMQPServer {
 	if len(urlStr) == 0 {
 		log.Println("No URL provided")
 		//usage()
@@ -95,6 +96,7 @@ func NewAMQPServer(urlStr string, debug bool, msgcount int, prefetch int, amqpHa
 			done:        done,
 			prefetch:    prefetch,
 			amqpHandler: amqpHanlder,
+			uniqueName:  uniqueName,
 		}
 	} else {
 		server = &AMQPServer{
@@ -108,6 +110,7 @@ func NewAMQPServer(urlStr string, debug bool, msgcount int, prefetch int, amqpHa
 			done:        done,
 			prefetch:    prefetch,
 			amqpHandler: amqpHanlder,
+			uniqueName:  uniqueName,
 		}
 	}
 
@@ -305,7 +308,7 @@ msgloop:
 func (s *AMQPServer) connect() (electron.Receiver, error) {
 	// Wait for one goroutine per URL
 	// Make name unique-ish
-	container := electron.NewContainer(fmt.Sprintf("rcv[%v]", os.Args[0]))
+	container := electron.NewContainer(fmt.Sprintf("rcv[%v]", s.uniqueName))
 	//connections := make(chan electron.Connection, 1) // Connections to close on exit
 	url, err := amqp.ParseURL(s.urlStr)
 	debugr("Parsing %s\n", s.urlStr)
