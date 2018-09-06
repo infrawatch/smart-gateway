@@ -13,7 +13,7 @@ func TestPut(t *testing.T) {
 
 	done := make(chan bool)
 
-	amqpServer = NewAMQPServer(url, true, 10, 0, nil, done, false)
+	amqpServer = NewAMQPServer(url, true, 10, 0, nil, done, false, "metrics-test")
 
 	for i := 0; i < 10; i++ {
 		data := <-amqpServer.notifier
