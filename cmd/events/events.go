@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
 	"os/signal"
+	"strconv"
 	"time"
 
 	"github.com/MakeNowJust/heredoc"
@@ -66,6 +68,7 @@ func main() {
 	fAMQP1PublishURL := flag.String("amqppublishurl", "", "(Optional) AMQP1.0 event publish address 127.0.0.1:5672/collectd/alert")
 	fResetIndex := flag.Bool("resetIndex", false, "Optional Clean all index before on start (default false)")
 	fPrefetch := flag.Int("prefetch", 0, "AMQP1.0 option: Enable prefetc and set capacity(0 is disabled,>0 enabled with capacity of >0) (OPTIONAL)")
+	fUniqueName := flag.String("uname", "metrics-"+strconv.Itoa(rand.Intn(100)), "Unique name across application")
 
 	flag.Parse()
 
@@ -86,6 +89,7 @@ func main() {
 			},
 			ResetIndex: *fResetIndex,
 			Debug:      *fDebug,
+			UniqueName: *fUniqueName,
 		}
 
 	}
@@ -146,7 +150,7 @@ func main() {
 	log.Printf("Connecting to AMQP1 : %s\n", amqpEventsurl)
 	// done channel is used during testing
 	done := make(chan bool)
-	amqpEventServer = amqp10.NewAMQPServer(amqpEventsurl, serverConfig.Debug, -1, serverConfig.Prefetch, amqpHandler, done, false)
+	amqpEventServer = amqp10.NewAMQPServer(amqpEventsurl, serverConfig.Debug, -1, serverConfig.Prefetch, amqpHandler, done, false, *fUniqueName)
 
 	log.Printf("Listening.....\n")
 
