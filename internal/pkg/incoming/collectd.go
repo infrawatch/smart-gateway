@@ -62,6 +62,11 @@ func (c *Collectd) SetNew(new bool) {
 	c.new = new
 }
 
+//GetInterval ...
+func (c *Collectd) GetInterval() float64 {
+	return c.Interval
+}
+
 // ISNew   ..
 func (c *Collectd) ISNew() bool {
 	return c.new

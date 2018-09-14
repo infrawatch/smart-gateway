@@ -1,5 +1,5 @@
 {
-	"AMQP1MetricURL": "10.19.110.5:5672/collectd/telemetry",
+	"AMQP1MetricURL": "10.19.110.5/collectd/telemetry",
 	"Exporterhost": "localhost",
 	"Exporterport": 8081,
 	"CPUStats": false,

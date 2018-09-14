@@ -223,7 +223,7 @@ func main() {
 						}
 						var jsonEvent = []byte("[" + string(jsonString) + "]")
 						debuge("Debug:Posting to  %#s\n", serverConfig.AlertManagerURL)
-						req, err := http.NewRequest("POST", serverConfig.AlertManagerURL, bytes.NewBuffer(jsonEvent))
+						req, _ := http.NewRequest("POST", serverConfig.AlertManagerURL, bytes.NewBuffer(jsonEvent))
 						req.Header.Set("X-Custom-Header", "smartgateway")
 						req.Header.Set("Content-Type", "application/json")
 						client := &http.Client{}
