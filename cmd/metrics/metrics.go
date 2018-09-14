@@ -282,6 +282,7 @@ func main() {
 				incomingType := incoming.NewInComing(incoming.COLLECTD)
 				metrics, _ := incomingType.ParseInputJSON(data)
 				for _, m := range metrics {
+					amqpMetricServer.UpdateMinCollectInterval(m.GetInterval())
 					cacheServer.Put(m)
 				}
 				debugs(len(metrics))

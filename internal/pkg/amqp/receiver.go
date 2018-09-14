@@ -46,25 +46,29 @@ var debugr = func(format string, data ...interface{}) {} // Default no debugging
 
 //AMQPServer msgcount -1 is infinite
 type AMQPServer struct {
-	urlStr      string
-	debug       bool
-	msgcount    int
-	notifier    chan string
-	status      chan int
-	done        chan bool
-	connections chan electron.Connection
-	method      func(s *AMQPServer) (electron.Receiver, error)
-	prefetch    int
-	amqpHandler *AMQPHandler
-	uniqueName  string
+	urlStr          string
+	debug           bool
+	msgcount        int
+	notifier        chan string
+	status          chan int
+	done            chan bool
+	connections     chan electron.Connection
+	method          func(s *AMQPServer) (electron.Receiver, error)
+	prefetch        int
+	amqpHandler     *AMQPHandler
+	uniqueName      string
+	reconnect       bool
+	collectinterval float64
 }
 
 //AMQPHandler ...
 type AMQPHandler struct {
-	totalCount         int64
-	totalProcessed     int64
-	totalCountDesc     *prometheus.Desc
-	totalProcessedDesc *prometheus.Desc
+	totalCount              int
+	totalProcessed          int
+	totalReconnectCount     int
+	totalCountDesc          *prometheus.Desc
+	totalProcessedDesc      *prometheus.Desc
+	totalReconnectCountDesc *prometheus.Desc
 }
 
 //MockAmqpServer  Create Mock AMQP server
@@ -86,31 +90,35 @@ func NewAMQPServer(urlStr string, debug bool, msgcount int, prefetch int, amqpHa
 
 	if isTest == true {
 		server = &AMQPServer{
-			urlStr:      "127.0.0.1:5672",
-			debug:       debug,
-			notifier:    make(chan string, 100),
-			status:      make(chan int),
-			msgcount:    msgcount,
-			connections: make(chan electron.Connection, 1),
-			method:      (*AMQPServer).serverTest,
-			done:        done,
-			prefetch:    prefetch,
-			amqpHandler: amqpHanlder,
-			uniqueName:  uniqueName,
+			urlStr:          "127.0.0.1:5672",
+			debug:           debug,
+			notifier:        make(chan string, 100),
+			status:          make(chan int),
+			msgcount:        msgcount,
+			connections:     make(chan electron.Connection, 1),
+			method:          (*AMQPServer).serverTest,
+			done:            done,
+			prefetch:        prefetch,
+			amqpHandler:     amqpHanlder,
+			uniqueName:      uniqueName,
+			reconnect:       false,
+			collectinterval: 30,
 		}
 	} else {
 		server = &AMQPServer{
-			urlStr:      urlStr,
-			debug:       debug,
-			notifier:    make(chan string),
-			status:      make(chan int),
-			msgcount:    msgcount,
-			connections: make(chan electron.Connection, 1),
-			method:      (*AMQPServer).connect,
-			done:        done,
-			prefetch:    prefetch,
-			amqpHandler: amqpHanlder,
-			uniqueName:  uniqueName,
+			urlStr:          urlStr,
+			debug:           debug,
+			notifier:        make(chan string),
+			status:          make(chan int),
+			msgcount:        msgcount,
+			connections:     make(chan electron.Connection, 1),
+			method:          (*AMQPServer).connect,
+			done:            done,
+			prefetch:        prefetch,
+			amqpHandler:     amqpHanlder,
+			uniqueName:      uniqueName,
+			reconnect:       false,
+			collectinterval: 30,
 		}
 	}
 
@@ -136,14 +144,19 @@ func NewAMQPHandler(source string) *AMQPHandler {
 	plabels := prometheus.Labels{}
 	plabels["source"] = source
 	return &AMQPHandler{
-		totalCount:     0,
-		totalProcessed: 0,
+		totalCount:          0,
+		totalProcessed:      0,
+		totalReconnectCount: 0,
 		totalCountDesc: prometheus.NewDesc("sa_collectd_total_amqp_message_recv_count",
 			"Total count of amqp message received.",
 			nil, plabels,
 		),
 		totalProcessedDesc: prometheus.NewDesc("sa_collectd_total_amqp_processed_message_count",
 			"Total count of amqp message processed.",
+			nil, plabels,
+		),
+		totalReconnectCountDesc: prometheus.NewDesc("sa_collectd_total_amqp_reconnect_count",
+			"Total count of amqp reconnection .",
 			nil, plabels,
 		),
 	}
@@ -159,14 +172,24 @@ func (a *AMQPHandler) IncTotalMsgProcessed() {
 	a.totalProcessed++
 }
 
+//IncTotalReconnectCount ...
+func (a *AMQPHandler) IncTotalReconnectCount() {
+	a.totalReconnectCount++
+}
+
 //GetTotalMsgRcv ...
-func (a *AMQPHandler) GetTotalMsgRcv() int64 {
+func (a *AMQPHandler) GetTotalMsgRcv() int {
 	return a.totalCount
 }
 
 //GetTotalMsgProcessed ...
-func (a *AMQPHandler) GetTotalMsgProcessed() int64 {
+func (a *AMQPHandler) GetTotalMsgProcessed() int {
 	return a.totalProcessed
+}
+
+//GetTotalReconnectCount ...
+func (a *AMQPHandler) GetTotalReconnectCount() int {
+	return a.totalReconnectCount
 }
 
 //Describe ...
@@ -174,6 +197,7 @@ func (a *AMQPHandler) Describe(ch chan<- *prometheus.Desc) {
 
 	ch <- a.totalCountDesc
 	ch <- a.totalProcessedDesc
+	ch <- a.totalReconnectCountDesc
 }
 
 //Collect implements prometheus.Collector.
@@ -181,6 +205,7 @@ func (a *AMQPHandler) Collect(ch chan<- prometheus.Metric) {
 
 	ch <- prometheus.MustNewConstMetric(a.totalCountDesc, prometheus.CounterValue, float64(a.totalCount))
 	ch <- prometheus.MustNewConstMetric(a.totalProcessedDesc, prometheus.CounterValue, float64(a.totalProcessed))
+	ch <- prometheus.MustNewConstMetric(a.totalReconnectCountDesc, prometheus.CounterValue, float64(a.totalReconnectCount))
 
 }
 
@@ -203,6 +228,13 @@ func (s *AMQPServer) Close() {
 		c.Close(nil)
 	default:
 		return
+	}
+}
+
+//UpdateMinCollectInterval ...
+func (s *AMQPServer) UpdateMinCollectInterval(interval float64) {
+	if interval < s.collectinterval {
+		s.collectinterval = interval
 	}
 }
 
@@ -229,7 +261,8 @@ func (s *AMQPServer) start(isTest bool) {
 		// Loop receiving messages and sending them to the main() goroutine
 		if isTest == false && s.msgcount == -1 {
 			for {
-				if rm, err := r.Receive(); err == nil {
+				debugr("time %s", 2*int(s.collectinterval))
+				if rm, err := r.ReceiveTimeout(time.Duration(2*int(s.collectinterval)) * time.Second); err == nil {
 					rm.Accept()
 					debugr("AMQP Receiving messages.")
 					messages <- rm.Message
@@ -237,16 +270,24 @@ func (s *AMQPServer) start(isTest bool) {
 					log.Fatalf("Connection Closed %v: %v", s.urlStr, err)
 					connectionStatus <- 0
 					return
-				} else {
-					log.Printf("AMQP Listener error, will try to reconnect %v: %v\n", s.urlStr, err)
+				} else if err != nil {
+					if err != electron.Timeout {
+						log.Printf("AMQP Listener timed out, will try to reconnect %v: %v\n", s.urlStr, err)
+					}
 					debugr("AMQP Receiver trying to connect")
 					connectionStatus <- 0
+					sleepTimer := 2
 
 				CONNECTIONLOOP:
 					for {
 						s.Close()
-						log.Println("Reconnect attempt in 2 secs")
-						time.Sleep(2 * time.Second)
+						s.amqpHandler.IncTotalReconnectCount()
+						log.Printf("Reconnect attempt in %d secs\n", sleepTimer)
+						time.Sleep(time.Duration(sleepTimer) * time.Second)
+						sleepTimer = sleepTimer * 2
+						if sleepTimer > 120 {
+							sleepTimer = 120
+						}
 						r, err = s.connect()
 						debugr("%v", err)
 						if err == nil {
@@ -282,6 +323,7 @@ func (s *AMQPServer) start(isTest bool) {
 	}()
 	//outside go routin reciveve and process
 	//var firstmsg=0
+
 msgloop:
 	for {
 		select {

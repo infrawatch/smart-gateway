@@ -10,6 +10,7 @@ type DataTypeInterface interface {
 	GenerateSampleData(key string, itemkey string) DataTypeInterface
 	GenerateSampleJSON(key string, itemkey string) string
 	ParseInputByte(data []byte) error
+	GetInterval() float64
 	//GenerateSamples(jsonstring string) *Interface
 	SetNew(new bool)
 	ISNew() bool

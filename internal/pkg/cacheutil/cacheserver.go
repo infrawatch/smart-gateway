@@ -173,8 +173,9 @@ func (shard *ShardedIncomingDataCache) SetData(data incoming.DataTypeInterface) 
 
 //CacheServer   ..
 type CacheServer struct {
-	cache IncomingDataCache
-	ch    chan *IncomingBuffer
+	cache              IncomingDataCache
+	ch                 chan *IncomingBuffer
+	mincollectinterval int
 }
 
 //GetCache  Get All hosts
