@@ -270,10 +270,9 @@ func (s *AMQPServer) start(isTest bool) {
 					log.Fatalf("Connection Closed %v: %v", s.urlStr, err)
 					connectionStatus <- 0
 					return
-				} else if err != nil {
-					if err != electron.Timeout {
-						log.Printf("AMQP Listener timed out, will try to reconnect %v: %v\n", s.urlStr, err)
-					}
+				} else if err != electron.Timeout {
+					log.Printf("AMQP Listener timed out, will try to reconnect %v: %v\n", s.urlStr, err)
+					log.Printf("error == %v", err)
 					debugr("AMQP Receiver trying to connect")
 					connectionStatus <- 0
 					sleepTimer := 2
