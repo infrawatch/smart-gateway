@@ -1,5 +1,4 @@
 vendor/*
 events_consumer
 metrics_consumer
-metrics
-events
+

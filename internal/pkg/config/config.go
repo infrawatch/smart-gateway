@@ -19,6 +19,7 @@ type EventConfiguration struct {
 	ResetIndex          bool
 	Prefetch            int
 	UniqueName          string
+	ServiceType         string
 	IgnoreString        string `json:"-"`
 }
 
@@ -41,6 +42,7 @@ type MetricConfiguration struct {
 	UseSample      bool
 	Sample         SampleDataConfig
 	UniqueName     string
+	ServiceType    string
 	IgnoreString   string `json:"-"`
 }
 
