@@ -9,7 +9,5 @@ RUN dnf install qpid-proton-c-devel git golang -y && \
 WORKDIR $D
 ONBUILD COPY . $D/
 ONBUILD RUN /go/bin/dep ensure -v -vendor-only && \
-        go build -o metrics_consumer cmd/metrics/metrics.go && \
-        go build -o events_consumer cmd/events/events.go && \
-        cp metrics_consumer /tmp/ && \
-        cp events_consumer /tmp/
+        go build -o telemetry_consumer cmd/main.go && \
+        cp telemetry_consumer /tmp/ 

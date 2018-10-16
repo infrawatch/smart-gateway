@@ -1,11 +1,15 @@
-package main
+package events
 
 import (
 	"bytes"
 	"encoding/json"
+	"flag"
+	"fmt"
 	"io/ioutil"
+	"log"
 	"math/rand"
 	"net/http"
+	"os"
 	"os/signal"
 	"strconv"
 	"time"
@@ -18,11 +22,6 @@ import (
 	"github.com/redhat-nfvpe/telemetry-consumers/internal/pkg/cacheutil"
 	"github.com/redhat-nfvpe/telemetry-consumers/internal/pkg/config"
 	"github.com/redhat-nfvpe/telemetry-consumers/internal/pkg/elasticsearch"
-
-	"flag"
-	"fmt"
-	"log"
-	"os"
 )
 
 /*************** main routine ***********************/
@@ -31,17 +30,17 @@ func eventusage() {
 	doc := heredoc.Doc(`
   For running with config file use
 	********************* config *********************
-	$go run events/main.go -config sa.events.config.json -debug
+	$go run cmd/main.go -config sa.events.config.json -debug -servicetype events
 	**************************************************
 	For running with AMQP and Prometheus use following option
 	********************* Production *********************
-	$go run events/main.go -amqp1EventURL=10.19.110.5:5672/collectd/notify -eshost=http://10.19.110.5:9200
+	$go run cmd/main.go -servicetype events -amqp1EventURL=10.19.110.5:5672/collectd/notify -eshost=http://10.19.110.5:9200 
 	**************************************************************
 	For running with AMQP ,Prometheus,API and AlertManager use following option
 	********************* Production *********************
-	$go run events/main.go -amqp1EventURL=10.19.110.5:5672/collectd/notify -eshost=http://10.19.110.5:9200 -alertmanager=http://localhost:9090/v1/api/alert -apiurl=localhost:8082 -amqppublishurl=127.0.0.1:5672/collectd/alert
+	$go run cmd/main.go -servicetype events -amqp1EventURL=10.19.110.5:5672/collectd/notify -eshost=http://10.19.110.5:9200 -alertmanager=http://localhost:9090/v1/api/alert -apiurl=localhost:8082 -amqppublishurl=127.0.0.1:5672/collectd/alert
 	**************************************************************`)
-	fmt.Fprintln(os.Stderr, `Required commandline argument missing`)
+	fmt.Fprintln(os.Stderr, `Required command line argument missing`)
 	fmt.Fprintln(os.Stdout, doc)
 	flag.PrintDefaults()
 }
@@ -54,12 +53,14 @@ var (
 	elasticClient   *saelastic.ElasticClient
 )
 
-func main() {
+//StartEvents ... entry point to events
+func StartEvents() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
 	// set flags for parsing options
 	flag.Usage = eventusage
 	fDebug := flag.Bool("debug", false, "Enable debug")
+	fServiceType := flag.String("servicetype", "event", "event type")
 	fConfigLocation := flag.String("config", "", "Path to configuration file(optional).if provided ignores all command line options")
 	fAMQP1EventURL := flag.String("amqp1EventURL", "", "AMQP1.0 events listener example 127.0.0.1:5672/collectd/notify")
 	fElasticHostURL := flag.String("eshost", "", "ElasticSearch host http://localhost:9200")
@@ -83,6 +84,7 @@ func main() {
 			ElasticHostURL:  *fElasticHostURL,
 			AlertManagerURL: *fAlertManagerURL,
 			Prefetch:        *fPrefetch,
+			ServiceType:     *fServiceType,
 			API: saconfig.EventAPIConfig{
 				APIEndpointURL:  *fAPIEndpointURL,
 				AMQP1PublishURL: *fAMQP1PublishURL,

@@ -4,6 +4,7 @@
 		"AlertManagerURL": "http://10.19.110.5:9093/api/v1/alerts",
 		"ResetIndex": false,
 		"Debug": true,
+		"ServiceType" : "events",
 		"prefetch": 0,
 		"API":  {
 		 "APIEndpointURL": "localhost:9999",

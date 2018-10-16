@@ -1,9 +1,17 @@
-package main
+package metrics
 
 import (
+	"flag"
+	"fmt"
+	"log"
 	"math/rand"
+	"net/http"
+	"net/http/pprof"
+	"os"
 	"os/signal"
 	"strconv"
+	"sync"
+	"time"
 
 	"github.com/MakeNowJust/heredoc"
 	"github.com/prometheus/client_golang/prometheus"
@@ -12,15 +20,6 @@ import (
 	"github.com/redhat-nfvpe/telemetry-consumers/internal/pkg/cacheutil"
 	"github.com/redhat-nfvpe/telemetry-consumers/internal/pkg/config"
 	"github.com/redhat-nfvpe/telemetry-consumers/internal/pkg/incoming"
-
-	"flag"
-	"fmt"
-	"log"
-	"net/http"
-	"net/http/pprof"
-	"os"
-	"sync"
-	"time"
 )
 
 var (
@@ -84,16 +83,16 @@ func metricusage() {
 	doc := heredoc.Doc(`
   For running with config file use
 	********************* config *********************
-	$go run metrics/main.go -config sa.metrics.config.json -debug
+	$go run cmd/main.go -config sa.metrics.config.json -debug -servicetype metrics
 	**************************************************
 	For running with AMQP and Prometheus use following option
 	********************* Production *********************
-	$go run metrics/main.go -mhost=localhost -mport=8081 -amqp1MetricURL=10.19.110.5:5672/collectd/telemetry
+	$go run cmd/main.go -servicetype metrics -mhost=localhost -mport=8081 -amqp1MetricURL=10.19.110.5:5672/collectd/telemetry
 	**************************************************************
 
 	For running Sample data wihout AMQP use following option
 	********************* Sample Data *********************
-	$go run metrics/main.go -mhost=localhost -mport=8081 -usesample=true -h=10 -p=100 -t=-1 -debug
+	$go run cmd/main.go -servicetype metrics -mhost=localhost -mport=8081 -usesample=true -h=10 -p=100 -t=-1 -debug 
 	*************************************************************`)
 	fmt.Fprintln(os.Stderr, `Required commandline argument missing`)
 	fmt.Fprintln(os.Stdout, doc)
@@ -119,10 +118,13 @@ func getLoopStater(q chan string, everyCount int) func(count int) {
 		}
 	}
 }
-func main() {
+
+//StartMetrics ... entry point to metrics
+func StartMetrics() {
 	// set flags for parsing options
 	flag.Usage = metricusage
 	fDebug := flag.Bool("debug", false, "Enable debug")
+	fServiceType := flag.String("servicetype", "metrics", "metric type")
 	fTestServer := flag.Bool("testclient", false, "Enable Test Receiver for use with AMQP test client")
 	fConfigLocation := flag.String("config", "", "Path to configuration file(optional).if provided ignores all command line options")
 	fIncludeStats := flag.Bool("cpustats", false, "Include cpu usage info in http requests (degrades performance)")
@@ -156,6 +158,7 @@ func main() {
 			Debug:          *fDebug,
 			TestServer:     *fTestServer,
 			Prefetch:       *fPrefetch,
+			ServiceType:    *fServiceType,
 			Sample: saconfig.SampleDataConfig{
 				HostCount:   *fHosts,   //no of host to simulate
 				PluginCount: *fPlugins, //No of plugin count per hosts

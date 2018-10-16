@@ -1,14 +1,13 @@
-package main
+package metrics
 
 import (
 	"fmt"
-
-	"github.com/redhat-nfvpe/telemetry-consumers/internal/pkg/cacheutil"
-	"github.com/redhat-nfvpe/telemetry-consumers/internal/pkg/incoming"
-
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/redhat-nfvpe/telemetry-consumers/internal/pkg/cacheutil"
+	"github.com/redhat-nfvpe/telemetry-consumers/internal/pkg/incoming"
 )
 
 func BenchmarkWithSampleData(b *testing.B) {

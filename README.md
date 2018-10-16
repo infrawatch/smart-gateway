@@ -19,10 +19,9 @@ dep ensure -v -vendor-only
 
 # Building
 
-Build the `events` and `metrics` consumers with Golang using the following command.
+Build the `telemetry_consumer` with Golang using the following command.
 
 ```
 cd $GOPATH/src/github.com/redhat-nfvpe/telemetry-consumers
-go build cmd/events/events.go
-go build cmd/metrics/metrics.go
+go build -o telemetry_consumer cmd/main.go 
 ```
