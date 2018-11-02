@@ -5,7 +5,7 @@
 	"CPUStats": false,
 	"DataCount": -1,
 	"UseSample": false,
-	"ServiceType" : "metrics",
+	"UseTimeStamp": true,
 	"Debug": false,
 	"prefetch": 100,
 	"Sample": {

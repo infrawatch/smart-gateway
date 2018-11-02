@@ -168,7 +168,7 @@ func StartEvents() {
 	if serverConfig.APIEnabled {
 		prometheus.MustRegister(metricHandler, amqpHandler)
 		// Including these stats kills performance when Prometheus polls with multiple targets
-		prometheus.Unregister(prometheus.NewProcessCollector(os.Getpid(), ""))
+		prometheus.Unregister(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}))
 		prometheus.Unregister(prometheus.NewGoCollector())
 
 		context := apihandler.NewAPIContext(serverConfig)

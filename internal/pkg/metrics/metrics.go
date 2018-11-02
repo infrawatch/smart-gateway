@@ -56,7 +56,7 @@ func (c *cacheHandler) Collect(ch chan<- prometheus.Metric) {
 	for key, plugin := range allHosts {
 		//fmt.Fprintln(w, hostname)
 		debugm("Debug:Getting metrics for host %s  with total plugin size %d\n", key, plugin.Size())
-		metricCount = plugin.FlushPrometheusMetric(ch)
+		metricCount = plugin.FlushPrometheusMetric(serverConfig.UseTimeStamp, ch)
 		if metricCount > 0 {
 			// add heart if there is atleast one new metrics for the host
 			debugm("Debug:Adding heartbeat for host %s.", key)
@@ -135,6 +135,7 @@ func StartMetrics() {
 	fPrefetch := flag.Int("prefetch", 0, "AMQP1.0 option: Enable prefetc and set capacity(0 is disabled,>0 enabled with capacity of >0) (OPTIONAL)")
 
 	fSampledata := flag.Bool("usesample", false, "Use sample data instead of amqp.This will not fetch any data from amqp (OPTIONAL)")
+	fUsetimestamp := flag.Bool("usetimestamp", true, "Use source time stamp instead of promethues.(default true,OPTIONAL)")
 	fHosts := flag.Int("h", 1, "No of hosts : Sample hosts required (default 1).")
 	fPlugins := flag.Int("p", 100, "No of plugins: Sample plugins per host(default 100).")
 	fIterations := flag.Int("t", 1, "No of times to run sample data (default 1) -1 for ever.")
@@ -155,6 +156,7 @@ func StartMetrics() {
 			Exporterport:   *fExporterport,
 			DataCount:      *fCount, //-1 for ever which is default
 			UseSample:      *fSampledata,
+			UseTimeStamp:   *fUsetimestamp,
 			Debug:          *fDebug,
 			TestServer:     *fTestServer,
 			Prefetch:       *fPrefetch,
@@ -203,7 +205,7 @@ func StartMetrics() {
 
 	if serverConfig.CPUStats == false {
 		// Including these stats kills performance when Prometheus polls with multiple targets
-		prometheus.Unregister(prometheus.NewProcessCollector(os.Getpid(), ""))
+		prometheus.Unregister(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}))
 		prometheus.Unregister(prometheus.NewGoCollector())
 	}
 	//Set up Metric Exporter

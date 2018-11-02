@@ -40,6 +40,7 @@ type MetricConfiguration struct {
 	Prefetch       int
 	DataCount      int //-1 for ever which is default
 	UseSample      bool
+	UseTimeStamp   bool
 	Sample         SampleDataConfig
 	UniqueName     string
 	ServiceType    string
