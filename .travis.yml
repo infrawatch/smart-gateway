@@ -20,11 +20,10 @@ script:
 - golint . | xargs -r false
 before_deploy:
 - docker login -u $REGISTRY_USER -p $REGISTRY_PASS
-- docker build --tag nfvpe/smart_agent_builder:latest -f build/docker/builder/Dockerfile .
-- docker build --tag nfvpe/telemetry_consumer:latest -f build/docker/telemetry_consumer/Dockerfile .
+- docker build --tag nfvpe/smart_gateway:latest .
 - docker images
 deploy:
   provider: script
-  script: docker push nfvpe/telemetry_consumer:latest
+  script: docker push nfvpe/smart_gateway:latest
   on:
     branch: master
