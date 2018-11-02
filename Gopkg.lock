@@ -2,6 +2,14 @@
 
 
 [[projects]]
+  digest = "1:9939d8708d4cfd0699dd380b741dcc1b709f2220258b29b07703792e6f4d669b"
+  name = "collectd.org"
+  packages = ["cdtime"]
+  pruneopts = "UT"
+  revision = "2ce144541b8903101fb8f1483cc0497a68798122"
+  version = "v0.3.0"
+
+[[projects]]
   branch = "master"
   digest = "1:9831b48eaba66c6eee6b8bc698d5a669088313cfee3c94435056e3522e4a53fb"
   name = "github.com/MakeNowJust/heredoc"
@@ -157,10 +165,12 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "collectd.org/cdtime",
     "github.com/MakeNowJust/heredoc",
     "github.com/json-iterator/go",
     "github.com/olivere/elastic",
     "github.com/prometheus/client_golang/prometheus",
+    "github.com/prometheus/client_model/go",
     "github.com/satori/go.uuid",
     "qpid.apache.org/amqp",
     "qpid.apache.org/electron",
