@@ -1,17 +1,9 @@
-package metrics
+package main
 
 import (
-	"flag"
-	"fmt"
-	"log"
 	"math/rand"
-	"net/http"
-	"net/http/pprof"
-	"os"
 	"os/signal"
 	"strconv"
-	"sync"
-	"time"
 
 	"github.com/MakeNowJust/heredoc"
 	"github.com/prometheus/client_golang/prometheus"
@@ -20,6 +12,15 @@ import (
 	"github.com/redhat-nfvpe/smart-gateway/internal/pkg/cacheutil"
 	"github.com/redhat-nfvpe/smart-gateway/internal/pkg/config"
 	"github.com/redhat-nfvpe/smart-gateway/internal/pkg/incoming"
+
+	"flag"
+	"fmt"
+	"log"
+	"net/http"
+	"net/http/pprof"
+	"os"
+	"sync"
+	"time"
 )
 
 var (
@@ -56,7 +57,7 @@ func (c *cacheHandler) Collect(ch chan<- prometheus.Metric) {
 	for key, plugin := range allHosts {
 		//fmt.Fprintln(w, hostname)
 		debugm("Debug:Getting metrics for host %s  with total plugin size %d\n", key, plugin.Size())
-		metricCount = plugin.FlushPrometheusMetric(serverConfig.UseTimeStamp, ch)
+		metricCount = plugin.FlushPrometheusMetric(ch)
 		if metricCount > 0 {
 			// add heart if there is atleast one new metrics for the host
 			debugm("Debug:Adding heartbeat for host %s.", key)
@@ -83,16 +84,16 @@ func metricusage() {
 	doc := heredoc.Doc(`
   For running with config file use
 	********************* config *********************
-	$go run cmd/main.go -config sa.metrics.config.json -debug -servicetype metrics
+	$go run metrics/main.go -config sa.metrics.config.json -debug
 	**************************************************
 	For running with AMQP and Prometheus use following option
 	********************* Production *********************
-	$go run cmd/main.go -servicetype metrics -mhost=localhost -mport=8081 -amqp1MetricURL=10.19.110.5:5672/collectd/telemetry
+	$go run metrics/main.go -mhost=localhost -mport=8081 -amqp1MetricURL=10.19.110.5:5672/collectd/telemetry
 	**************************************************************
 
 	For running Sample data wihout AMQP use following option
 	********************* Sample Data *********************
-	$go run cmd/main.go -servicetype metrics -mhost=localhost -mport=8081 -usesample=true -h=10 -p=100 -t=-1 -debug 
+	$go run metrics/main.go -mhost=localhost -mport=8081 -usesample=true -h=10 -p=100 -t=-1 -debug
 	*************************************************************`)
 	fmt.Fprintln(os.Stderr, `Required commandline argument missing`)
 	fmt.Fprintln(os.Stdout, doc)
@@ -118,13 +119,10 @@ func getLoopStater(q chan string, everyCount int) func(count int) {
 		}
 	}
 }
-
-//StartMetrics ... entry point to metrics
-func StartMetrics() {
+func main() {
 	// set flags for parsing options
 	flag.Usage = metricusage
 	fDebug := flag.Bool("debug", false, "Enable debug")
-	fServiceType := flag.String("servicetype", "metrics", "metric type")
 	fTestServer := flag.Bool("testclient", false, "Enable Test Receiver for use with AMQP test client")
 	fConfigLocation := flag.String("config", "", "Path to configuration file(optional).if provided ignores all command line options")
 	fIncludeStats := flag.Bool("cpustats", false, "Include cpu usage info in http requests (degrades performance)")
@@ -135,7 +133,6 @@ func StartMetrics() {
 	fPrefetch := flag.Int("prefetch", 0, "AMQP1.0 option: Enable prefetc and set capacity(0 is disabled,>0 enabled with capacity of >0) (OPTIONAL)")
 
 	fSampledata := flag.Bool("usesample", false, "Use sample data instead of amqp.This will not fetch any data from amqp (OPTIONAL)")
-	fUsetimestamp := flag.Bool("usetimestamp", true, "Use source time stamp instead of promethues.(default true,OPTIONAL)")
 	fHosts := flag.Int("h", 1, "No of hosts : Sample hosts required (default 1).")
 	fPlugins := flag.Int("p", 100, "No of plugins: Sample plugins per host(default 100).")
 	fIterations := flag.Int("t", 1, "No of times to run sample data (default 1) -1 for ever.")
@@ -145,7 +142,6 @@ func StartMetrics() {
 
 	if len(*fConfigLocation) > 0 { //load configuration
 		serverConfig = saconfig.LoadMetricConfig(*fConfigLocation)
-		serverConfig.ServiceType = *fServiceType
 		if *fDebug {
 			serverConfig.Debug = true
 		}
@@ -157,11 +153,9 @@ func StartMetrics() {
 			Exporterport:   *fExporterport,
 			DataCount:      *fCount, //-1 for ever which is default
 			UseSample:      *fSampledata,
-			UseTimeStamp:   *fUsetimestamp,
 			Debug:          *fDebug,
 			TestServer:     *fTestServer,
 			Prefetch:       *fPrefetch,
-			ServiceType:    *fServiceType,
 			Sample: saconfig.SampleDataConfig{
 				HostCount:   *fHosts,   //no of host to simulate
 				PluginCount: *fPlugins, //No of plugin count per hosts
@@ -206,7 +200,7 @@ func StartMetrics() {
 
 	if serverConfig.CPUStats == false {
 		// Including these stats kills performance when Prometheus polls with multiple targets
-		prometheus.Unregister(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}))
+		prometheus.Unregister(prometheus.NewProcessCollector(os.Getpid(), ""))
 		prometheus.Unregister(prometheus.NewGoCollector())
 	}
 	//Set up Metric Exporter

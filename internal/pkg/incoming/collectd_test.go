@@ -24,13 +24,13 @@ func TestCollected(t *testing.T) {
 		t.Error("Collectd data  is not empty.")
 	}
 	//2
-	sample := c1.GenerateSampleData("hostname", "plugi_name")
+	sample := c1.GenerateSampleData("hostname", "pluginname")
 	if len(GetFieldStr(sample, "Plugin")) == 0 {
 		t.Errorf("Collectd data was not populated by GenrateSampleData %#v", c1)
 	}
 	c1 = NewInComing(COLLECTD)
-	c1.ParseInputJSON(jsonString)
-	if len(GetFieldStr(c1, "Plugin")) == 0 {
+	sample2, _ := c1.ParseInputJSON(jsonString)
+	if len(GetFieldStr(sample2[0], "Plugin")) == 0 {
 		t.Errorf("Collectd data was not populated by ParsestrconvInputJSON %#v", c1)
 	}
 	//check DSName method
@@ -70,31 +70,31 @@ func TestCollected(t *testing.T) {
 func TestCollectedMetrics(t *testing.T) {
 	c1 := NewInComing(COLLECTD)
 	c := NewInComing(COLLECTD)
-	jsonString := c.GenerateSampleJSON("hostname", "plugi_name")
+	jsonString := c.GenerateSampleJSON("hostname", "pluginname")
 	if len(jsonString) == 0 {
 		t.Error("Empty sample string generated")
 	}
-	c1.ParseInputJSON(jsonString)
-	if len(GetFieldStr(c1, "Plugin")) == 0 {
+	sample, _ := c1.ParseInputJSON(jsonString)
+	if len(GetFieldStr(sample[0], "Plugin")) == 0 {
 		t.Errorf("Collectd data was not populated by ParseInputJSON %#v", c1)
 	}
 	_, errors := c1.ParseInputJSON("Error Json")
 	if errors == nil {
 		t.Errorf("Excepted error got nil%v", errors)
 	}
-	labels := c1.GetLabels()
+	labels := sample[0].GetLabels()
 	if len(labels) < 2 {
 		t.Errorf("Labels not populated by GetLabels %#v", c1)
 	}
-	name := c1.GetName()
+	name := sample[0].GetName()
 	if len(name) == 0 {
 		t.Errorf("name not populated by GetName %#v", c1)
 	}
-	metricDesc := c1.GetMetricDesc(0)
+	metricDesc := sample[0].GetMetricDesc(0)
 	if len(metricDesc) == 0 {
 		t.Errorf("metricDesc not populated by GetMetricDesc %#v", c1)
 	}
-	metricName := c1.GetMetricName(0)
+	metricName := sample[0].GetMetricName(0)
 	if len(metricName) == 0 {
 		t.Errorf("metricName not populated by GetMetricName %#v", c1)
 	}

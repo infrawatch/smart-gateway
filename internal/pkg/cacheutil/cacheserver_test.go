@@ -1,10 +1,10 @@
 package cacheutil
 
 import (
-	"github.com/redhat-nfvpe/telemetry-consumers/internal/pkg/incoming"
-
 	"testing"
 	"time"
+
+	"github.com/redhat-nfvpe/smart-gateway/internal/pkg/incoming"
 )
 
 func TestCacheServer(t *testing.T) {

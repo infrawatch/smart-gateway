@@ -16,12 +16,12 @@ import (
 
 	"github.com/MakeNowJust/heredoc"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/redhat-nfvpe/telemetry-consumers/internal/pkg/alerts"
-	"github.com/redhat-nfvpe/telemetry-consumers/internal/pkg/amqp"
-	"github.com/redhat-nfvpe/telemetry-consumers/internal/pkg/api"
-	"github.com/redhat-nfvpe/telemetry-consumers/internal/pkg/cacheutil"
-	"github.com/redhat-nfvpe/telemetry-consumers/internal/pkg/config"
-	"github.com/redhat-nfvpe/telemetry-consumers/internal/pkg/elasticsearch"
+	"github.com/redhat-nfvpe/smart-gateway/internal/pkg/alerts"
+	"github.com/redhat-nfvpe/smart-gateway/internal/pkg/amqp"
+	"github.com/redhat-nfvpe/smart-gateway/internal/pkg/api"
+	"github.com/redhat-nfvpe/smart-gateway/internal/pkg/cacheutil"
+	"github.com/redhat-nfvpe/smart-gateway/internal/pkg/config"
+	"github.com/redhat-nfvpe/smart-gateway/internal/pkg/elasticsearch"
 )
 
 /*************** main routine ***********************/
@@ -169,7 +169,7 @@ func StartEvents() {
 	if serverConfig.APIEnabled {
 		prometheus.MustRegister(metricHandler, amqpHandler)
 		// Including these stats kills performance when Prometheus polls with multiple targets
-		prometheus.Unregister(prometheus.NewProcessCollector(os.Getpid(), ""))
+		prometheus.Unregister(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}))
 		prometheus.Unregister(prometheus.NewGoCollector())
 
 		context := apihandler.NewAPIContext(serverConfig)

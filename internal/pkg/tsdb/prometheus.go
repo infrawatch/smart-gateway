@@ -5,7 +5,7 @@ import (
 	"regexp"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/redhat-nfvpe/telemetry-consumers/internal/pkg/incoming"
+	"github.com/redhat-nfvpe/smart-gateway/internal/pkg/incoming"
 )
 
 var (
@@ -39,7 +39,7 @@ func AddMetricsByHost(instance string, value float64) (prometheus.Metric, error)
 }
 
 //NewCollectdMetric converts one data source of a value list to a Prometheus metric.
-func NewCollectdMetric(collectd incoming.Collectd, index int) (prometheus.Metric, error) {
+func NewCollectdMetric(usetimestamp bool, collectd incoming.Collectd, index int) (prometheus.Metric, error) {
 	var value float64
 	var valueType prometheus.ValueType
 
@@ -64,5 +64,12 @@ func NewCollectdMetric(collectd incoming.Collectd, index int) (prometheus.Metric
 	metricName := metricNameRe.ReplaceAllString(collectd.GetMetricName(index), "_")
 	desc := prometheus.NewDesc(metricName, help, []string{}, plabels)
 
+	if usetimestamp == true {
+		return prometheus.NewMetricWithTimestamp(
+			collectd.Time.Time(),
+			prometheus.MustNewConstMetric(desc, valueType, value),
+		), nil
+	}
 	return prometheus.NewConstMetric(desc, valueType, value)
+
 }

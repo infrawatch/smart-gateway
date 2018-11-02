@@ -1,13 +1,14 @@
 package incoming
 
 import (
-	"github.com/json-iterator/go"
-
 	"fmt"
 	"log"
 	"math/rand"
 	"strconv"
 	"time"
+
+	"collectd.org/cdtime"
+	"github.com/json-iterator/go"
 )
 
 // Collectd  ...
@@ -15,13 +16,13 @@ type Collectd struct {
 	Values         []float64
 	Dstypes        []string
 	Dsnames        []string
-	Time           float64 `json:"time"`
-	Interval       float64 `json:"interval"`
-	Host           string  `json:"host"`
-	Plugin         string  `json:"plugin"`
-	PluginInstance string  `json:"plugin_instance"`
-	Type           string  `json:"type"`
-	TypeInstance   string  `json:"type_instance"`
+	Time           cdtime.Time `json:"time"`
+	Interval       float64     `json:"interval"`
+	Host           string      `json:"host"`
+	Plugin         string      `json:"plugin"`
+	PluginInstance string      `json:"plugin_instance"`
+	Type           string      `json:"type"`
+	TypeInstance   string      `json:"type_instance"`
 	new            bool
 }
 
@@ -199,7 +200,7 @@ func (c *Collectd) GenerateSampleData(hostname string, pluginname string) DataTy
 	collectd.Dsnames = []string{"value1", "value2"}
 	collectd.TypeInstance = "idle"
 	collectd.Values = []float64{rand.Float64(), rand.Float64()}
-	collectd.Time = float64((time.Now().UnixNano())) / 1000000
+	collectd.Time = cdtime.New(time.Now())
 	return collectd
 }
 
