@@ -75,6 +75,7 @@ func StartEvents() {
 
 	if len(*fConfigLocation) > 0 { //load configuration
 		serverConfig = saconfig.LoadEventConfig(*fConfigLocation)
+		serverConfig.ServiceType = *fServiceType
 		if *fDebug {
 			serverConfig.Debug = true
 		}
