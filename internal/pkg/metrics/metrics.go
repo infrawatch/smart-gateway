@@ -144,6 +144,7 @@ func StartMetrics() {
 
 	if len(*fConfigLocation) > 0 { //load configuration
 		serverConfig = saconfig.LoadMetricConfig(*fConfigLocation)
+		serverConfig.ServiceType = *fServiceType
 		if *fDebug {
 			serverConfig.Debug = true
 		}

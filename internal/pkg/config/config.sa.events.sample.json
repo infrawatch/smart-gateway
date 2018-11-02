@@ -3,7 +3,6 @@
 	"ElasticHostURL": "http://127.0.0.1:9200",
 	"AlertManagerURL": "http://127.0.0.1:9093/api/v1/alerts",
 	"ResetIndex": false,
-	"ServiceType" : "events",
 	"Debug": true,
 	"prefetch": 100,
 	"API":  {
