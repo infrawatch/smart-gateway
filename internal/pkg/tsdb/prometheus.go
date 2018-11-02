@@ -5,7 +5,7 @@ import (
 	"regexp"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/redhat-nfvpe/telemetry-consumers/internal/pkg/incoming"
+	"github.com/redhat-nfvpe/smart-gateway/internal/pkg/incoming"
 )
 
 var (

@@ -24,7 +24,7 @@
 #   go-tests = true
 #   unused-packages = true
 
-ignored = ["github.com/redhat-nfvpe/telemetry-consumers"]
+ignored = ["github.com/redhat-nfvpe/smart-gateway"]
 
 [[constraint]]
   branch = "master"

@@ -16,12 +16,12 @@ import (
 
 	"github.com/MakeNowJust/heredoc"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/redhat-nfvpe/telemetry-consumers/internal/pkg/alerts"
-	"github.com/redhat-nfvpe/telemetry-consumers/internal/pkg/amqp"
-	"github.com/redhat-nfvpe/telemetry-consumers/internal/pkg/api"
-	"github.com/redhat-nfvpe/telemetry-consumers/internal/pkg/cacheutil"
-	"github.com/redhat-nfvpe/telemetry-consumers/internal/pkg/config"
-	"github.com/redhat-nfvpe/telemetry-consumers/internal/pkg/elasticsearch"
+	"github.com/redhat-nfvpe/smart-gateway/internal/pkg/alerts"
+	"github.com/redhat-nfvpe/smart-gateway/internal/pkg/amqp"
+	"github.com/redhat-nfvpe/smart-gateway/internal/pkg/api"
+	"github.com/redhat-nfvpe/smart-gateway/internal/pkg/cacheutil"
+	"github.com/redhat-nfvpe/smart-gateway/internal/pkg/config"
+	"github.com/redhat-nfvpe/smart-gateway/internal/pkg/elasticsearch"
 )
 
 /*************** main routine ***********************/

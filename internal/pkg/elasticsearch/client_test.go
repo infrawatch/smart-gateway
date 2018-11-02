@@ -6,7 +6,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/redhat-nfvpe/telemetry-consumers/internal/pkg/elasticsearch/mapping"
+	"github.com/redhat-nfvpe/smart-gateway/internal/pkg/elasticsearch/mapping"
 )
 
 //IndexName   ..
