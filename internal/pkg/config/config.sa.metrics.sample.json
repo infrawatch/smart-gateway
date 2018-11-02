@@ -4,8 +4,7 @@
 	"Exporterport": 8081,
 	"CPUStats": false,
 	"DataCount": -1,
-	"UseSample": false,
-	"ServiceType" : "metrics",
+	"UseSample": false,	
 	"Debug": false,
 	"prefetch": 100,
 	"Sample": {
