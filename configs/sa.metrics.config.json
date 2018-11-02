@@ -5,7 +5,6 @@
 	"CPUStats": false,
 	"DataCount": -1,
 	"UseSample": false,
-	"ServiceType" : "metrics",
 	"Debug": true,
 	"prefetch": 0,
 	"Sample": {
