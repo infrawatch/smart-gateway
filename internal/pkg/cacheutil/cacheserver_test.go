@@ -1,7 +1,6 @@
 package cacheutil
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -23,12 +22,11 @@ func TestCacheServer(t *testing.T) {
 func TestCacheServer2(t *testing.T) {
 	pluginCount := 10
 	hostname := "hostname"
-	ctx := context.Background()
 	//	var hostCount=1
 	//	var freeListToCollectSample = make(chan *IncomingBuffer, 100)
 
 	//  collectd:=incoming.NewInComing(incoming.COLLECTD)
-	server := NewCacheServer(ctx, 0, true)
+	server := NewCacheServer(0, true)
 	collectd := incoming.NewInComing(incoming.COLLECTD)
 	server.GenrateSampleData(hostname, pluginCount, collectd)
 
@@ -47,12 +45,11 @@ func TestCacheServer2(t *testing.T) {
 func TestCacheServerForCleanUP(t *testing.T) {
 	pluginCount := 10
 	hostname := "hostname"
-	ctx := context.Background()
 	//	var hostCount=1
 	//	var freeListToCollectSample = make(chan *IncomingBuffer, 100)
 
 	//  collectd:=incoming.NewInComing(incoming.COLLECTD)
-	server := NewCacheServer(ctx, 4, true)
+	server := NewCacheServer(4, true)
 	collectd := incoming.NewInComing(incoming.COLLECTD)
 	server.GenrateSampleData(hostname, pluginCount, collectd)
 	incomingDataCache := server.GetCache()
