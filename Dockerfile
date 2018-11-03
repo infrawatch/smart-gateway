@@ -7,7 +7,8 @@ WORKDIR $D
 COPY . $D/
 
 RUN yum install epel-release -y && \
-        yum install qpid-proton-c-devel git golang -y && \
+        yum update-minimal -y --setopt=tsflags=nodocs --security --sec-severity=Important --sec-severity=Critical && \
+        yum install qpid-proton-c-devel git golang --setopt=tsflags=nodocs -y && \
         yum clean all && \
         go get -u github.com/golang/dep/... && \
         /go/bin/dep ensure -v -vendor-only && \
@@ -22,8 +23,10 @@ LABEL io.k8s.display-name="Service Assurance Smart Gateway" \
       maintainer="Leif Madsen <leif@redhat.com>"
 
 RUN yum install epel-release -y && \
-        yum install qpid-proton-c -y && \
-        yum clean all
+        yum update-minimal -y --setopt=tsflags=nodocs --security --sec-severity=Important --sec-severity=Critical && \
+        yum install qpid-proton-c --setopt=tsflags=nodocs -y && \
+        yum clean all && \
+        rm -rf /var/cache/yum
 
 COPY --from=builder /tmp/smart_gateway /
 

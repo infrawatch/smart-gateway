@@ -1,0 +1,39 @@
+# --- build smart gateway ---
+FROM registry.access.redhat.com/rhel7/rhel AS builder
+ENV GOPATH=/go
+ENV D=/go/src/github.com/redhat-nfvpe/smart-gateway
+
+WORKDIR $D
+COPY . $D/
+
+RUN REPOLIST=rhel-7-server-rpms,rhel-7-server-optional-rpms \
+        yum install epel-release -y && \
+        INSTALL_PKGS="qpid-proton-c-delete git golang" && \
+        yum -y update-minimal --disablerepo "*" --enablerepo rhel-7-server-rpms --setopt=tsflags=nodocs \
+          --security --sec-severity=Important --sec-severity=Critical && \
+        yum -y install --disablerepo "*" --enablerepo ${REPOLIST} --setopt=tsflags=nodocs ${INSTALL_PKGS} && \
+        yum clean all && \
+        go get -u github.com/golang/dep/... && \
+        /go/bin/dep ensure -v -vendor-only && \
+        go build -o smart_gateway cmd/main.go && \
+        mv smart_gateway /tmp/
+
+# --- end build, create smart gateway layer ---
+FROM registry.access.redhat.com/rhel7/rhel
+
+LABEL io.k8s.display-name="Service Assurance Smart Gateway" \
+      io.k8s.description="A component of the Service Assurance Framework on the server side that ingests data from AMQP 1.x and provides a metrics scrape endpoint for Prometheus, and forwards events to ElasticSearch" \
+      maintainer="Leif Madsen <leif@redhat.com>"
+
+RUN REPOLIST=rhel-7-server-rpms,rhel-7-server-optional-rpms \
+        yum install epel-release -y && \
+        INSTALL_PKGS="qpid-proton-c" && \
+        yum -y update-minimal --disablerepo "*" --enablerepo rhel-7-server-rpms --setopt=tsflags=nodocs \
+          --security --sec-severity=Important --sec-severity=Critical && \
+        yum -y install --disablerepo "*" --enablerepo ${REPOLIST} --setopt=tsflags=nodocs ${INSTALL_PKGS} && \
+        yum clean all && \
+        rm -rf /var/cache/yum
+
+COPY --from=builder /tmp/smart_gateway /
+
+ENTRYPOINT ["/smart_gateway"]
