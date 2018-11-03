@@ -1,21 +1,30 @@
-FROM fedora:27 AS builder
+# --- build smart gateway ---
+FROM centos:7 AS builder
 ENV GOPATH=/go
 ENV D=/go/src/github.com/redhat-nfvpe/smart-gateway
 
-RUN dnf install qpid-proton-c-devel git golang -y && \
-        dnf clean all && \
-        go get -u github.com/golang/dep/...
-
 WORKDIR $D
 COPY . $D/
-RUN /go/bin/dep ensure -v -vendor-only && \
-        go build -o smart_gateway cmd/main.go && \
-        cp smart_gateway /tmp/
 
-FROM fedora:27
-LABEL maintainer="admin@nfvpe.site"
-RUN dnf install qpid-proton-c -y && dnf clean all
+RUN yum install epel-release -y && \
+        yum install qpid-proton-c-devel git golang -y && \
+        yum clean all && \
+        go get -u github.com/golang/dep/... && \
+        /go/bin/dep ensure -v -vendor-only && \
+        go build -o smart_gateway cmd/main.go && \
+        mv smart_gateway /tmp/
+
+# --- end build, create smart gateway layer ---
+FROM centos:7
+
+LABEL io.k8s.display-name="Service Assurance Smart Gateway" \
+      io.k8s.description="A component of the Service Assurance Framework on the server side that ingests data from AMQP 1.x and provides a metrics scrape endpoint for Prometheus, and forwards events to ElasticSearch" \
+      maintainer="Leif Madsen <leif@redhat.com>"
+
+RUN yum install epel-release -y && \
+        yum install qpid-proton-c -y && \
+        yum clean all
+
 COPY --from=builder /tmp/smart_gateway /
-EXPOSE 8081
-EXPOSE 5672
+
 ENTRYPOINT ["/smart_gateway"]
