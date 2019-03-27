@@ -4,8 +4,8 @@ import (
 	"log"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/redhat-nfvpe/smart-gateway/internal/pkg/incoming"
-	"github.com/redhat-nfvpe/smart-gateway/internal/pkg/tsdb"
+	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/incoming"
+	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/tsdb"
 )
 
 //AddHeartBeat ...

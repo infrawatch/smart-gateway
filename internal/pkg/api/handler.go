@@ -9,9 +9,9 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/redhat-nfvpe/smart-gateway/internal/pkg/amqp"
-	"github.com/redhat-nfvpe/smart-gateway/internal/pkg/cacheutil"
-	"github.com/redhat-nfvpe/smart-gateway/internal/pkg/config"
+	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/amqp"
+	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/cacheutil"
+	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/config"
 )
 
 var debugh = func(format string, data ...interface{}) {} // Default no debugging output

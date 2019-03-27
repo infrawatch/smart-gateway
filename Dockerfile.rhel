@@ -1,7 +1,7 @@
 # --- build smart gateway ---
 FROM registry.access.redhat.com/rhel7/rhel AS builder
 ENV GOPATH=/go
-ENV D=/go/src/github.com/redhat-nfvpe/smart-gateway
+ENV D=/go/src/github.com/redhat-service-assurance/smart-gateway
 
 WORKDIR $D
 COPY . $D/

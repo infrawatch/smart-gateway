@@ -15,11 +15,11 @@ import (
 
 	"github.com/MakeNowJust/heredoc"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/redhat-nfvpe/smart-gateway/internal/pkg/amqp"
-	"github.com/redhat-nfvpe/smart-gateway/internal/pkg/api"
-	"github.com/redhat-nfvpe/smart-gateway/internal/pkg/cacheutil"
-	"github.com/redhat-nfvpe/smart-gateway/internal/pkg/config"
-	"github.com/redhat-nfvpe/smart-gateway/internal/pkg/incoming"
+	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/amqp"
+	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/api"
+	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/cacheutil"
+	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/config"
+	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/incoming"
 )
 
 var (

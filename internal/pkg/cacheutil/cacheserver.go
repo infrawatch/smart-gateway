@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/redhat-nfvpe/smart-gateway/internal/pkg/incoming"
+	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/incoming"
 )
 
 // MAXTTL to remove plugin is stale for 5

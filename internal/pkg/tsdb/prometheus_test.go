@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	dto "github.com/prometheus/client_model/go"
-	"github.com/redhat-nfvpe/smart-gateway/internal/pkg/incoming"
+	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/incoming"
 )
 
 func TestCollectedTimeMetrics(t *testing.T) {

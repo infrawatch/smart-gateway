@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/redhat-nfvpe/smart-gateway/internal/pkg/incoming"
+	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/incoming"
 )
 
 func TestCacheServer(t *testing.T) {

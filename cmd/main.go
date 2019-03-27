@@ -5,8 +5,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/redhat-nfvpe/smart-gateway/internal/pkg/events"
-	"github.com/redhat-nfvpe/smart-gateway/internal/pkg/metrics"
+	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/events"
+	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/metrics"
 )
 
 var metricType = "metrics"

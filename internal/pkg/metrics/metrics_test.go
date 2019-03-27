@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/redhat-nfvpe/smart-gateway/internal/pkg/cacheutil"
-	"github.com/redhat-nfvpe/smart-gateway/internal/pkg/incoming"
+	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/cacheutil"
+	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/incoming"
 )
 
 func BenchmarkWithSampleData(b *testing.B) {

@@ -1,4 +1,4 @@
-# smart-gateway ![build status](https://travis-ci.org/redhat-nfvpe/smart-gateway.svg?branch=master) [![Go Report Card](https://goreportcard.com/badge/github.com/redhat-nfvpe/smart-gateway)](https://goreportcard.com/report/github.com/redhat-nfvpe/smart-gateway)
+# smart-gateway ![build status](https://travis-ci.org/redhat-service-assurance/smart-gateway.svg?branch=master) [![Go Report Card](https://goreportcard.com/badge/github.com/redhat-service-assurance/smart-gateway)](https://goreportcard.com/report/github.com/redhat-service-assurance/smart-gateway)
 
 Smart gateway for service assurance. Includes applications for both metrics and events gathering.
 
@@ -12,8 +12,8 @@ Dependencies are managed using [`dep`](https://github.com/golang/dep). Clone thi
 dependencies with the following commands.
 
 ```
-go get -u github.com/redhat-nfvpe/smart-gateway
-cd $GOPATH/src/github.com/redhat-nfvpe/smart-gateway
+go get -u github.com/redhat-service-assurance/smart-gateway
+cd $GOPATH/src/github.com/redhat-service-assurance/smart-gateway
 dep ensure -v -vendor-only
 ```
 
@@ -22,6 +22,6 @@ dep ensure -v -vendor-only
 Build the `smart_gateway` with Golang using the following command.
 
 ```
-cd $GOPATH/src/github.com/redhat-nfvpe/smart-gateway
+cd $GOPATH/src/github.com/redhat-service-assurance/smart-gateway
 go build -o smart_gateway cmd/main.go 
 ```
