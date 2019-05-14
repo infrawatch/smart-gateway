@@ -75,6 +75,7 @@ func (as *AMQPSender) Close() {
 //Send  starts amqp server
 func (as *AMQPSender) Send(jsonmsg string) {
 	debugsf("Debug: AMQP send is invoked")
+	//woot := make(chan electron.Outcome)
 	//sentChan := make(chan electron.Outcome) // Channel to receive acknowledgements.
 	go func(body string) {
 		//defer wait.Done()
@@ -96,9 +97,12 @@ func (as *AMQPSender) Send(jsonmsg string) {
 		debugsf("Debug:Sending alerts on a bus URL %s\n", body)
 		// Note: can block if there is no space to buffer the message.
 		s.SendForget(m)
+		//woot <- s.SendSync(m)
 		as.Close()
 		//s.SendAsync(m, sentChan, body) // Outcome will be sent to sentChan
 	}(jsonmsg)
+
+	//fmt.Printf("%v", <-woot)
 	//outside go routin reciveve and processurlStr
 	//var firstmsg=0
 	/*for {

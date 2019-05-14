@@ -30,7 +30,7 @@ const procEventDirty = "[{\"labels\":{\"alertname\":\"collectd_procevent_gauge\"
 
 const ovsEvent = `[{"labels":{"alertname":"collectd_ovs_events_gauge","instance":"nfvha-comp-03","ovs_events":"br0","type":"link_status","severity":"OKAY","service":"collectd"},"annotations":{"summary":"link state of \"br0\" interface has been changed to \"UP\"","uuid":"c52f2aca-3cb1-48e3-bba3-100b54303d84"},"startsAt":"2018-02-22T20:12:19.547955618Z"}]`
 
-const elastichost = "http://10.19.110.5:9200"
+const elastichost = "http://127.0.0.1:9200"
 
 func TestMain(m *testing.M) {
 	// call flag.Parse() here if TestMain uses flags
