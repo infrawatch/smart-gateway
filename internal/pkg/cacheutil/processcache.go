@@ -61,8 +61,8 @@ func (shard *ShardedIncomingDataCache) FlushPrometheusMetric(usetimestamp bool, 
 func (shard *ShardedIncomingDataCache) FlushAllMetrics() {
 	shard.lock.Lock()
 	defer shard.lock.Unlock()
-	for _, IncomingDataInterface := range shard.plugin {
-		if collectd, ok := IncomingDataInterface.(*incoming.Collectd); ok {
+	for _, dataInterface := range shard.plugin {
+		if collectd, ok := dataInterface.(*incoming.Collectd); ok {
 			if collectd.ISNew() {
 				collectd.SetNew(false)
 				log.Printf("New Metrics %#v\n", collectd)

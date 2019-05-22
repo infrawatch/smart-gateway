@@ -14,8 +14,7 @@ var (
 
 //NewHeartBeatMetricByHost ...
 func NewHeartBeatMetricByHost(instance string, value float64) (prometheus.Metric, error) {
-	var valueType prometheus.ValueType
-	valueType = prometheus.GaugeValue
+	valueType := prometheus.GaugeValue
 	metricName := "sa_collectd_last_metric_for_host_status"
 	help := "Status of metrics for host currently active."
 
@@ -51,7 +50,7 @@ func NewCollectdMetric(usetimestamp bool, collectd incoming.Collectd, index int)
 		value = float64(collectd.Values[index])
 		valueType = prometheus.CounterValue
 	default:
-		return nil, fmt.Errorf("unknowdsnamen value type: %s", collectd.Dstypes[index])
+		return nil, fmt.Errorf("Unknown name of value type: %s", collectd.Dstypes[index])
 	}
 	labels := collectd.GetLabels()
 	plabels := prometheus.Labels{}
@@ -63,7 +62,6 @@ func NewCollectdMetric(usetimestamp bool, collectd incoming.Collectd, index int)
 		collectd.Plugin, collectd.Type, collectd.Dstypes[index], collectd.DSName(index))
 	metricName := metricNameRe.ReplaceAllString(collectd.GetMetricName(index), "_")
 	desc := prometheus.NewDesc(metricName, help, []string{}, plabels)
-
 	if usetimestamp == true {
 		return prometheus.NewMetricWithTimestamp(
 			collectd.Time.Time(),

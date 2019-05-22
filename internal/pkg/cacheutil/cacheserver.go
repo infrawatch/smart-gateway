@@ -1,7 +1,6 @@
 package cacheutil
 
 import (
-	"fmt"
 	"log"
 	"sync"
 	"time"
@@ -12,7 +11,7 @@ import (
 // MAXTTL to remove plugin is stale for 5
 var MAXTTL int64 = 300
 var freeList = make(chan *IncomingBuffer, 1000)
-var quitCacheServerCh = make(chan struct{})
+var quitCacheServerCh = make(chan bool)
 var debugc = func(format string, data ...interface{}) {} // Default no debugging output
 
 //ApplicationHealthCache  ...
@@ -125,21 +124,18 @@ func (shard *ShardedIncomingDataCache) Expired() bool {
 
 //GetShard  ..
 func (i IncomingDataCache) GetShard(key string) *ShardedIncomingDataCache {
-	//GetShard .... add shardGetCollectD
-	//i.lock.Lock()
 	if i.hosts[key] == nil {
 		i.Put(key)
 	}
 
 	return i.hosts[key]
-
 }
 
-//GetData   ..
-func (shard *ShardedIncomingDataCache) GetData(pluginname string) incoming.DataTypeInterface {
+//GetData ...
+func (shard *ShardedIncomingDataCache) GetData(itemKey string) incoming.DataTypeInterface {
 	shard.lock.Lock()
 	defer shard.lock.Unlock()
-	return shard.plugin[pluginname]
+	return shard.plugin[itemKey]
 }
 
 //Size no of plugin per shard
@@ -158,7 +154,10 @@ func (shard *ShardedIncomingDataCache) Size() int {
 
 }
 
-//SetData  TODO : add generic
+//SetData ...
+//TODO : add generic
+//TODO(mmagr): either don't export or maybe make sure dara.Host has the same
+// value as is saved under in DataCache
 func (shard *ShardedIncomingDataCache) SetData(data incoming.DataTypeInterface) error {
 	shard.lock.Lock()
 	defer shard.lock.Unlock()
@@ -169,10 +168,8 @@ func (shard *ShardedIncomingDataCache) SetData(data incoming.DataTypeInterface) 
 	shard.lastAccess = time.Now().Unix()
 	collectd := shard.plugin[data.GetItemKey()]
 	collectd.SetData(data)
+
 	return nil
-
-	//return errors.New("unknow data type while setting data")
-
 }
 
 //CacheServer   ..
@@ -216,12 +213,11 @@ func (cs *CacheServer) Put(incomingData incoming.DataTypeInterface) {
 }
 
 func (cs CacheServer) close() {
-	<-quitCacheServerCh
+	quitCacheServerCh <- true
 	close(quitCacheServerCh)
 }
+
 func (cs CacheServer) loop() {
-	// The built-in "range" clause can iterate over channels,
-	// amongst other things
 LOOP:
 	for {
 		// Reuse buffer if there's room.
@@ -236,29 +232,5 @@ LOOP:
 		default:
 			// Free list full, just carry on.
 		}
-		/*select {
-		case data := <-s.ch:
-			//fmt.Printf("got message in channel %v", data)
-			shard := s.cache.GetShard(data.collectd.Host)
-			shard.SetCollectD(data.collectd)
-
-		}*/
 	}
-
-}
-
-//GenrateSampleData  ....
-func (cs *CacheServer) GenrateSampleData(key string, itemCount int, datatype incoming.DataTypeInterface) {
-	//100 plugins
-	for j := 0; j < itemCount; j++ {
-		pluginname := fmt.Sprintf("%s_%d", "plugin_name_", j)
-		debugc("Debug:Pluginname %s\n", pluginname)
-		//. defer wg.Done()
-		newSample := datatype.GenerateSampleData(key, pluginname)
-		debugc("Debug:Sample %#v\n", newSample)
-
-		cs.Put(newSample)
-
-	}
-
 }

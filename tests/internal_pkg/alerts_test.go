@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type DataMatrix struct {
+type AlertDataMatrix struct {
 	Label    string
 	Expected string
 }
@@ -22,27 +22,27 @@ func TestAlertParsing(t *testing.T) {
 	eventAlert := &alerts.Alerts{}
 	eventAlert.Parse(eventString, "http://0.0.0.0/")
 	// prepare test matrix for Alerts.Labels and verify it
-	data := []DataMatrix{
-		DataMatrix{"alertname", "collectd_connectivity_gauge"},
-		DataMatrix{"instance", "nfvha-comp-03"},
-		DataMatrix{"connectivity", "eno2"},
-		DataMatrix{"type", "interface_status"},
-		DataMatrix{"severity", "info"},
-		//DataMatrix{"service", "collectd"},
-		DataMatrix{"domain", "stateChange"},
-		DataMatrix{"eventId", "39996"},
-		DataMatrix{"eventName", "interface eno2 up"},
-		DataMatrix{"lastEpochMicrosec", "1523292316174821"},
-		DataMatrix{"priority", "high"},
-		DataMatrix{"reportingEntityName", "collectd connectivity plugin"},
-		DataMatrix{"sourceName", "eno2"},
-		DataMatrix{"version", "1"},
-		DataMatrix{"newState", "inService"},
-		DataMatrix{"oldState", "outOfService"},
-		DataMatrix{"stateChangeFieldsVersion", "1"},
-		DataMatrix{"stateInterface", "eno2"},
-		DataMatrix{"summary", ""},
-		DataMatrix{"name", "collectd_connectivity_gauge_eno2_nfvha-comp-03_collectd_interface_status"},
+	data := []AlertDataMatrix{
+		AlertDataMatrix{"alertname", "collectd_connectivity_gauge"},
+		AlertDataMatrix{"instance", "nfvha-comp-03"},
+		AlertDataMatrix{"connectivity", "eno2"},
+		AlertDataMatrix{"type", "interface_status"},
+		AlertDataMatrix{"severity", "info"},
+		//AlertDataMatrix{"service", "collectd"},
+		AlertDataMatrix{"domain", "stateChange"},
+		AlertDataMatrix{"eventId", "39996"},
+		AlertDataMatrix{"eventName", "interface eno2 up"},
+		AlertDataMatrix{"lastEpochMicrosec", "1523292316174821"},
+		AlertDataMatrix{"priority", "high"},
+		AlertDataMatrix{"reportingEntityName", "collectd connectivity plugin"},
+		AlertDataMatrix{"sourceName", "eno2"},
+		AlertDataMatrix{"version", "1"},
+		AlertDataMatrix{"newState", "inService"},
+		AlertDataMatrix{"oldState", "outOfService"},
+		AlertDataMatrix{"stateChangeFieldsVersion", "1"},
+		AlertDataMatrix{"stateInterface", "eno2"},
+		AlertDataMatrix{"summary", ""},
+		AlertDataMatrix{"name", "collectd_connectivity_gauge_eno2_nfvha-comp-03_collectd_interface_status"},
 	}
 	t.Run("Verify proper parsing of event data to Alerts.Labels", func(t *testing.T) {
 		for _, testCase := range data {
@@ -50,9 +50,9 @@ func TestAlertParsing(t *testing.T) {
 		}
 	})
 	// prepare test matrix for Alerts.Annotation and verify it
-	data = []DataMatrix{
-		DataMatrix{"summary", "eno2 interface_status interface eno2 up"},
-		DataMatrix{"description", "collectd_connectivity_gauge eno2 nfvha-comp-03 collectd info interface_status"},
+	data = []AlertDataMatrix{
+		AlertDataMatrix{"summary", "eno2 interface_status interface eno2 up"},
+		AlertDataMatrix{"description", "collectd_connectivity_gauge eno2 nfvha-comp-03 collectd info interface_status"},
 	}
 	t.Run("Verify proper parsing of event data to Alerts.Annotations", func(t *testing.T) {
 		for _, testCase := range data {
