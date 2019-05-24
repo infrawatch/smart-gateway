@@ -16,4 +16,4 @@ ss -lnp
 ss -ntp
 # run test suite
 dep ensure -v --vendor-only
-go test  -timeout=10s ./cmd ./internal/pkg/*
+go test -timeout=10s ./tests/*

@@ -2,7 +2,7 @@ git:
   depth: 1
 language: go
 go:
-- 1.9.7
+- 1.11.x
 sudo: required
 dist: xenial
 services:
@@ -35,11 +35,16 @@ before_deploy:
 - docker login -u $REGISTRY_USER -p $REGISTRY_PASS
 - docker build --tag nfvpe/smart_gateway:latest .
 - docker images
-#deploy:
-#  provider: script
-#  script: docker push nfvpe/smart_gateway:latest
-#  on:
-#    branch: master
+deploy:
+  provider: script
+  script: docker push nfvpe/smart_gateway:latest
+  on:
+    branch: master
 after_success:
-- go test -v -covermode=count -coverprofile=coverage.out
-- $HOME/gopath/bin/goveralls -coverprofile=coverage.out -service=travis-ci -repotoken $COVERALLS_TOKEN
+# works correctly only with Go-1.11+ due to: https://github.com/golang/go/issues/25093
+- echo "mode: set" > coverage.out
+- for pkg in $(go list ./internal/pkg/...); do
+    go test -cover -coverpkg $pkg -coverprofile coverfragment.out ./tests/internal_pkg/*;
+    grep -h -v "mode: set" coverfragment.out >> coverage.out;
+  done
+- $GOPATH/bin/goveralls -coverprofile=coverage.out -service=travis-ci -repotoken $COVERALLS_TOKEN
