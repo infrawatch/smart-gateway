@@ -18,7 +18,7 @@ import (
 	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/amqp"
 	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/api"
 	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/cacheutil"
-	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/config"
+	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/saconfig"
 	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/incoming"
 )
 

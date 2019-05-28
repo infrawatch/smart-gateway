@@ -20,8 +20,8 @@ import (
 	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/amqp"
 	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/api"
 	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/cacheutil"
-	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/config"
 	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/elasticsearch"
+	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/saconfig"
 )
 
 /*************** main routine ***********************/
@@ -34,7 +34,7 @@ func eventusage() {
 	**************************************************
 	For running with AMQP and Prometheus use following option
 	********************* Production *********************
-	$go run cmd/main.go -servicetype events -amqp1EventURL=10.19.110.5:5672/collectd/notify -eshost=http://10.19.110.5:9200 
+	$go run cmd/main.go -servicetype events -amqp1EventURL=10.19.110.5:5672/collectd/notify -eshost=http://10.19.110.5:9200
 	**************************************************************
 	For running with AMQP ,Prometheus,API and AlertManager use following option
 	********************* Production *********************
