@@ -31,30 +31,20 @@ type EventAPIConfig struct {
 
 //MetricConfiguration   ....
 type MetricConfiguration struct {
-	Debug          bool             `json:"Debug"`
-	TestServer     bool             `json:"TestServer"`
-	AMQP1MetricURL string           `json:"AMQP1MetricURL"`
-	CPUStats       bool             `json:"CPUStats"`
-	Exporterhost   string           `json:"Exporterhost"`
-	Exporterport   int              `json:"Exporterport"`
-	Prefetch       int              `json:"Prefetch"`
-	DataCount      int              `json:"DataCount"` //-1 for ever which is default //TODO(mmagr): config implementation does not have a way to for default value, implement one?
-	UseSample      bool             `json:"UseSample"`
-	UseTimeStamp   bool             `json:"UseTimeStamp"`
-	Sample         SampleDataConfig `json:"Sample"`
-	UniqueName     string           `json:"UniqueName"`
-	ServiceType    string           `json:"ServiceType"`
-	IgnoreString   string           `json:"-"` //TODO(mmagr): ?
+	Debug          bool   `json:"Debug"`
+	AMQP1MetricURL string `json:"AMQP1MetricURL"`
+	CPUStats       bool   `json:"CPUStats"`
+	Exporterhost   string `json:"Exporterhost"`
+	Exporterport   int    `json:"Exporterport"`
+	Prefetch       int    `json:"Prefetch"`
+	DataCount      int    `json:"DataCount"` //-1 for ever which is default //TODO(mmagr): config implementation does not have a way to for default value, implement one?
+	UseTimeStamp   bool   `json:"UseTimeStamp"`
+	UniqueName     string `json:"UniqueName"`
+	ServiceType    string `json:"ServiceType"`
+	IgnoreString   string `json:"-"` //TODO(mmagr): ?
 }
 
-//SampleDataConfig  ...
-type SampleDataConfig struct {
-	HostCount   int `json:"HostCount"`   //no of host to simulate
-	PluginCount int `json:"PluginCount"` //No of plugin count per hosts
-	DataCount   int `json:"DataCount"`   //-1 for ever howmany times sample data should be generated
-}
-
-//TODO(mmagr): aaply DRY principle here
+//TODO(mmagr): apply DRY principle here
 
 //LoadMetricConfig ....
 func LoadMetricConfig(path string) MetricConfiguration {

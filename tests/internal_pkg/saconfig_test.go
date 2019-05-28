@@ -103,7 +103,6 @@ func TestUnstructuredData(t *testing.T) {
 				ConfigDataMatrix{"Exporterport", 8081},
 				ConfigDataMatrix{"CPUStats", false},
 				ConfigDataMatrix{"DataCount", -1},
-				ConfigDataMatrix{"UseSample", false},
 				ConfigDataMatrix{"UseTimeStamp", true},
 				ConfigDataMatrix{"Debug", false},
 				ConfigDataMatrix{"Prefetch", 102},
@@ -161,16 +160,5 @@ func TestStructuredData(t *testing.T) {
 		cfg := saconfig.LoadEventConfig(confPath)
 		apiStruct := saconfig.EventAPIConfig{"http://127.0.0.1:8082", "127.0.0.1:5672/collectd/alert"}
 		assert.Equal(t, apiStruct, cfg.API)
-	})
-
-	t.Run("Test structured data of metric config", func(t *testing.T) {
-		confPath, err := GenerateTestConfig(METRICS_CONFIG)
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer os.Remove(confPath)
-		cfg := saconfig.LoadMetricConfig(confPath)
-		sampleStruct := saconfig.SampleDataConfig{10, 100, -1}
-		assert.Equal(t, sampleStruct, cfg.Sample)
 	})
 }

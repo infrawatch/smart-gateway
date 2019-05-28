@@ -7,6 +7,8 @@ import (
 
 	"github.com/MakeNowJust/heredoc"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/amqp10"
+	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/api"
 	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/cacheutil"
 	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/incoming"
 
@@ -34,7 +36,7 @@ var (
 /*************** HTTP HANDLER***********************/
 type cacheHandler struct {
 	cache    *cacheutil.IncomingDataCache
-	appstate *apihandler.MetricHandler
+	appstate *api.MetricHandler
 }
 
 // Describe implements prometheus.Collector.
@@ -190,7 +192,7 @@ func main() {
 	//Cache sever to process and serve the exporter
 	cacheServer := cacheutil.NewCacheServer(cacheutil.MAXTTL, serverConfig.Debug)
 	applicationHealth := cacheutil.NewApplicationHealthCache()
-	appStateHandler := apihandler.NewAppStateMetricHandler(applicationHealth)
+	appStateHandler := api.NewAppStateMetricHandler(applicationHealth)
 	myHandler := &cacheHandler{cache: cacheServer.GetCache(), appstate: appStateHandler}
 	amqpHandler := amqp10.NewAMQPHandler("Metric Consumer")
 	prometheus.MustRegister(myHandler, amqpHandler)

@@ -1,4 +1,4 @@
-package saelastic
+package saemapping
 
 //SyseventMapping ...
 const SyseventMapping = `

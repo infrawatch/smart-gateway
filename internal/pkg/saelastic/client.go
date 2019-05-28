@@ -54,7 +54,7 @@ func (ec *ElasticClient) InitAllMappings() {
 }
 
 //CreateClient   ....
-func CreateClient(elastichost string, resetIndex bool, debug bool) *ElasticClient {
+func CreateClient(elastichost string, resetIndex bool, debug bool) (*ElasticClient, error) {
 	//c, _ = client.New(client.WithHosts([]string{"https://elasticsearch:9200"}))
 	if debug {
 		debuges = func(format string, data ...interface{}) { log.Printf(format, data...) }
@@ -64,15 +64,22 @@ func CreateClient(elastichost string, resetIndex bool, debug bool) *ElasticClien
 	eclient, err := elastic.NewClient(elastic.SetHealthcheckInterval(5*time.Second), elastic.SetURL(elastichost))
 	if err != nil {
 		log.Fatal(err)
-		elasticClient.err = err
-		return elasticClient
+		return elasticClient, err
 	}
 	elasticClient = &ElasticClient{client: eclient, ctx: context.Background()}
 	if resetIndex {
 		elasticClient.InitAllMappings()
 	}
 	debuges("Debug:ElasticSearch client created.")
-	return elasticClient
+	return elasticClient, nil
+}
+
+func (ec *ElasticClient) IndexExists(index string) *elastic.IndicesExistsService {
+	return ec.client.IndexExists(index)
+}
+
+func (ec *ElasticClient) GetContext() context.Context {
+	return ec.ctx
 }
 
 //CreateIndex  ...

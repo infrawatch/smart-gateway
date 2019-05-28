@@ -22,11 +22,9 @@ package amqp10
 import (
 	"fmt"
 	"log"
-	"math"
 	"net"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"qpid.apache.org/amqp"
@@ -80,46 +78,26 @@ func MockAmqpServer(notifier chan string) *AMQPServer {
 }
 
 //NewAMQPServer   ...
-func NewAMQPServer(urlStr string, debug bool, msgcount int, prefetch int, amqpHanlder *AMQPHandler, done chan bool, isTest bool, uniqueName string) *AMQPServer {
+func NewAMQPServer(urlStr string, debug bool, msgcount int, prefetch int, amqpHanlder *AMQPHandler, done chan bool, uniqueName string) *AMQPServer {
 	if len(urlStr) == 0 {
 		log.Println("No URL provided")
 		//usage()
 		os.Exit(1)
 	}
-	var server *AMQPServer
-
-	if isTest == true {
-		server = &AMQPServer{
-			urlStr:          "127.0.0.1:5672",
-			debug:           debug,
-			notifier:        make(chan string, 100),
-			status:          make(chan int),
-			msgcount:        msgcount,
-			connections:     make(chan electron.Connection, 1),
-			method:          (*AMQPServer).serverTest,
-			done:            done,
-			prefetch:        prefetch,
-			amqpHandler:     amqpHanlder,
-			uniqueName:      uniqueName,
-			reconnect:       false,
-			collectinterval: 30,
-		}
-	} else {
-		server = &AMQPServer{
-			urlStr:          urlStr,
-			debug:           debug,
-			notifier:        make(chan string),
-			status:          make(chan int),
-			msgcount:        msgcount,
-			connections:     make(chan electron.Connection, 1),
-			method:          (*AMQPServer).connect,
-			done:            done,
-			prefetch:        prefetch,
-			amqpHandler:     amqpHanlder,
-			uniqueName:      uniqueName,
-			reconnect:       false,
-			collectinterval: 30,
-		}
+	server := &AMQPServer{
+		urlStr:          urlStr,
+		debug:           debug,
+		notifier:        make(chan string),
+		status:          make(chan int),
+		msgcount:        msgcount,
+		connections:     make(chan electron.Connection, 1),
+		method:          (*AMQPServer).connect,
+		done:            done,
+		prefetch:        prefetch,
+		amqpHandler:     amqpHanlder,
+		uniqueName:      uniqueName,
+		reconnect:       false,
+		collectinterval: 30,
 	}
 
 	if debug {
@@ -129,7 +107,7 @@ func NewAMQPServer(urlStr string, debug bool, msgcount int, prefetch int, amqpHa
 	}
 	// Spawn off the server's main loop immediately
 	// not exported
-	go server.start(isTest)
+	go server.start()
 
 	return server
 }
@@ -239,7 +217,7 @@ func (s *AMQPServer) UpdateMinCollectInterval(interval float64) {
 }
 
 //start  starts amqp server
-func (s *AMQPServer) start(isTest bool) {
+func (s *AMQPServer) start() {
 	messages := make(chan amqp.Message, 10) // Channel for messages from goroutines to main()
 	connectionStatus := make(chan int)
 	done := make(chan bool)
@@ -249,79 +227,33 @@ func (s *AMQPServer) start(isTest bool) {
 	//var wait sync.WaitGroup // Used by main() to wait for all goroutines to end.
 	//wait.Add(1)
 	go func() {
-		/*if *prefetch > 0 {
-		  opts = append(opts, electron.Capacity(*prefetch), electron.Prefetch(true))
-		}*/
 		r, err := s.method(s)
 		if err != nil {
 			log.Fatalf("Could not connect to Qpid-dispatch router. is it running? : %v", err)
 		}
-		//s.status <- 1
 		connectionStatus <- 1
-		// Loop receiving messages and sending them to the main() goroutine
-		if isTest == false && s.msgcount == -1 {
-			for {
-				debugr("time %s", 2*int(s.collectinterval))
-				if rm, err := r.ReceiveTimeout(time.Duration(2*int(s.collectinterval)) * time.Second); err == nil {
-					rm.Accept()
-					debugr("AMQP Receiving messages.")
-					messages <- rm.Message
-				} else if err == electron.Closed {
-					log.Fatalf("Connection Closed %v: %v", s.urlStr, err)
-					connectionStatus <- 0
-					return
-				} else if err != electron.Timeout {
-					log.Printf("AMQP Listener timed out, will try to reconnect %v: %v\n", s.urlStr, err)
-					log.Printf("error == %v", err)
-					debugr("AMQP Receiver trying to connect")
-					connectionStatus <- 0
-					sleepTimer := 2
-
-				CONNECTIONLOOP:
-					for {
-						s.Close()
-						s.amqpHandler.IncTotalReconnectCount()
-						log.Printf("Reconnect attempt in %d secs\n", sleepTimer)
-						time.Sleep(time.Duration(sleepTimer) * time.Second)
-						sleepTimer = sleepTimer * 2
-						if sleepTimer > 120 {
-							sleepTimer = 120
-						}
-						r, err = s.connect()
-						debugr("%v", err)
-						if err == nil {
-							log.Println("Connection with QDR established.")
-							connectionStatus <- 1
-							break CONNECTIONLOOP
-						}
-					}
-
-				}
+		untilCount := s.msgcount
+		for {
+			if rm, err := r.Receive(); err == nil {
+				rm.Accept()
+				messages <- rm.Message
+			} else if err == electron.Closed {
+				log.Printf("Channel closed...\n")
+				return
+			} else {
+				log.Fatalf("receive error %v: %v", s.urlStr, err)
 			}
-		} else {
-			untilCount := s.msgcount
-			if s.msgcount == -1 {
-				untilCount = math.MaxInt32
+			if untilCount > 0 {
+				untilCount--
+			} else if untilCount == 0 {
+				break
 			}
-			for i := 0; i < untilCount; i++ {
-				if rm, err := r.Receive(); err == nil {
-					rm.Accept()
-					messages <- rm.Message
-				} else if err == electron.Closed {
-					log.Printf("Channel closed...\n")
-					return
-				} else {
-					log.Fatalf("receive error %v: %v, %d", s.urlStr, err, i)
-				}
-			}
-			s.Close()
-			log.Println("Closed AMQP...letting loop know")
-			done <- true
-			s.done <- true
 		}
+		s.Close()
+		log.Println("Closed AMQP...letting loop know")
+		done <- true
+		s.done <- true
 	}()
-	//outside go routin reciveve and process
-	//var firstmsg=0
 
 msgloop:
 	for {
@@ -338,8 +270,6 @@ msgloop:
 		case <-done:
 			log.Println("Done Received...")
 			break msgloop
-
-			//		default: //default makes this non-blocking
 		}
 	}
 

@@ -1,4 +1,4 @@
-package apihandler
+package api
 
 import (
 	"encoding/json"
@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/amqp"
+	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/amqp10"
 	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/cacheutil"
 	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/saconfig"
 )

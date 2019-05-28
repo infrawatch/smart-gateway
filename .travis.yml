@@ -14,14 +14,16 @@ env:
   - secure: Nhc7/4h45Fpj/jjsObzRt4zAjUCEeBornHjdKY0z2OIsWcsRJnTV7FWsOWjyprnD/O4TQi2TQQqUzUr+MK+3/fVsB94ivUrTr2DHOtvJBwQcz1YzMsEwOvqMkd+1iXfafWT+NHtkJlxoKu69UYKpZvGIRuxW+GFO1cgERikYxJ40AMV5mGD+GnF7cJaRmXkzTEfgfRBHazwrYiP0vsdCIpoe9m45z3Z2kkh/F5o7sUD9hc/bG7HUR8TwxoBfjVxWGkcZ8r8T5SG0fhg9p1Sm0QSIFOuu0VoTyWUCSdcCuZNjfIKWJjhO5GhX7rN418PTfUyEGBsG5p70lSap2ywLDxLuaXi5BgLhZiXvJ81jVcd5Xlru66MAGoMrvnlf4FNm/pnEYH0ctVrnbi2Ds+CkxW7u2/Yj0TsLsFylKSn1SRtWC1Ju8kIPrMNA+zuwdV5x/ddl6vxhThYva9GhqwTWF+vsApmQDe+pH8QijX9CFEevDpBuE8h02uKV7OcyaEQUiYwAWvyLI4+KRwMYB/KLG8Os2zp3QJVuB2rVVxnLVNbV5fBIf5xcQimOGsKclTQvRIJerE7Uh6XW27iUx18hn3lMngktfcIytLs3Vhr3RadcSJc3BT6dkErDH286BCPGvkvTNqUz/YgBIuMXHozlN5rUNIo9/V0Ek3H+DsEseik=
 before_install:
 # run local elascticsearch
-- docker pull docker.elastic.co/elasticsearch/elasticsearch:7.0.1
-- docker run  -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" -d docker.elastic.co/elasticsearch/elasticsearch:7.0.1
+- docker pull docker.elastic.co/elasticsearch/elasticsearch:6.0.1
+- docker run -p 9200:9200 --name elastic -p 9300:9300 -e "discovery.type=single-node" -d docker.elastic.co/elasticsearch/elasticsearch:6.0.1
 # run local qdr
 - docker pull quay.io/interconnectedcloud/qdrouterd:1.5.0
 - docker run -p 5672:5672 -d quay.io/interconnectedcloud/qdrouterd:1.5.0
 # run unit test
+- sleep 10
+- docker logs elastic
 - docker pull centos:7
-- docker run -uroot -it --volume $PWD:/go/src/github.com/redhat-service-assurance/smart-gateway:z --workdir /go/src/github.com/redhat-service-assurance/smart-gateway centos:7 /bin/sh -c 'sh ./run_tests.sh'
+- docker run -uroot --network host -it --volume $PWD:/go/src/github.com/redhat-service-assurance/smart-gateway:z --workdir /go/src/github.com/redhat-service-assurance/smart-gateway centos:7 /bin/sh -c 'sh ./run_tests.sh'
 install:
 - go get -u golang.org/x/tools/cmd/cover
 - go get -u github.com/mattn/goveralls

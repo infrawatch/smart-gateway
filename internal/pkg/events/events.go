@@ -17,11 +17,11 @@ import (
 	"github.com/MakeNowJust/heredoc"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/alerts"
-	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/amqp"
+	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/amqp10"
 	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/api"
 	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/cacheutil"
-	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/elasticsearch"
 	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/saconfig"
+	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/saelastic"
 )
 
 /*************** main routine ***********************/
@@ -144,7 +144,7 @@ func StartEvents() {
 	/* Print Configuration details */
 	//mertic handler for event mertics to check health status
 	applicationHealth := cacheutil.NewApplicationHealthCache()
-	metricHandler := apihandler.NewAppStateEventMetricHandler(applicationHealth)
+	metricHandler := api.NewAppStateEventMetricHandler(applicationHealth)
 	amqpHandler := amqp10.NewAMQPHandler("Event Consumer")
 	debuge("Debug:Config %#v\n", serverConfig)
 
@@ -153,12 +153,12 @@ func StartEvents() {
 	log.Printf("Connecting to AMQP1 : %s\n", amqpEventsurl)
 	// done channel is used during testing
 	done := make(chan bool)
-	amqpEventServer = amqp10.NewAMQPServer(amqpEventsurl, serverConfig.Debug, -1, serverConfig.Prefetch, amqpHandler, done, false, *fUniqueName)
+	amqpEventServer = amqp10.NewAMQPServer(amqpEventsurl, serverConfig.Debug, -1, serverConfig.Prefetch, amqpHandler, done, *fUniqueName)
 
 	log.Printf("Listening.....\n")
 
 	log.Printf("Connecting to ElasticSearch : %s\n", serverConfig.ElasticHostURL)
-	elasticClient = saelastic.CreateClient(serverConfig.ElasticHostURL, serverConfig.ResetIndex, serverConfig.Debug)
+	elasticClient, _ = saelastic.CreateClient(serverConfig.ElasticHostURL, serverConfig.ResetIndex, serverConfig.Debug)
 	applicationHealth.ElasticSearchState = 1
 
 	/**** HTTP Listener for alerts from alert manager *******************************
@@ -172,8 +172,8 @@ func StartEvents() {
 		prometheus.Unregister(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}))
 		prometheus.Unregister(prometheus.NewGoCollector())
 
-		context := apihandler.NewAPIContext(serverConfig)
-		http.Handle("/alert", apihandler.Handler{context, apihandler.AlertHandler}) //creates writer everytime api is called.
+		context := api.NewAPIContext(serverConfig)
+		http.Handle("/alert", api.Handler{context, api.AlertHandler}) //creates writer everytime api is called.
 		http.Handle("/metrics", prometheus.Handler())
 		http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte(`<html>
@@ -210,7 +210,7 @@ func StartEvents() {
 				if err != nil {
 					log.Printf("Error creating event %s in elastic search %s\n", event, err)
 					applicationHealth.ElasticSearchState = 0
-				} // else {
+				}
 				//update AlertManager
 				if serverConfig.AlertManagerEnabled {
 					go func() {
