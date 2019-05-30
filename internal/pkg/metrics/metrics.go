@@ -23,14 +23,13 @@ import (
 )
 
 var (
-	cacheServer      cacheutil.CacheServer
-	amqpMetricServer *amqp10.AMQPServer
-	debugm           = func(format string, data ...interface{}) {} // Default no debugging output
-	debugs           = func(count int) {}                          // Default no debugging output
-	serverConfig     saconfig.MetricConfiguration
-	amqpHandler      *amqp10.AMQPHandler
-	myHandler        *cacheHandler
-	hostwaitgroup    sync.WaitGroup
+	cacheServer   cacheutil.CacheServer
+	debugm        = func(format string, data ...interface{}) {} // Default no debugging output
+	debugs        = func(count int) {}                          // Default no debugging output
+	serverConfig  saconfig.MetricConfiguration
+	amqpHandler   *amqp10.AMQPHandler
+	myHandler     *cacheHandler
+	hostwaitgroup sync.WaitGroup
 )
 
 /*************** HTTP HANDLER***********************/
@@ -225,16 +224,10 @@ func StartMetrics() {
 	time.Sleep(2 * time.Second)
 	log.Println("HTTP server is ready....")
 
-	//aqp listener if sample is requested then amqp will not be used but random sample data will be used
-	var amqpMetricServer *amqp10.AMQPServer
-
-	// done channel is used during serverTest
-	done := make(chan bool)
-
 	///Metric Listener
 	amqpMetricsurl := fmt.Sprintf("amqp://%s", serverConfig.AMQP1MetricURL)
 	log.Printf("Connecting to AMQP1 : %s\n", amqpMetricsurl)
-	amqpMetricServer = amqp10.NewAMQPServer(amqpMetricsurl, serverConfig.Debug, serverConfig.DataCount, serverConfig.Prefetch, amqpHandler, done, *fUniqueName)
+	amqpMetricServer := amqp10.NewAMQPServer(amqpMetricsurl, serverConfig.Debug, serverConfig.DataCount, serverConfig.Prefetch, amqpHandler, *fUniqueName)
 	log.Printf("Listening.....\n")
 
 msgloop:
@@ -253,7 +246,7 @@ msgloop:
 			continue // priority channel
 		case status := <-amqpMetricServer.GetStatus():
 			applicationHealth.QpidRouterState = status
-		case <-done:
+		case <-amqpMetricServer.GetDoneChan():
 			break msgloop
 		}
 	}
