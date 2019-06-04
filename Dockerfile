@@ -23,7 +23,7 @@ LABEL io.k8s.display-name="Service Assurance Smart Gateway" \
       maintainer="Leif Madsen <leif@redhat.com>"
 
 RUN yum install epel-release -y && \
-        yum update && \
+        yum update -y --setopt=tsflags=nodocs && \
         yum install qpid-proton-c --setopt=tsflags=nodocs -y && \
         yum clean all && \
         rm -rf /var/cache/yum
