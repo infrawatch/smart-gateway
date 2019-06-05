@@ -156,7 +156,7 @@ func (shard *ShardedIncomingDataCache) Size() int {
 
 //SetData ...
 //TODO : add generic
-//TODO(mmagr): either don't export or maybe make sure dara.Host has the same
+//TODO(mmagr): either don't export or maybe make sure data.Host has the same
 // value as is saved under in DataCache
 func (shard *ShardedIncomingDataCache) SetData(data incoming.DataTypeInterface) error {
 	shard.lock.Lock()
