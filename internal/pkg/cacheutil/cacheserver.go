@@ -78,17 +78,21 @@ func NewShardedIncomingDataCache(maxttl int64) *ShardedIncomingDataCache {
 
 //FlushAll Flush raw meterics data
 func (i *IncomingDataCache) FlushAll() {
-	allHosts := i.GetHosts()
+	lock, allHosts := i.GetHosts()
+	defer lock.Unlock()
+	willDelete := []string{}
 	for key, plugin := range allHosts {
 		//fmt.Fprintln(w, hostname)
 		plugin.FlushAllMetrics()
 		//this will clean up all zero plugins
 		if plugin.Size() == 0 {
-			delete(allHosts, key)
-			log.Printf("Cleaned up host for %s", key)
+			willDelete = append(willDelete, key)
 		}
 	}
-
+	for _, key := range willDelete {
+		delete(allHosts, key)
+		log.Printf("Cleaned up host for %s", key)
+	}
 }
 
 //Put   ..
@@ -98,11 +102,11 @@ func (i IncomingDataCache) Put(key string) {
 	i.hosts[key] = NewShardedIncomingDataCache(i.maxTTL)
 }
 
-//GetHosts  Get All hosts
-func (i IncomingDataCache) GetHosts() map[string]*ShardedIncomingDataCache {
+// GetHosts locks the cache and returns the whole cache together with the lock. Caller needs
+// to explicitly unlocks after the operation is done.
+func (i IncomingDataCache) GetHosts() (*sync.RWMutex, map[string]*ShardedIncomingDataCache) {
 	i.lock.Lock()
-	defer i.lock.Unlock()
-	return i.hosts
+	return i.lock, i.hosts
 }
 
 //GetLastAccess ..Get last access time ...

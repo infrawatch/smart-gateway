@@ -51,7 +51,8 @@ func (c *cacheHandler) Collect(ch chan<- prometheus.Metric) {
 	c.appstate.Collect(ch)
 	var metricCount int
 	//ch <- lastPull
-	allHosts := c.cache.GetHosts()
+	lock, allHosts := c.cache.GetHosts()
+	defer lock.Unlock()
 	debugm("Debug:Prometheus is requesting to scrape metrics...")
 	for key, plugin := range allHosts {
 		//fmt.Fprintln(w, hostname)
@@ -74,7 +75,6 @@ func (c *cacheHandler) Collect(ch chan<- prometheus.Metric) {
 			debugm("Debug:Cleaned up cache for host %s", key)
 		}
 	}
-
 }
 
 /*************** main routine ***********************/
@@ -92,7 +92,7 @@ func metricusage() {
 
 	For running Sample data wihout AMQP use following option
 	********************* Sample Data *********************
-	$go run cmd/main.go -servicetype metrics -mhost=localhost -mport=8081 -usesample=true -h=10 -p=100 -t=-1 -debug 
+	$go run cmd/main.go -servicetype metrics -mhost=localhost -mport=8081 -usesample=true -h=10 -p=100 -t=-1 -debug
 	*************************************************************`)
 	fmt.Fprintln(os.Stderr, `Required commandline argument missing`)
 	fmt.Fprintln(os.Stdout, doc)
