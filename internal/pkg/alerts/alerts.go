@@ -2,7 +2,6 @@ package alerts
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"sort"
 	"strings"
@@ -46,8 +45,6 @@ func (a *Alerts) SetSummary() {
 			values = append(values, eventNameVal)
 		}
 	}
-
-	//log.Printf("alert summary %s", values)
 	a.Annotations["summary"] = strings.Join(values, " ")
 }
 
@@ -55,7 +52,7 @@ func (a *Alerts) SetSummary() {
 func (a *Alerts) SetName() {
 
 	values := make([]string, 0, len(a.Labels)-1)
-	desc := make([]string, 0, len(a.Labels)-1)
+	desc := make([]string, 0, len(a.Labels))
 	keys := make([]string, 0, len(a.Labels))
 	for k := range a.Labels {
 		keys = append(keys, k)
@@ -99,11 +96,6 @@ func (a *Alerts) Parse(eventJSON []byte, generatorURL string) {
 			} else {
 				a.Labels[k] = v.(string)
 			}
-			/*if valStatus, okStatus := alertStatus[v.(string)]; okStatus {
-				a.Status = valStatus
-			} else {
-				a.Status = "firing"
-			}*/
 		} else {
 			a.Labels[k] = v.(string)
 		}
@@ -132,7 +124,6 @@ func (a *Alerts) parseMap(aMap map[string]interface{}) {
 	for key, val := range aMap {
 		switch concreteVal := val.(type) {
 		case map[string]interface{}:
-			fmt.Println(key)
 			a.parseMap(val.(map[string]interface{}))
 		case []interface{}:
 			//donothing now

@@ -15,28 +15,27 @@ import (
 
 	"github.com/MakeNowJust/heredoc"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/amqp"
+	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/amqp10"
 	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/api"
 	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/cacheutil"
-	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/config"
 	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/incoming"
+	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/saconfig"
 )
 
 var (
-	cacheServer      cacheutil.CacheServer
-	amqpMetricServer *amqp10.AMQPServer
-	debugm           = func(format string, data ...interface{}) {} // Default no debugging output
-	debugs           = func(count int) {}                          // Default no debugging output
-	serverConfig     saconfig.MetricConfiguration
-	amqpHandler      *amqp10.AMQPHandler
-	myHandler        *cacheHandler
-	hostwaitgroup    sync.WaitGroup
+	cacheServer   cacheutil.CacheServer
+	debugm        = func(format string, data ...interface{}) {} // Default no debugging output
+	debugs        = func(count int) {}                          // Default no debugging output
+	serverConfig  saconfig.MetricConfiguration
+	amqpHandler   *amqp10.AMQPHandler
+	myHandler     *cacheHandler
+	hostwaitgroup sync.WaitGroup
 )
 
 /*************** HTTP HANDLER***********************/
 type cacheHandler struct {
 	cache    *cacheutil.IncomingDataCache
-	appstate *apihandler.MetricHandler
+	appstate *api.MetricHandler
 }
 
 // Describe implements prometheus.Collector.
@@ -125,7 +124,6 @@ func StartMetrics() {
 	flag.Usage = metricusage
 	fDebug := flag.Bool("debug", false, "Enable debug")
 	fServiceType := flag.String("servicetype", "metrics", "metric type")
-	fTestServer := flag.Bool("testclient", false, "Enable Test Receiver for use with AMQP test client")
 	fConfigLocation := flag.String("config", "", "Path to configuration file(optional).if provided ignores all command line options")
 	fIncludeStats := flag.Bool("cpustats", false, "Include cpu usage info in http requests (degrades performance)")
 	fExporterhost := flag.String("mhost", "localhost", "Metrics url for Prometheus to export. ")
@@ -134,11 +132,7 @@ func StartMetrics() {
 	fCount := flag.Int("count", -1, "Stop after receiving this many messages in total(-1 forever) (OPTIONAL)")
 	fPrefetch := flag.Int("prefetch", 0, "AMQP1.0 option: Enable prefetc and set capacity(0 is disabled,>0 enabled with capacity of >0) (OPTIONAL)")
 
-	fSampledata := flag.Bool("usesample", false, "Use sample data instead of amqp.This will not fetch any data from amqp (OPTIONAL)")
 	fUsetimestamp := flag.Bool("usetimestamp", true, "Use source time stamp instead of promethues.(default true,OPTIONAL)")
-	fHosts := flag.Int("h", 1, "No of hosts : Sample hosts required (default 1).")
-	fPlugins := flag.Int("p", 100, "No of plugins: Sample plugins per host(default 100).")
-	fIterations := flag.Int("t", 1, "No of times to run sample data (default 1) -1 for ever.")
 	fUniqueName := flag.String("uname", "metrics-"+strconv.Itoa(rand.Intn(100)), "Unique name across application")
 
 	flag.Parse()
@@ -156,18 +150,11 @@ func StartMetrics() {
 			Exporterhost:   *fExporterhost,
 			Exporterport:   *fExporterport,
 			DataCount:      *fCount, //-1 for ever which is default
-			UseSample:      *fSampledata,
 			UseTimeStamp:   *fUsetimestamp,
 			Debug:          *fDebug,
-			TestServer:     *fTestServer,
 			Prefetch:       *fPrefetch,
 			ServiceType:    *fServiceType,
-			Sample: saconfig.SampleDataConfig{
-				HostCount:   *fHosts,   //no of host to simulate
-				PluginCount: *fPlugins, //No of plugin count per hosts
-				DataCount:   *fIterations,
-			},
-			UniqueName: *fUniqueName,
+			UniqueName:     *fUniqueName,
 		}
 
 	}
@@ -175,8 +162,7 @@ func StartMetrics() {
 		debugm = func(format string, data ...interface{}) { log.Printf(format, data...) }
 	}
 
-	if serverConfig.TestServer == false &&
-		serverConfig.UseSample == false && (len(serverConfig.AMQP1MetricURL) == 0) {
+	if len(serverConfig.AMQP1MetricURL) == 0 {
 		log.Println("AMQP1 Metrics URL is required")
 		metricusage()
 		os.Exit(1)
@@ -199,7 +185,7 @@ func StartMetrics() {
 	//Cache sever to process and serve the exporter
 	cacheServer := cacheutil.NewCacheServer(cacheutil.MAXTTL, serverConfig.Debug)
 	applicationHealth := cacheutil.NewApplicationHealthCache()
-	appStateHandler := apihandler.NewAppStateMetricHandler(applicationHealth)
+	appStateHandler := api.NewAppStateMetricHandler(applicationHealth)
 	myHandler := &cacheHandler{cache: cacheServer.GetCache(), appstate: appStateHandler}
 	amqpHandler := amqp10.NewAMQPHandler("Metric Consumer")
 	prometheus.MustRegister(myHandler, amqpHandler)
@@ -238,68 +224,32 @@ func StartMetrics() {
 	time.Sleep(2 * time.Second)
 	log.Println("HTTP server is ready....")
 
-	//if running just samples
-	if serverConfig.UseSample {
-		log.Println("Using sample data")
-		if serverConfig.Sample.DataCount == -1 {
-			serverConfig.Sample.DataCount = 9999999
-		}
+	///Metric Listener
+	amqpMetricsurl := fmt.Sprintf("amqp://%s", serverConfig.AMQP1MetricURL)
+	log.Printf("Connecting to AMQP1 : %s\n", amqpMetricsurl)
+	amqpMetricServer := amqp10.NewAMQPServer(amqpMetricsurl, serverConfig.Debug, serverConfig.DataCount, serverConfig.Prefetch, amqpHandler, *fUniqueName)
+	log.Printf("Listening.....\n")
 
-		fmt.Printf("Test data  will run for %d times ", serverConfig.Sample.DataCount)
-		for times := 1; times <= serverConfig.Sample.DataCount; times++ {
-			hostwaitgroup.Add(serverConfig.Sample.HostCount)
-			for hosts := 0; hosts < serverConfig.Sample.HostCount; hosts++ {
-				go func(host_id int) {
-					defer hostwaitgroup.Done()
-					hostname := fmt.Sprintf("%s_%d", "redhat.boston.nfv", host_id)
-					incomingType := incoming.NewInComing(incoming.COLLECTD)
-					debugm("Hostname %s IncomingType %#v", hostname, incomingType)
-					go cacheServer.GenrateSampleData(hostname, serverConfig.Sample.PluginCount, incomingType)
-				}(hosts)
-
+msgloop:
+	for {
+		select {
+		case data := <-amqpMetricServer.GetNotifier():
+			amqpMetricServer.GetHandler().IncTotalMsgProcessed()
+			debugm("Debug: Getting incoming data from notifier channel : %#v\n", data)
+			incomingType := incoming.NewInComing(incoming.COLLECTD)
+			metrics, _ := incomingType.ParseInputJSON(data)
+			for _, m := range metrics {
+				amqpMetricServer.UpdateMinCollectInterval(m.GetInterval())
+				cacheServer.Put(m)
 			}
-			hostwaitgroup.Wait()
-			time.Sleep(time.Second * 1)
-		}
-
-	} else {
-		//aqp listener if sample is requested then amqp will not be used but random sample data will be used
-		var amqpMetricServer *amqp10.AMQPServer
-
-		// done channel is used during serverTest
-		done := make(chan bool)
-
-		///Metric Listener
-		amqpMetricsurl := fmt.Sprintf("amqp://%s", serverConfig.AMQP1MetricURL)
-		log.Printf("Connecting to AMQP1 : %s\n", amqpMetricsurl)
-		amqpMetricServer = amqp10.NewAMQPServer(amqpMetricsurl, serverConfig.Debug, serverConfig.DataCount, serverConfig.Prefetch, amqpHandler, done, *fTestServer, *fUniqueName)
-		log.Printf("Listening.....\n")
-
-		if serverConfig.TestServer == true {
-			debugs = getLoopStater(amqpMetricServer.GetNotifier(), 10000)
-		}
-
-	msgloop:
-		for {
-			select {
-			case data := <-amqpMetricServer.GetNotifier():
-				amqpMetricServer.GetHandler().IncTotalMsgProcessed()
-				debugm("Debug: Getting incoming data from notifier channel : %#v\n", data)
-				incomingType := incoming.NewInComing(incoming.COLLECTD)
-				metrics, _ := incomingType.ParseInputJSON(data)
-				for _, m := range metrics {
-					amqpMetricServer.UpdateMinCollectInterval(m.GetInterval())
-					cacheServer.Put(m)
-				}
-				debugs(len(metrics))
-				continue // priority channel
-			case status := <-amqpMetricServer.GetStatus():
-				applicationHealth.QpidRouterState = status
-			case <-done:
-				break msgloop
-			}
+			debugs(len(metrics))
+			continue // priority channel
+		case status := <-amqpMetricServer.GetStatus():
+			applicationHealth.QpidRouterState = status
+		case <-amqpMetricServer.GetDoneChan():
+			break msgloop
 		}
 	}
-	//TO DO: to close cache server on keyboard interrupt
+	//TODO: to close cache server on keyboard interrupt
 
 }

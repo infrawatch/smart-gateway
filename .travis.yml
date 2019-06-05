@@ -4,26 +4,26 @@ language: go
 go:
 - 1.9.7
 sudo: required
-dist: trusty
+dist: xenial
 services:
 - docker
 env:
   global:
-  - REGISTRY_USER="nfvperobot"
-  - secure: pv9Ti1pifBsF9Gv1RKqO6H0lR7/YtiHCWnQHIukVfAzKd3tDHK+xDW5AjnO9fmuy8XAxDwTvFuIYPboJwI1a24nGgDD+bU1OSBJzHvZydnQrUi0AI14w7kHnN6gSGrxlP98d6y69S6ZDTeAO88N6qudyfsjc7GUJ7GiXuqmCGv3cqfwccYO4ZSivVIGtQA0iEndrhurmBSStGD4lviFavshNqixC4EgJNE0p6r3wEnDlchEiH0a5g8My6GFgfKynNGgSgMVGDkAbBVgFFt9vcs58dF/zuhrt5H0yDL29e/EwGTijQ02/w+xeMZpLdg/WLBc4bdhEmKj8Ee/HLBFjY52QNZwomp0gaLIJXfG/F+uxOu41BZd7nDaOr9G7uIhIoZqQj0P/EHGq6fHvpYtGxQU9p9vguzDuBaEZddiekrE+X/5aMEf0oVGTEb6fAn7zs6BRwYx8AEuB2/I+dfbJMLnClDv67gVYYTRQdNtey/8hGEpRggVdd0vQw7FX6c8pRNhhBCZk2tRlDrzdkY2hftaJHALlOB7FVHaPjmUTf1MfzlEORlwt79XbtJeYL6VivgOOREk8ZhVJdqzSzbSNRkkzw7/K6x7SWEd0z+lRBcRxzsxG3uRxi7BNmI8jWIWYaRbaqw9TAxLKPSvNAG2lemDvlIt9Em0JWPIF/NoZi8Q=
+  - secure: "YKhYqVwsXmufXJVmFwxcnfsO1Mcdnjy6ryDrJx4hsGyPC8tqvmqI7/3rQqhXbaYGDZRlNawE6jZer5Tx8kbSg/Loya7pWXMIhs0aO1G76xkkYFY3bqB4EbPv2b/8euxcPqQ4fg6iz2Pn5n9wAZyezTGiGzLyhEhbvPDvxroBUWxviV1x9ad5sWe4FJl09Hz3/ln60hO9hXAKWWxMxw9WXLSL0p8bJavgggmgjvdUAQDpq41treKuUEp9VQ6mo0a0LbVovyce4XFbH0SR2zBQdRY0k3SW2qGwVE4CZLcYgxm0P45g0v6MZryhCZUW79YDXjBL97G/fcOoPGBR6DMdDniX5WFra2iOXyOFs/9OXcff/w6S78m9dCe91CfdKISrPkLBB58A2gxLgbUFU6VQFwi46inU89TZfdsF3WoRiE9CltsaQEL2y69PDA49hiXmI+kmkqpgsefkijbjXTQPbNq5UJ4sQMq7YhTQjdfIl7a7ppoplce/k0OTFF+L/auMr/R9sZl2m6KUTEGac1swdTJql+kN6uHnQ4qHwtkjStYqG8Icm25mZ50lGL0AVTHlzjx3pUMTutwQiov8wDwnK84g9cY3TUlp66j3TQASske8kRTXgf8UT0CKiIwmu/mtF475axtzuIJ4vJr9L//VMiNEhlVewPZLrbuf2ofFKOk="
+before_install:
+# run local elascticsearch
+- docker pull docker.elastic.co/elasticsearch/elasticsearch:6.0.1
+- docker run -p 9200:9200 --name elastic -p 9300:9300 -e "discovery.type=single-node" -d docker.elastic.co/elasticsearch/elasticsearch:6.0.1
+# run local qdr
+- docker pull quay.io/interconnectedcloud/qdrouterd:1.7.0
+- docker run -p 5672:5672 -d quay.io/interconnectedcloud/qdrouterd:1.7.0
+# run unit test
+- sleep 10
+- docker pull centos:7
+- docker run -eCOVERALLS_TOKEN -uroot --network host -it --volume $PWD:/go/src/github.com/redhat-service-assurance/smart-gateway:z --workdir /go/src/github.com/redhat-service-assurance/smart-gateway centos:7 /bin/sh -c 'sh ./run_tests.sh'
 install:
-- go get -u golang.org/x/lint/golint
 - go get -u github.com/golang/dep/...
+- $GOPATH/bin/dep ensure -v --vendor-only
 script:
-- "$GOPATH/bin/dep ensure -v --vendor-only"
-- go vet ./cmd/main.go
-- golint . | xargs -r false
-before_deploy:
-- docker login -u $REGISTRY_USER -p $REGISTRY_PASS
 - docker build --tag nfvpe/smart_gateway:latest .
 - docker images
-deploy:
-  provider: script
-  script: docker push nfvpe/smart_gateway:latest
-  on:
-    branch: master

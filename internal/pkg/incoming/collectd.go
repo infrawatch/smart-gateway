@@ -3,9 +3,7 @@ package incoming
 import (
 	"fmt"
 	"log"
-	"math/rand"
 	"strconv"
-	"time"
 
 	"collectd.org/cdtime"
 	"github.com/json-iterator/go"
@@ -13,9 +11,9 @@ import (
 
 // Collectd  ...
 type Collectd struct {
-	Values         []float64
-	Dstypes        []string
-	Dsnames        []string
+	Values         []float64   `json:"values"`
+	Dstypes        []string    `json:"dstypes"`
+	Dsnames        []string    `json:"dsnames"`
 	Time           cdtime.Time `json:"time"`
 	Interval       float64     `json:"interval"`
 	Host           string      `json:"host"`
@@ -24,12 +22,6 @@ type Collectd struct {
 	Type           string      `json:"type"`
 	TypeInstance   string      `json:"type_instance"`
 	new            bool
-}
-
-// createNewCollectd don't use .... use incoming.NewInComing
-// used at only GenerateSampleData()
-func createNewCollectd() *Collectd {
-	return new(Collectd)
 }
 
 // GetName implement interface
@@ -43,13 +35,13 @@ func (c Collectd) GetKey() string {
 }
 
 // ParseInputByte ....
+//TODO(mmagr): probably unify interface with ParseInputJSON
 func (c *Collectd) ParseInputByte(data []byte) error {
 	cparse := make([]Collectd, 1)
-	//var jsonBlob = []byte(collectdJson)
 	var json = jsoniter.ConfigCompatibleWithStandardLibrary
 	err := json.Unmarshal(data, &cparse)
 	if err != nil {
-		log.Printf("Error parsing InputByte:%v", err)
+		log.Printf("Error parsing InputByte: %s", err)
 		return err
 	}
 	c1 := cparse[0]
@@ -78,6 +70,7 @@ func (c *Collectd) DSName(index int) string {
 	if c.Dsnames != nil {
 		return c.Dsnames[index]
 	} else if len(c.Values) != 1 {
+		//TODO(mmagr): verify validity of above conditional later
 		return strconv.FormatInt(int64(index), 10)
 	}
 	return "value"
@@ -166,15 +159,6 @@ func (c Collectd) GetMetricName(index int) string {
 }
 
 //GetItemKey  ...
-/* func (c Collectd) GetItemKey() string {
-	name := c.Plugin + "_" + c.Type
-	if c.Plugin == c.Type {
-		name = c.Type
-	}
-	return name
-}
-*/
-//GetItemKey  ...
 func (c Collectd) GetItemKey() string {
 	name := c.Plugin + "_" + c.Type
 	if c.Plugin == c.Type {
@@ -187,21 +171,6 @@ func (c Collectd) GetItemKey() string {
 		name += "_" + c.TypeInstance
 	}
 	return name
-}
-
-//GenerateSampleData  ...
-func (c *Collectd) GenerateSampleData(hostname string, pluginname string) DataTypeInterface {
-	collectd := createNewCollectd()
-	collectd.Host = hostname
-	collectd.Plugin = pluginname
-	collectd.Type = pluginname
-	collectd.PluginInstance = pluginname
-	collectd.Dstypes = []string{"gauge", "gauge"}
-	collectd.Dsnames = []string{"value1", "value2"}
-	collectd.TypeInstance = "idle"
-	collectd.Values = []float64{rand.Float64(), rand.Float64()}
-	collectd.Time = cdtime.New(time.Now())
-	return collectd
 }
 
 //ParseInputJSON   ...
@@ -219,20 +188,4 @@ func (c *Collectd) ParseInputJSON(jsonString string) ([]DataTypeInterface, error
 		retDtype[index] = &rt
 	}
 	return retDtype, nil
-}
-
-//GenerateSampleJSON  ... for samples
-func (c Collectd) GenerateSampleJSON(hostname string, pluginname string) string {
-	return `[{
-      "values":  [0.0,0.0],
-      "dstypes":  ["gauge","gauge"],
-      "dsnames":    ["value11","value12"],
-      "time":      0.0,
-      "interval":          10.0,
-      "host":            "hostname",
-      "plugin":          "apluginname",
-      "plugin_instance": "0",
-      "type":            "pluginname",
-      "type_instance":   "idle"
-    }]`
 }

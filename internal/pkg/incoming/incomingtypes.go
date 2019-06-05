@@ -7,11 +7,8 @@ type DataTypeInterface interface {
 	ParseInputJSON(json string) ([]DataTypeInterface, error)
 	GetKey() string
 	GetItemKey() string
-	GenerateSampleData(key string, itemkey string) DataTypeInterface
-	GenerateSampleJSON(key string, itemkey string) string
 	ParseInputByte(data []byte) error
 	GetInterval() float64
-	//GenerateSamples(jsonstring string) *Interface
 	SetNew(new bool)
 	ISNew() bool
 	TSDB
@@ -45,16 +42,6 @@ func NewInComing(t DataType) DataTypeInterface {
 //newCollectd  -- avoid calling this . Use factory method in incoming package
 func newCollectd() *Collectd {
 	return new(Collectd)
-}
-
-//GenerateData  Generates sample data in source format
-func GenerateData(dataItem DataTypeInterface, key string, itemkey string) DataTypeInterface {
-	return dataItem.GenerateSampleData(key, itemkey)
-}
-
-//GenerateJSON  Generates sample data  in json format
-func GenerateJSON(dataItem DataTypeInterface, key string, itemkey string) string {
-	return dataItem.GenerateSampleJSON(key, itemkey)
 }
 
 //ParseByte  parse incoming data

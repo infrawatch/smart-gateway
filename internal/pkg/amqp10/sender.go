@@ -36,12 +36,7 @@ type AMQPSender struct {
 	urlStr      string
 	debug       bool
 	connections chan electron.Connection
-}
-
-//MockAMQPSender  Create Mock AMQP server
-func MockAMQPSender(notifier chan string) *AMQPServer {
-	server := &AMQPServer{}
-	return server
+	acks        chan electron.Outcome
 }
 
 //NewAMQPSender   ...
@@ -55,6 +50,7 @@ func NewAMQPSender(urlStr string, debug bool) *AMQPSender {
 		urlStr:      urlStr,
 		debug:       debug,
 		connections: make(chan electron.Connection, 1),
+		acks:        make(chan electron.Outcome),
 	}
 	// Spawn off the server's main loop immediately
 	// not exported
@@ -68,20 +64,20 @@ func NewAMQPSender(urlStr string, debug bool) *AMQPSender {
 //Close connections it is exported so users can force close
 func (as *AMQPSender) Close() {
 	c := <-as.connections
-	debugsf("Debug:close %s", c)
 	c.Close(nil)
+	debugsf("Debug: close sender connection %s", c)
+}
+
+// GetAckChannel returns electron.Outcome channel for receiving ACK when debug mode is turned on
+func (as *AMQPSender) GetAckChannel() chan electron.Outcome {
+	return as.acks
 }
 
 //Send  starts amqp server
 func (as *AMQPSender) Send(jsonmsg string) {
 	debugsf("Debug: AMQP send is invoked")
-	//sentChan := make(chan electron.Outcome) // Channel to receive acknowledgements.
 	go func(body string) {
-		//defer wait.Done()
-		// Wait for one goroutine per URL
 		container := electron.NewContainer(fmt.Sprintf("send[%v]", os.Getpid()))
-		//connections := make(chan electron.Connection, 1) // Connections to close on exit
-		//log.Printf("PArsing URL %s\n", as.urlStr)
 		url, err := amqp.ParseURL(as.urlStr)
 		fatalsIf(err)
 		c, err := container.Dial("tcp", url.Host) // NOTE: Dial takes just the Host part of the URL
@@ -90,32 +86,20 @@ func (as *AMQPSender) Send(jsonmsg string) {
 		addr := strings.TrimPrefix(url.Path, "/")
 		s, err := c.Sender(electron.Target(addr))
 		fatalsIf(err)
+
 		m := amqp.NewMessage()
-		//body := fmt.Sprintf("%v%v", addr, jsonmsg)
+		m.SetContentType("application/json")
 		m.Marshal(body)
+
 		debugsf("Debug:Sending alerts on a bus URL %s\n", body)
-		// Note: can block if there is no space to buffer the message.
-		s.SendForget(m)
-		as.Close()
-		//s.SendAsync(m, sentChan, body) // Outcome will be sent to sentChan
-	}(jsonmsg)
-	//outside go routin reciveve and processurlStr
-	//var firstmsg=0
-	/*for {
-		out := <-sentChan // Outcome of async sends.
-		if out.Error != nil {
-			log.Fatalf("acknowledgement[%v] %v error: %v", jsonmsg, out.Value, out.Error)
-		} else if out.Status != electron.Accepted {
-			log.Fatalf("acknowledgement[%v] unexpected status: %v", jsonmsg, out.Status)
+
+		if as.debug {
+			s.SendAsync(m, as.acks, "smart-gateway-ack")
 		} else {
-			debugsf("acknowledgement[%v]  %v (%v)\n", jsonmsg, out.Value, out.Status)
+			s.SendForget(m)
 		}
-	}*/
-	debugsf("Debug:Closing connections")
-	//wait.Wait()
-
-	//wait.Wait() // Wait for all goroutines to finish.
-
+		as.Close()
+	}(jsonmsg)
 }
 
 func fatalsIf(err error) {
