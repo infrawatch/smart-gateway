@@ -27,5 +27,4 @@ golint . | xargs -r false
 # works correctly only with Go-1.11+ due to: https://github.com/golang/go/issues/25093
 echo "mode: set" > coverage.out
 for pkg in $(go list ./internal/pkg/...); do go test -cover -coverpkg $pkg -coverprofile coverfragment.out ./tests/internal_pkg/* && grep -h -v "mode: set" coverfragment.out >> coverage.out; done
-#TODO(mmagr): Uncomment submission by straight push to master as secured env is not correctly unecrytpted in PR
-#$GOPATH/bin/goveralls -coverprofile=coverage.out -service=travis-ci -repotoken $COVERALLS_TOKEN
+$GOPATH/bin/goveralls -coverprofile=coverage.out -service=travis-ci -repotoken $COVERALLS_TOKEN || exit 0
