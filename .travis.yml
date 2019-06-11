@@ -19,8 +19,8 @@ before_install:
 - docker run -p 5672:5672 -d quay.io/interconnectedcloud/qdrouterd:1.7.0
 # run unit test
 - sleep 10
-- docker pull centos:7
-- docker run -eCOVERALLS_TOKEN -uroot --network host -it --volume $PWD:/go/src/github.com/redhat-service-assurance/smart-gateway:z --workdir /go/src/github.com/redhat-service-assurance/smart-gateway centos:7 /bin/sh -c 'sh ./run_tests.sh'
+- docker pull registry.access.redhat.com/ubi7/ubi
+- docker run -eCOVERALLS_TOKEN -uroot --network host -it --volume $PWD:/go/src/github.com/redhat-service-assurance/smart-gateway:z --workdir /go/src/github.com/redhat-service-assurance/smart-gateway registry.access.redhat.com/ubi7/ubi /bin/sh -c 'sh ./run_tests.sh'
 install:
 - go get -u github.com/golang/dep/...
 - $GOPATH/bin/dep ensure -v --vendor-only
