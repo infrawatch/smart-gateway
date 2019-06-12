@@ -9,9 +9,15 @@ export PATH=$PATH:$GOPATH/bin
 # get dependencies
 #yum install -y epel-release
 
-yum install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm -y
-yum install https://www.mercurial-scm.org/release/centos7/RPMS/x86_64/mercurial-3.4-0.x86_64.rpm -y 
-yum install http://opensource.wandisco.com/centos/7/svn-1.11/RPMS/x86_64/libserf-1.3.9-1.el7.x86_64.rpm yum install http://opensource.wandisco.com/centos/7/svn-1.11/RPMS/x86_64/subversion-1.11.0-1.x86_64.rpm -y
+#yum install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm -y
+#yum install https://www.mercurial-scm.org/release/centos7/RPMS/x86_64/mercurial-3.4-0.x86_64.rpm -y 
+#yum install http://opensource.wandisco.com/centos/7/svn-1.11/RPMS/x86_64/libserf-1.3.9-1.el7.x86_64.rpm
+#yum install http://opensource.wandisco.com/centos/7/svn-1.11/RPMS/x86_64/subversion-1.11.0-1.x86_64.rpm -y
+
+yum --nogpgcheck localinstall ./repo/epel-release-latest-7.noarch.rpm -y
+yum --nogpgcheck localinstall ./repo/libserf-1.3.9-1.el7.x86_64.rpm -y
+yum --nogpgcheck localinstall ./repo/mercurial-3.4-0.x86_64.rpm -y
+yum --nogpgcheck localinstall ./repo/subversion-1.11.0-1.x86_64.rpm -y
 
 yum install -y golang qpid-proton-c-devel iproute
 go get -u golang.org/x/tools/cmd/cover
