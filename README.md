@@ -17,7 +17,7 @@ cd $GOPATH/src/github.com/redhat-service-assurance/smart-gateway
 dep ensure -v -vendor-only
 ```
 
-# Building
+# Building with Golang
 
 Build the `smart_gateway` with Golang using the following command.
 
@@ -25,3 +25,11 @@ Build the `smart_gateway` with Golang using the following command.
 cd $GOPATH/src/github.com/redhat-service-assurance/smart-gateway
 go build -o smart_gateway cmd/main.go
 ```
+
+# Building with Docker
+
+Building the `smart-gateway` with docker using the following commands.
+```
+git clone --depth=1 --branch=master https://github.com/redhat-service-assurance/smart-gateway.git smart-gateway; rm -rf ./smart-gateway/.git
+cd smart-gateway
+sudo docker build -t smart-gateway .
