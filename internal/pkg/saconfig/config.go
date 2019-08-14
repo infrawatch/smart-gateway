@@ -21,6 +21,10 @@ type EventConfiguration struct {
 	UniqueName          string         `json:"UniqueName"`
 	ServiceType         string         `json:"ServiceType"`
 	IgnoreString        string         `json:"-"` //TODO(mmagr): ?
+	UseTls              bool           `json:"UseTls"`
+	TlsClientCert       string         `json:"TlsClientCert"`
+	TlsClientKey        string         `json:"TlsClientKey"`
+	TlsCaCert           string         `json:"TlsCaCert"`
 }
 
 //EventAPIConfig ...

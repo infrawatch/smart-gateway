@@ -2,10 +2,15 @@ package saelastic
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
+	"io/ioutil"
 	"log"
+	"net/http"
 	"time"
 
 	"github.com/olivere/elastic"
+	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/saconfig"
 	"github.com/satori/go.uuid"
 )
 
@@ -53,21 +58,57 @@ func (ec *ElasticClient) InitAllMappings() {
 	*/
 }
 
+// createHttpsClient creates http.Client for elastic.Client with enabled
+// cert-based authentication
+func createTlsClient(certFile string, keyFile string, caFile string) (*http.Client, error) {
+	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
+	if err != nil {
+		log.Fatal(err)
+		return &http.Client{}, err
+	}
+
+	ca, err := ioutil.ReadFile(caFile)
+	if err != nil {
+		log.Fatal(err)
+		return &http.Client{}, err
+	}
+	certPool := x509.NewCertPool()
+	certPool.AppendCertsFromPEM(ca)
+
+	tlsConfig := &tls.Config{
+		Certificates: []tls.Certificate{cert},
+		RootCAs:      certPool,
+	}
+	tlsConfig.BuildNameToCertificate()
+	return &http.Client{
+		Transport: &http.Transport{TLSClientConfig: tlsConfig},
+	}, nil
+}
+
 //CreateClient   ....
-func CreateClient(elastichost string, resetIndex bool, debug bool) (*ElasticClient, error) {
-	//c, _ = client.New(client.WithHosts([]string{"https://elasticsearch:9200"}))
-	if debug {
+func CreateClient(config saconfig.EventConfiguration) (*ElasticClient, error) {
+	if config.Debug {
 		debuges = func(format string, data ...interface{}) { log.Printf(format, data...) }
 	}
+
 	var elasticClient *ElasticClient
-	//var eClient *elastic.Client
-	eclient, err := elastic.NewClient(elastic.SetHealthcheckInterval(5*time.Second), elastic.SetURL(elastichost))
+	elasticOpts := []elastic.ClientOptionFunc{elastic.SetHealthcheckInterval(5 * time.Second), elastic.SetURL(config.ElasticHostURL)}
+	// add transport with TLS enabled in case it is required
+	if config.UseTls {
+		tlsClient, err := createTlsClient(config.TlsClientCert, config.TlsClientKey, config.TlsCaCert)
+		if err != nil {
+			return elasticClient, nil
+		}
+		elasticOpts = append(elasticOpts, elastic.SetHttpClient(tlsClient))
+	}
+
+	eclient, err := elastic.NewClient(elasticOpts...)
 	if err != nil {
 		log.Fatal(err)
 		return elasticClient, err
 	}
 	elasticClient = &ElasticClient{client: eclient, ctx: context.Background()}
-	if resetIndex {
+	if config.ResetIndex {
 		elasticClient.InitAllMappings()
 	}
 	debuges("Debug:ElasticSearch client created.")
