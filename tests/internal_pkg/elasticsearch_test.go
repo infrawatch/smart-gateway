@@ -5,6 +5,7 @@ import (
 	"log"
 	"testing"
 
+	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/saconfig"
 	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/saelastic"
 	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/saelastic/saemapping"
 )
@@ -24,7 +25,16 @@ const (
 )
 
 func TestMain(t *testing.T) {
-	client, err := saelastic.CreateClient(elastichost, false, false)
+	config := saconfig.EventConfiguration{
+		Debug:          false,
+		ElasticHostURL: elastichost,
+		UseTls:         false,
+		TlsClientCert:  "",
+		TlsClientKey:   "",
+		TlsCaCert:      "",
+	}
+
+	client, err := saelastic.CreateClient(config)
 	if err != nil {
 		t.Fatalf("Failed to connect to elastic search: %s", err)
 	} else {
