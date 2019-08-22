@@ -156,7 +156,10 @@ func StartEvents() {
 	log.Printf("Listening.....\n")
 
 	log.Printf("Connecting to ElasticSearch : %s\n", serverConfig.ElasticHostURL)
-	elasticClient, _ = saelastic.CreateClient(serverConfig.ElasticHostURL, serverConfig.ResetIndex, serverConfig.Debug)
+	elasticClient, err := saelastic.CreateClient(serverConfig)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 	applicationHealth.ElasticSearchState = 1
 
 	/**** HTTP Listener for alerts from alert manager *******************************
