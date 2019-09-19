@@ -3,6 +3,7 @@ package saelastic
 import (
 	"encoding/json"
 	"log"
+	"regexp"
 	"strings"
 )
 
@@ -11,6 +12,39 @@ type EventNotification struct {
 	Labels      func() interface{}
 	Annotations func() interface{}
 	StartsAt    string
+}
+
+//SanitizeSummary ... summay is description and it adds double quote which breaks the json
+func SanitizeSummary(text string) string {
+	//look for summary and get the slice index
+	reg := regexp.MustCompile(`summary":"`)
+	indexes := reg.FindAllStringIndex(text, 1)
+	if len(indexes) > 0 {
+		//get slick index with first occurrence of comma with doublequote
+		summaryreg := regexp.MustCompile("\",")
+		summaryIndex := summaryreg.FindAllStringIndex(text[indexes[0][1]:len(text)], 1)
+		// sanitize  everything within the summary
+		summaryReplace := strings.NewReplacer("\"", "", "\\", "")
+		// if summary has empty value then ignore example summary:"" else process
+		if text[indexes[0][1]:indexes[0][1]+summaryIndex[0][0]] != "" {
+			//sanitize result from end of summary key slice to value slice
+			sanresult := summaryReplace.Replace(text[indexes[0][1] : indexes[0][1]+summaryIndex[0][0]])
+			//make a new slice and allocate memory to the length of the text( this needs to re calculated ,else end up with extra spaces , )
+			result := make([]string, len(text)+1)
+			//get the first part
+			result[0] = text[0:indexes[0][1]]
+			// add the satized part
+			result[1] = sanresult
+			// suffice the remaining part
+			result[2] = text[indexes[0][1]+summaryIndex[0][0]:]
+			//convert as string
+			return strings.Join(result, "")
+		}
+
+	}
+
+	return text
+
 }
 
 //Sanitize ... Issue with json format in events.
@@ -22,6 +56,8 @@ func Sanitize(jsondata string) string {
 		"]", "")
 	result := r.Replace(jsondata)
 	result1 := strings.Replace(result, "\\\"", "\"", -1)
+	result1 = SanitizeSummary(result1)
+
 	return result1
 
 }
