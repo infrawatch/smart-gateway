@@ -17,14 +17,18 @@ sh $GOPATH/src/github.com/golang/dep/install.sh
 
 # run test suite
 dep ensure -v --vendor-only
-go test -v -timeout=10s ./tests/*
+go test -v -timeout=10s ./tests/* || exit 1
 
 # run lints
-go vet ./cmd/main.go
-golint . | xargs -r false
+go vet ./cmd/main.go || exit 1
+golint . | xargs -r false || exit 1
 
 # analyze test coverage
 # works correctly only with Go-1.11+ due to: https://github.com/golang/go/issues/25093
 echo "mode: set" > coverage.out
-for pkg in $(go list ./internal/pkg/...); do go test -cover -coverpkg $pkg -coverprofile coverfragment.out ./tests/internal_pkg/* && grep -h -v "mode: set" coverfragment.out >> coverage.out; done
-$GOPATH/bin/goveralls -coverprofile=coverage.out -service=travis-ci -repotoken $COVERALLS_TOKEN || exit 0
+for pkg in $(go list ./internal/pkg/...)
+do
+    go test -cover -coverpkg "$pkg" -coverprofile coverfragment.out ./tests/internal_pkg/* && grep -h -v "mode: set" coverfragment.out >> coverage.out
+done
+
+$GOPATH/bin/goveralls -coverprofile=coverage.out -service=travis-ci -repotoken "$COVERALLS_TOKEN" || exit 0
