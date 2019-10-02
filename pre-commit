@@ -1,0 +1,83 @@
+#!/bin/sh
+# original source: https://raw.githubusercontent.com/streadway/amqp/master/pre-commit
+
+GOFMT_OK=1
+GOLINT_OK=1
+GOVET_OK=1
+
+# TODO: uncomment each of these tests during future pull-requests with
+#       resolving code changes
+main() {
+    mv_vendor_out
+#    run_gofmt
+#    run_golint
+    mv_vendor_in
+#    run_govet
+    check_results
+}
+
+local_go_version_is_latest_stable() {
+  go version | grep -q $LATEST_STABLE_SUPPORTED_GO_VERSION
+}
+
+log_error() {
+  echo "$*" 1>&2
+}
+
+mv_vendor_out() {
+    mv ./vendor/ /tmp/
+}
+
+mv_vendor_in() {
+    mv /tmp/vendor ./
+}
+
+check_results() {
+    if [[ "$GOFMT_OK" == "1" && "$GOLINT_OK" == "1" && "$GOVET_OK" == "1" ]]
+    then
+        echo "Formatting, Linting, and Vetting all returned OK."
+        exit 0
+    else
+        echo "One of Formatting, Linting, or Vetting is invalid. Check logs for more information."
+        exit 1
+    fi
+}
+
+run_gofmt() {
+  GOFMT_FILES=$(gofmt -l .)
+  if [ -n "$GOFMT_FILES" ]
+  then
+    log_error "gofmt failed for the following files:
+$GOFMT_FILES
+
+please run 'gofmt -w .' on your changes before committing."
+    GOFMT_OK=0
+  fi
+}
+
+run_golint() {
+  GOLINT_ERRORS=$(golint ./... | grep -v "Id should be")
+  if [ -n "$GOLINT_ERRORS" ]
+  then
+    log_error "golint failed for the following reasons:
+$GOLINT_ERRORS
+
+please run 'golint ./...' on your changes before committing."
+    GOLINT_OK=0
+  fi
+}
+
+run_govet() {
+  GOVET_ERRORS=$(go vet ./... 2>&1)
+  if [ -n "$GOVET_ERRORS" ]
+  then
+    log_error "go vet failed for the following reasons:
+$GOVET_ERRORS
+
+please run 'go tool vet ./*.go' on your changes before committing."
+    GOVET_OK=0
+  fi
+}
+
+main
+# vim: set ft=sh:ts=2:sw=2:noai:

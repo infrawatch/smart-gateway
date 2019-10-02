@@ -1,4 +1,5 @@
 vendor/*
 events_consumer
 metrics_consumer
-
+coverage.out
+coverfragment.out
