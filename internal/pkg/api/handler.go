@@ -41,11 +41,13 @@ type (
 		StartsAt    string            `json:"startsAt,omitempty"`
 		EndsAt      string            `json:"EndsAt,omitempty"`
 	}
+
 	//Context ...
 	Context struct {
 		Config      *saconfig.EventConfiguration
 		AMQP1Sender *amqp10.AMQPSender
 	}
+
 	//Handler ...
 	Handler struct {
 		*Context

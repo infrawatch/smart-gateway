@@ -158,7 +158,8 @@ func TestStructuredData(t *testing.T) {
 		}
 		defer os.Remove(confPath)
 		cfg := saconfig.LoadEventConfig(confPath)
-		apiStruct := saconfig.EventAPIConfig{"http://127.0.0.1:8082", "127.0.0.1:5672/collectd/alert"}
+
+		apiStruct := saconfig.EventAPIConfig{APIEndpointURL: "http://127.0.0.1:8082", AMQP1PublishURL: "127.0.0.1:5672/collectd/alert"}
 		assert.Equal(t, apiStruct, cfg.API)
 	})
 }

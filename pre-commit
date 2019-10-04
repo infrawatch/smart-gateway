@@ -12,7 +12,7 @@ main() {
     run_gofmt
     run_golint
     mv_vendor_in
-#    run_govet
+    run_govet
     check_results
 }
 
