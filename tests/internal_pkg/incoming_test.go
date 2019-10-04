@@ -45,7 +45,7 @@ func GetFieldStr(dataItem incoming.DataTypeInterface, field string) string {
 /*----------------------------------------------------------------------------*/
 
 func TestCollectdIncoming(t *testing.T) {
-	empty_sample := incoming.NewInComing(incoming.COLLECTD)
+	emptySample := incoming.NewInComing(incoming.COLLECTD)
 	sample := GenerateSampleCollectdData("hostname", "pluginname")
 	jsonBytes, err := json.Marshal([]*incoming.Collectd{sample})
 	if err != nil {
@@ -54,17 +54,17 @@ func TestCollectdIncoming(t *testing.T) {
 	jsonString := string(jsonBytes)
 
 	t.Run("Test initialization of empty incoming.Collectd sample", func(t *testing.T) {
-		assert.Emptyf(t, GetFieldStr(empty_sample, "Plugin"), "Collectd data is not empty.")
+		assert.Emptyf(t, GetFieldStr(emptySample, "Plugin"), "Collectd data is not empty.")
 		// test DSName behaviour
-		if empty_collectd, ok := empty_sample.(*incoming.Collectd); ok {
-			assert.Equal(t, "666", empty_collectd.DSName(666))
-			empty_collectd.Values = []float64{1}
-			assert.Equal(t, "value", empty_collectd.DSName(666))
+		if emptyCollectd, ok := emptySample.(*incoming.Collectd); ok {
+			assert.Equal(t, "666", emptyCollectd.DSName(666))
+			emptyCollectd.Values = []float64{1}
+			assert.Equal(t, "value", emptyCollectd.DSName(666))
 		} else {
 			t.Errorf("Failed to convert empty incoming.DataTypeInterface to empty incoming.Collectd")
 		}
 		// test loading values from []byte and string
-		_, errr := empty_sample.ParseInputJSON("Error Json")
+		_, errr := emptySample.ParseInputJSON("Error Json")
 		assert.Error(t, errr, "Expected error got nil")
 		data := []IncommingCollecdDataMatrix{
 			IncommingCollecdDataMatrix{"Host", GetFieldStr(sample, "Host")},
@@ -77,7 +77,7 @@ func TestCollectdIncoming(t *testing.T) {
 			IncommingCollecdDataMatrix{"Values", GetFieldStr(sample, "Values")},
 			IncommingCollecdDataMatrix{"Time", GetFieldStr(sample, "Time")},
 		}
-		sample2, errr := empty_sample.ParseInputJSON(jsonString)
+		sample2, errr := emptySample.ParseInputJSON(jsonString)
 		if errr == nil {
 			for _, testCase := range data {
 				assert.Equal(t, testCase.Expected, GetFieldStr(sample2[0], testCase.Field))
@@ -85,7 +85,7 @@ func TestCollectdIncoming(t *testing.T) {
 		} else {
 			t.Errorf("Failed to initialize using ParseInputJSON: %s", err)
 		}
-		errr = empty_sample.ParseInputByte([]byte("error string"))
+		errr = emptySample.ParseInputByte([]byte("error string"))
 		assert.Error(t, errr, "Expected error got nil")
 		esample := incoming.NewInComing(incoming.COLLECTD)
 		errs := esample.ParseInputByte(jsonBytes)

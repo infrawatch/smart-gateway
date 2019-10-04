@@ -22,12 +22,13 @@ echo " *** Running pre-commit code validation"
 # run unit tests
 echo " *** Running test suite"
 # TODO: re-enable the test suite once supporting changes result in tests to pass
-#go test -v ./...
+go test -v ./...
 
 # check test coverage
 echo " *** Running code coverage tooling"
 
-# TODO: remove this set +e once all our tests are passing without issue
+# TODO: disable exiting on non-zero return because not all internal/pkg/*
+#       contents have a corresponding Testing package
 set +e
 
 echo "mode: set" > coverage.out

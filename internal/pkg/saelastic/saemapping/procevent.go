@@ -215,6 +215,7 @@ const ProceventMapping = `
 }
 }`
 
+//ProcEvent ...
 type ProcEvent []struct {
 	Labels struct {
 		Alertname string `json:"alertname"`

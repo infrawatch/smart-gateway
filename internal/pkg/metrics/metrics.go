@@ -87,35 +87,11 @@ func metricusage() {
 	For running with AMQP and Prometheus use following option
 	********************* Production *********************
 	$go run cmd/main.go -servicetype metrics -mhost=localhost -mport=8081 -amqp1MetricURL=10.19.110.5:5672/collectd/telemetry
-	**************************************************************
+	**************************************************************`)
 
-	For running Sample data wihout AMQP use following option
-	********************* Sample Data *********************
-	$go run cmd/main.go -servicetype metrics -mhost=localhost -mport=8081 -usesample=true -h=10 -p=100 -t=-1 -debug
-	*************************************************************`)
 	fmt.Fprintln(os.Stderr, `Required commandline argument missing`)
 	fmt.Fprintln(os.Stdout, doc)
 	flag.PrintDefaults()
-}
-
-func getLoopStater(q chan string, everyCount int) func(count int) {
-	lastCounted := time.Now()
-	showCount := everyCount
-	var lenSum float64
-	var countSent int64
-
-	return func(count int) {
-		countSent = countSent + int64(count)
-		lenSum = lenSum + float64(len(q))
-		if showCount != -1 && countSent%int64(showCount+1) == 0 {
-			lastCounted = time.Now()
-		}
-		if showCount != -1 && countSent%int64(showCount) == 0 {
-			deltaTime := time.Now().Sub(lastCounted)
-			msPerMetric := float64(deltaTime/time.Microsecond) / float64(showCount)
-			log.Printf("Rcv: %d Rcv'd (%v %.4v us), queue depth %v\n", countSent, deltaTime, msPerMetric, lenSum/float64(countSent))
-		}
-	}
 }
 
 //StartMetrics ... entry point to metrics

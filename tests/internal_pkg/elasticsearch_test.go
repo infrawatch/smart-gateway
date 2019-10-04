@@ -98,10 +98,10 @@ func TestMain(t *testing.T) {
 	config := saconfig.EventConfiguration{
 		Debug:          false,
 		ElasticHostURL: elastichost,
-		UseTls:         false,
-		TlsClientCert:  "",
-		TlsClientKey:   "",
-		TlsCaCert:      "",
+		UseTLS:         false,
+		TLSClientCert:  "",
+		TLSClientKey:   "",
+		TLSCaCert:      "",
 	}
 
 	client, err := saelastic.CreateClient(config)
@@ -215,11 +215,11 @@ func TestTls(t *testing.T) {
 		config := saconfig.EventConfiguration{
 			Debug:          false,
 			ElasticHostURL: elastichost,
-			UseTls:         true,
-			TlsClientCert:  clientCert,
-			TlsClientKey:   clientKey,
-			TlsCaCert:      caCert,
-			TlsServerName:  "",
+			UseTLS:         true,
+			TLSClientCert:  clientCert,
+			TLSClientKey:   clientKey,
+			TLSCaCert:      caCert,
+			TLSServerName:  "",
 		}
 
 		_, err = saelastic.CreateClient(config)
@@ -232,10 +232,10 @@ func TestTls(t *testing.T) {
 		config := saconfig.EventConfiguration{
 			Debug:          false,
 			ElasticHostURL: elastichost,
-			UseTls:         true,
-			TlsClientCert:  clientCert,
-			TlsClientKey:   clientKey,
-			TlsCaCert:      caCert,
+			UseTLS:         true,
+			TLSClientCert:  clientCert,
+			TLSClientKey:   clientKey,
+			TLSCaCert:      caCert,
 		}
 
 		_, err = saelastic.CreateClient(config)
