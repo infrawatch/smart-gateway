@@ -58,8 +58,8 @@ func (ec *ElasticClient) InitAllMappings() {
 	*/
 }
 
-// createHttpsClient creates http.Client for elastic.Client with enabled
-// cert-based authentication
+//createTLSClient creates http.Client for elastic.Client with enabled
+//cert-based authentication
 func createTLSClient(serverName string, certFile string, keyFile string, caFile string) (*http.Client, error) {
 	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
 	if err != nil {
