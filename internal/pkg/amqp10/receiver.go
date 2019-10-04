@@ -195,6 +195,7 @@ func (s *AMQPServer) GetStatus() chan int {
 	return s.status
 }
 
+//GetDoneChan ...
 func (s *AMQPServer) GetDoneChan() chan bool {
 	return s.done
 }

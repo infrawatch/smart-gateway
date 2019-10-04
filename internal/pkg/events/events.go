@@ -173,7 +173,7 @@ func StartEvents() {
 		prometheus.Unregister(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}))
 		prometheus.Unregister(prometheus.NewGoCollector())
 
-		context := api.NewAPIContext(serverConfig)
+		context := api.NewContext(serverConfig)
 		http.Handle("/alert", api.Handler{context, api.AlertHandler}) //creates writer everytime api is called.
 		http.Handle("/metrics", prometheus.Handler())
 		http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {

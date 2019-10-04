@@ -185,7 +185,7 @@ const ConnectivityMapping = `
 }
 `
 
-// generated using https://mholt.github.io/json-to-go
+//Connectivity ... generated using https://mholt.github.io/json-to-go
 type Connectivity []struct {
 	Labels struct {
 		Alertname    string `json:"alertname"`

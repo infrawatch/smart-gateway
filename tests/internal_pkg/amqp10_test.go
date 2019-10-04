@@ -8,22 +8,22 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const QDR_URL = "amqp://127.0.0.1:5672/collectd/telemetry"
-const QDR_MSG = "{\"message\": \"smart gateway test\"}"
+const QDRURL = "amqp://127.0.0.1:5672/collectd/telemetry"
+const QDRMsg = "{\"message\": \"smart gateway test\"}"
 
 func TestSendAndReceiveMessage(t *testing.T) {
-	sender := amqp10.NewAMQPSender(QDR_URL, true)
-	receiver := amqp10.NewAMQPServer(QDR_URL, true, 1, 0, nil, "metrics-test")
+	sender := amqp10.NewAMQPSender(QDRURL, true)
+	receiver := amqp10.NewAMQPServer(QDRURL, true, 1, 0, nil, "metrics-test")
 	ackChan := sender.GetAckChannel()
 	t.Run("Test receive", func(t *testing.T) {
 		t.Parallel()
 		data := <-receiver.GetNotifier()
-		assert.Equal(t, QDR_MSG, data)
+		assert.Equal(t, QDRMsg, data)
 		fmt.Printf("Finished send")
 	})
 	t.Run("Test send and ACK", func(t *testing.T) {
 		t.Parallel()
-		sender.Send(QDR_MSG)
+		sender.Send(QDRMsg)
 		// otherwise receiver blocks
 		assert.Equal(t, 1, <-receiver.GetStatus())
 		assert.Equal(t, true, <-receiver.GetDoneChan())

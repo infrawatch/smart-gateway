@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	EVENTS_CONFIG = `
+	EventsConfig = `
 {
 	"AMQP1EventURL": "127.0.0.1:5672/collectd/notify",
 	"ElasticHostURL": "http://127.0.0.1:9200",
@@ -26,7 +26,7 @@ const (
 
 }
 `
-	METRICS_CONFIG = `
+	MetricsConfig = `
 {
 	"AMQP1MetricURL": "127.0.0.1:5672/collectd/telemetry",
 	"Exporterhost": "localhost",
@@ -82,7 +82,7 @@ func TestUnstructuredData(t *testing.T) {
 	testRuns := []ConfigDataTestRun{
 		ConfigDataTestRun{
 			Name:    "Test events config",
-			Content: EVENTS_CONFIG,
+			Content: EventsConfig,
 			Loader:  "LoadEventConfig",
 			Matrix: []ConfigDataMatrix{
 				ConfigDataMatrix{"AMQP1EventURL", "127.0.0.1:5672/collectd/notify"},
@@ -95,7 +95,7 @@ func TestUnstructuredData(t *testing.T) {
 		},
 		ConfigDataTestRun{
 			Name:    "Test metrics config",
-			Content: METRICS_CONFIG,
+			Content: MetricsConfig,
 			Loader:  "LoadMetricConfig",
 			Matrix: []ConfigDataMatrix{
 				ConfigDataMatrix{"AMQP1MetricURL", "127.0.0.1:5672/collectd/telemetry"},
@@ -152,7 +152,7 @@ func TestUnstructuredData(t *testing.T) {
 
 func TestStructuredData(t *testing.T) {
 	t.Run("Test structured data of event config", func(t *testing.T) {
-		confPath, err := GenerateTestConfig(EVENTS_CONFIG)
+		confPath, err := GenerateTestConfig(EventsConfig)
 		if err != nil {
 			t.Fatal(err)
 		}

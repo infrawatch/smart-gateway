@@ -9,15 +9,11 @@ GOVET_OK=1
 #       resolving code changes
 main() {
     mv_vendor_out
-#    run_gofmt
-#    run_golint
+    run_gofmt
+    run_golint
     mv_vendor_in
 #    run_govet
     check_results
-}
-
-local_go_version_is_latest_stable() {
-  go version | grep -q $LATEST_STABLE_SUPPORTED_GO_VERSION
 }
 
 log_error() {

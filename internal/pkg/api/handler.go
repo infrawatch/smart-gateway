@@ -41,23 +41,23 @@ type (
 		StartsAt    string            `json:"startsAt,omitempty"`
 		EndsAt      string            `json:"EndsAt,omitempty"`
 	}
-	//APIContext ...
-	APIContext struct {
+	//Context ...
+	Context struct {
 		Config      *saconfig.EventConfiguration
 		AMQP1Sender *amqp10.AMQPSender
 	}
 	//Handler ...
 	Handler struct {
-		*APIContext
-		H func(c *APIContext, w http.ResponseWriter, r *http.Request) (int, error)
+		*Context
+		H func(c *Context, w http.ResponseWriter, r *http.Request) (int, error)
 	}
 )
 
-//NewAPIContext ...
-func NewAPIContext(serverConfig saconfig.EventConfiguration) *APIContext {
+//NewContext ...
+func NewContext(serverConfig saconfig.EventConfiguration) *Context {
 	amqpPublishurl := fmt.Sprintf("amqp://%s", serverConfig.API.AMQP1PublishURL)
 	amqpSender := amqp10.NewAMQPSender(amqpPublishurl, false)
-	context := &APIContext{Config: &serverConfig, AMQP1Sender: amqpSender}
+	context := &Context{Config: &serverConfig, AMQP1Sender: amqpSender}
 	if serverConfig.Debug {
 		debugh = func(format string, data ...interface{}) { log.Printf(format, data...) }
 	}
@@ -71,7 +71,7 @@ func healthzHandler(w http.ResponseWriter, r *http.Request) {
 //ServeHTTP...
 func (ah Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Updated to pass ah.appContext as a parameter to our handler type.
-	status, err := ah.H(ah.APIContext, w, r)
+	status, err := ah.H(ah.Context, w, r)
 	if err != nil {
 		debugh("Debug:HTTP %d: %q", status, err)
 		switch status {
@@ -88,7 +88,7 @@ func (ah Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 //AlertHandler  ...
-func AlertHandler(a *APIContext, w http.ResponseWriter, r *http.Request) (int, error) {
+func AlertHandler(a *Context, w http.ResponseWriter, r *http.Request) (int, error) {
 	var body HookMessage
 	decoder := json.NewDecoder(r.Body)
 	defer r.Body.Close()
