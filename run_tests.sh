@@ -27,6 +27,10 @@ go test -v ./...
 # check test coverage
 echo " *** Running code coverage tooling"
 
+# TODO: disable exiting on non-zero return because not all internal/pkg/*
+#       contents have a corresponding Testing package
+set +e
+
 echo "mode: set" > coverage.out
 for pkg in $(go list ./internal/pkg/...)
 do
