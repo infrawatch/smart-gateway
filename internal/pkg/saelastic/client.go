@@ -11,7 +11,7 @@ import (
 
 	"github.com/olivere/elastic"
 	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/saconfig"
-	"github.com/satori/go.uuid"
+	uuid "github.com/satori/go.uuid"
 )
 
 var debuges = func(format string, data ...interface{}) {} // Default no debugging output
@@ -58,9 +58,9 @@ func (ec *ElasticClient) InitAllMappings() {
 	*/
 }
 
-// createHttpsClient creates http.Client for elastic.Client with enabled
-// cert-based authentication
-func createTlsClient(serverName string, certFile string, keyFile string, caFile string) (*http.Client, error) {
+//createTLSClient creates http.Client for elastic.Client with enabled
+//cert-based authentication
+func createTLSClient(serverName string, certFile string, keyFile string, caFile string) (*http.Client, error) {
 	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
 	if err != nil {
 		log.Fatal(err)
@@ -101,8 +101,8 @@ func CreateClient(config saconfig.EventConfiguration) (*ElasticClient, error) {
 	var elasticClient *ElasticClient
 	elasticOpts := []elastic.ClientOptionFunc{elastic.SetHealthcheckInterval(5 * time.Second), elastic.SetURL(config.ElasticHostURL)}
 	// add transport with TLS enabled in case it is required
-	if config.UseTls {
-		tlsClient, err := createTlsClient(config.TlsServerName, config.TlsClientCert, config.TlsClientKey, config.TlsCaCert)
+	if config.UseTLS {
+		tlsClient, err := createTLSClient(config.TLSServerName, config.TLSClientCert, config.TLSClientKey, config.TLSCaCert)
 		if err != nil {
 			return elasticClient, nil
 		}
@@ -121,10 +121,12 @@ func CreateClient(config saconfig.EventConfiguration) (*ElasticClient, error) {
 	return elasticClient, nil
 }
 
+//IndexExists ...
 func (ec *ElasticClient) IndexExists(index string) *elastic.IndicesExistsService {
 	return ec.client.IndexExists(index)
 }
 
+//GetContext ...
 func (ec *ElasticClient) GetContext() context.Context {
 	return ec.ctx
 }
@@ -152,7 +154,7 @@ func (ec *ElasticClient) CreateIndex(index string, mapping string) {
 
 }
 
-//genUUIDv4   ...
+//genUUIDv4  ...
 func genUUIDv4() string {
 	id, _ := uuid.NewV4()
 	debuges("Debug:github.com/satori/go.uuid:   %s\n", id)
