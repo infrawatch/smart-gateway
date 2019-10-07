@@ -23,13 +23,10 @@ func Sanitize(jsondata string) string {
 	result := r.Replace(jsondata)
 	result1 := strings.Replace(result, "\\\"", "\"", -1)
 	return result1
-
 }
 
 //GetIndexNameType ...
 func GetIndexNameType(jsondata string) (string, IndexType, error) {
-	//start := time.Now()
-
 	var f []interface{}
 	err := json.Unmarshal([]byte(jsondata), &f)
 	if err != nil {
@@ -40,7 +37,6 @@ func GetIndexNameType(jsondata string) (string, IndexType, error) {
 	index, indextype, error := typeSwitchAlertname(f[0])
 	//	log.Printf("getIndexNameType took %s", elapsed)
 	return index, indextype, error
-
 }
 
 func typeSwitchAlertname(tst interface{}) (string, IndexType, error) {

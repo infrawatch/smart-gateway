@@ -43,7 +43,7 @@ func (c *cacheHandler) Describe(ch chan<- *prometheus.Desc) {
 	c.appstate.Describe(ch)
 }
 
-// Collect implements prometheus.Collector.
+//Collect implements prometheus.Collector.
 //need improvement add lock etc etc
 func (c *cacheHandler) Collect(ch chan<- prometheus.Metric) {
 	//lastPull.Set(float64(time.Now().UnixNano()) / 1e9)
@@ -227,5 +227,4 @@ msgloop:
 		}
 	}
 	//TODO: to close cache server on keyboard interrupt
-
 }

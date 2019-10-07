@@ -17,7 +17,6 @@ import (
 var debugh = func(format string, data ...interface{}) {} // Default no debugging output
 
 type (
-
 	// Timestamp is a helper for (un)marhalling time
 	Timestamp time.Time
 
@@ -187,7 +186,6 @@ func (eventMetricHandler *EventMetricHandler) Describe(ch chan<- *prometheus.Des
 func (metricHandler *MetricHandler) Collect(ch chan<- prometheus.Metric) {
 	ch <- prometheus.MustNewConstMetric(metricHandler.lastPull, prometheus.GaugeValue, float64(time.Now().Unix()))
 	ch <- prometheus.MustNewConstMetric(metricHandler.qpidRouterState, prometheus.GaugeValue, float64(metricHandler.applicationHealth.QpidRouterState))
-
 }
 
 // Collect implements prometheus.Collector.
@@ -195,5 +193,4 @@ func (eventMetricHandler *EventMetricHandler) Collect(ch chan<- prometheus.Metri
 	ch <- prometheus.MustNewConstMetric(eventMetricHandler.lastPull, prometheus.GaugeValue, float64(time.Now().Unix()))
 	ch <- prometheus.MustNewConstMetric(eventMetricHandler.qpidRouterState, prometheus.GaugeValue, float64(eventMetricHandler.applicationHealth.QpidRouterState))
 	ch <- prometheus.MustNewConstMetric(eventMetricHandler.elasticSearchState, prometheus.GaugeValue, float64(eventMetricHandler.applicationHealth.ElasticSearchState))
-
 }

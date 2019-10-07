@@ -34,7 +34,7 @@ func (c Collectd) GetKey() string {
 	return c.Host
 }
 
-// ParseInputByte ....
+//ParseInputByte ...
 //TODO(mmagr): probably unify interface with ParseInputJSON
 func (c *Collectd) ParseInputByte(data []byte) error {
 	cparse := make([]Collectd, 1)
@@ -50,7 +50,7 @@ func (c *Collectd) ParseInputByte(data []byte) error {
 	return nil
 }
 
-// SetNew  .
+//SetNew ...
 func (c *Collectd) SetNew(new bool) {
 	c.new = new
 }
@@ -65,7 +65,8 @@ func (c *Collectd) ISNew() bool {
 	return c.new
 }
 
-// DSName newName converts one data source of a value list to a string representation.
+//DSName newName converts one data source of a value list to a string
+//representation.
 func (c *Collectd) DSName(index int) string {
 	if c.Dsnames != nil {
 		return c.Dsnames[index]
@@ -76,7 +77,7 @@ func (c *Collectd) DSName(index int) string {
 	return "value"
 }
 
-// SetData   ...
+//SetData ...
 func (c *Collectd) SetData(data DataTypeInterface) {
 	if collectd, ok := data.(*Collectd); ok { // type assert on it
 		if c.Host != collectd.Host {
@@ -103,7 +104,7 @@ func (c *Collectd) SetData(data DataTypeInterface) {
 	}
 }
 
-//GetLabels   ..
+//GetLabels ...
 func (c Collectd) GetLabels() map[string]string {
 	labels := map[string]string{}
 	if c.PluginInstance != "" {
@@ -136,10 +137,9 @@ func (c Collectd) GetMetricDesc(index int) string {
 	help := fmt.Sprintf("Service Assurance exporter: '%s' Type: '%s' Dstype: '%s' Dsname: '%s'",
 		c.Plugin, c.Type, c.Dstypes[index], c.DSName(index))
 	return help
-
 }
 
-//GetMetricName  ..
+//GetMetricName  ...
 func (c Collectd) GetMetricName(index int) string {
 	name := "sa_collectd_" + c.Plugin + "_" + c.Type
 	if c.Plugin == c.Type {
@@ -155,7 +155,6 @@ func (c Collectd) GetMetricName(index int) string {
 		name += "_total"
 	}
 	return name
-
 }
 
 //GetItemKey  ...

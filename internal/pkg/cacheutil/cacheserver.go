@@ -21,16 +21,6 @@ type ApplicationHealthCache struct {
 	LastAccess         int64 //timestamp in seconds
 }
 
-//NewApplicationHealthCache  ..
-func NewApplicationHealthCache() *ApplicationHealthCache {
-	return &ApplicationHealthCache{
-		QpidRouterState:    0,
-		LastAccess:         0,
-		ElasticSearchState: 0,
-	}
-
-}
-
 //IncomingBuffer  this is inut data send to cache server
 //IncomingBuffer  ..its of type collectd or anything else
 type IncomingBuffer struct {
@@ -53,6 +43,15 @@ type ShardedIncomingDataCache struct {
 	lock       *sync.RWMutex
 }
 
+//NewApplicationHealthCache  ..
+func NewApplicationHealthCache() *ApplicationHealthCache {
+	return &ApplicationHealthCache{
+		QpidRouterState:    0,
+		LastAccess:         0,
+		ElasticSearchState: 0,
+	}
+}
+
 //NewCache   .. .
 func NewCache(maxttl int64) IncomingDataCache {
 	if maxttl == 0 {
@@ -72,7 +71,6 @@ func NewShardedIncomingDataCache(maxttl int64) *ShardedIncomingDataCache {
 		maxTTL: maxttl,
 		lock:   new(sync.RWMutex),
 	}
-
 }
 
 //FlushAll Flush raw meterics data
@@ -143,7 +141,6 @@ func (i IncomingDataCache) Size() int {
 	i.lock.RLock()
 	defer i.lock.RUnlock()
 	return len(i.hosts)
-
 }
 
 //Size no of plugin per shard
@@ -151,13 +148,12 @@ func (shard *ShardedIncomingDataCache) Size() int {
 	shard.lock.RLock()
 	defer shard.lock.RUnlock()
 	return len(shard.plugin)
-
 }
 
 //SetData ...
 //TODO : add generic
 //TODO(mmagr): either don't export or maybe make sure data.Host has the same
-// value as is saved under in DataCache
+//value as is saved under in DataCache
 func (shard *ShardedIncomingDataCache) SetData(data incoming.DataTypeInterface) error {
 	shard.lock.Lock()
 	defer shard.lock.Unlock()
