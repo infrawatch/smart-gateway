@@ -50,7 +50,6 @@ func (a *Alerts) SetSummary() {
 
 //SetName ... set unique name for alerts
 func (a *Alerts) SetName() {
-
 	values := make([]string, 0, len(a.Labels)-1)
 	desc := make([]string, 0, len(a.Labels))
 	keys := make([]string, 0, len(a.Labels))

@@ -187,11 +187,6 @@ func (ec *ElasticClient) Create(indexname string, indextype IndexType, jsondata 
 
 }
 
-//Update ....
-func (ec *ElasticClient) Update() {
-
-}
-
 //DeleteIndex ...
 func (ec *ElasticClient) DeleteIndex(index string) error {
 	// Delete an index.
@@ -209,8 +204,6 @@ func (ec *ElasticClient) DeleteIndex(index string) error {
 
 //Delete  ....
 func (ec *ElasticClient) Delete(indexname string, indextype IndexType, id string) error {
-	// Get tweet with specified ID
-
 	_, err := ec.client.Delete().
 		Index(string(indexname)).
 		Type(string(indextype)).
@@ -221,8 +214,6 @@ func (ec *ElasticClient) Delete(indexname string, indextype IndexType, id string
 
 //Get  ....
 func (ec *ElasticClient) Get(indexname string, indextype IndexType, id string) (*elastic.GetResult, error) {
-	// Get tweet with specified ID
-
 	result, err := ec.client.Get().
 		Index(string(indexname)).
 		Type(string(indextype)).
@@ -232,9 +223,6 @@ func (ec *ElasticClient) Get(indexname string, indextype IndexType, id string) (
 		// Handle error
 		return nil, err
 	}
-	/*if result.Found {
-		return result.Fields,nil
-	}*/
 	if result.Found {
 		debuges("Debug:Got document %s in version %d from index %s, type %s\n", result.Id, result.Version, result.Index, result.Type)
 	}
@@ -243,8 +231,6 @@ func (ec *ElasticClient) Get(indexname string, indextype IndexType, id string) (
 
 //Search  ..
 func (ec *ElasticClient) Search(indexname string) *elastic.SearchResult {
-	// Search with a term
-
 	termQuery := elastic.NewTermQuery("user", "olivere")
 	searchResult, err := ec.client.Search().
 		Index(indexname).   // search in index "twitter"
@@ -259,5 +245,4 @@ func (ec *ElasticClient) Search(indexname string) *elastic.SearchResult {
 	}
 	debuges("Debug:Query took %d milliseconds\n", searchResult.TookInMillis)
 	return searchResult
-
 }

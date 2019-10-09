@@ -94,8 +94,8 @@ func StartEvents() {
 			Debug:      *fDebug,
 			UniqueName: *fUniqueName,
 		}
-
 	}
+
 	if serverConfig.Debug {
 		debuge = func(format string, data ...interface{}) { log.Printf(format, data...) }
 	}
@@ -105,11 +105,13 @@ func StartEvents() {
 		eventusage()
 		os.Exit(1)
 	}
+
 	if len(serverConfig.ElasticHostURL) == 0 {
 		log.Println("Elastic Host URL is required")
 		eventusage()
 		os.Exit(1)
 	}
+
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 	go func() {
@@ -128,12 +130,14 @@ func StartEvents() {
 	} else {
 		log.Println("AlertManager disabled")
 	}
+
 	if len(serverConfig.API.APIEndpointURL) > 0 {
 		log.Printf("API available at %s\n", serverConfig.API.APIEndpointURL)
 		serverConfig.APIEnabled = true
 	} else {
 		log.Println("API disabled")
 	}
+
 	if len(serverConfig.API.AMQP1PublishURL) > 0 {
 		log.Printf("AMQP1.0 Publish address at %s\n", serverConfig.API.AMQP1PublishURL)
 		serverConfig.PublishEventEnabled = true
@@ -240,7 +244,6 @@ func StartEvents() {
 						debuge("Debug:response Status:%s\n", resp.Status)
 						debuge("Debug:response Headers:%s\n", resp.Header)
 						debuge("Debug:response Body:%s\n", string(body))
-
 					}()
 					//}
 				}
@@ -252,5 +255,4 @@ func StartEvents() {
 			//no activity
 		}
 	}
-
 }

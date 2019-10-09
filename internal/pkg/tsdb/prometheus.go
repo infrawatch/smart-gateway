@@ -69,5 +69,4 @@ func NewCollectdMetric(usetimestamp bool, collectd incoming.Collectd, index int)
 		), nil
 	}
 	return prometheus.NewConstMetric(desc, valueType, value)
-
 }

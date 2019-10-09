@@ -30,15 +30,6 @@ import (
 	"qpid.apache.org/electron"
 )
 
-// Usage and command-line flags
-/*func usage() {
-	fmt.Fprintf(os.Stderr, `Usage: %s url [url ...]
-Receive messages from all URLs concurrently and print them.
-URLs are of the form "amqp://<host>:<port>/<amqp-address>"
-`, os.Args[0])
-	flag.PrintDefaults()
-}*/
-
 var debugr = func(format string, data ...interface{}) {} // Default no debugging output
 
 //AMQPServer msgcount -1 is infinite
@@ -66,14 +57,6 @@ type AMQPHandler struct {
 	totalCountDesc          *prometheus.Desc
 	totalProcessedDesc      *prometheus.Desc
 	totalReconnectCountDesc *prometheus.Desc
-}
-
-//MockAmqpServer  Create Mock AMQP server
-func MockAmqpServer(notifier chan string) *AMQPServer {
-	server := &AMQPServer{
-		notifier: notifier,
-	}
-	return server
 }
 
 //NewAMQPServer   ...
@@ -170,7 +153,6 @@ func (a *AMQPHandler) GetTotalReconnectCount() int {
 
 //Describe ...
 func (a *AMQPHandler) Describe(ch chan<- *prometheus.Desc) {
-
 	ch <- a.totalCountDesc
 	ch <- a.totalProcessedDesc
 	ch <- a.totalReconnectCountDesc
@@ -178,11 +160,9 @@ func (a *AMQPHandler) Describe(ch chan<- *prometheus.Desc) {
 
 //Collect implements prometheus.Collector.
 func (a *AMQPHandler) Collect(ch chan<- prometheus.Metric) {
-
 	ch <- prometheus.MustNewConstMetric(a.totalCountDesc, prometheus.CounterValue, float64(a.totalCount))
 	ch <- prometheus.MustNewConstMetric(a.totalProcessedDesc, prometheus.CounterValue, float64(a.totalProcessed))
 	ch <- prometheus.MustNewConstMetric(a.totalReconnectCountDesc, prometheus.CounterValue, float64(a.totalReconnectCount))
-
 }
 
 //GetNotifier  Get notifier
@@ -285,10 +265,9 @@ msgloop:
 			s.status <- status
 		}
 	}
-
-	//wait.Wait() // Wait for all goroutines to finish.
 }
 
+//connect Connect to an AMQP server returning an electron receiver
 func (s *AMQPServer) connect() (electron.Receiver, error) {
 	// Wait for one goroutine per URL
 	// Make name unique-ish
