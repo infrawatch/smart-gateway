@@ -2,7 +2,9 @@ package saelastic
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
+	"regexp"
 	"strings"
 )
 
@@ -13,16 +15,21 @@ type EventNotification struct {
 	StartsAt    string
 }
 
+var rexForNestedQuote = regexp.MustCompile(`\\\"`)
+var rexForVes = regexp.MustCompile(`"ves":"{(.*)}"`)
+
 //Sanitize ... Issue with json format in events.
 func Sanitize(jsondata string) string {
-	r := strings.NewReplacer("\\\"", "\"",
-		"\"ves\":\"{", "\"ves\":{",
-		"}\"}", "}}",
-		"[", "",
-		"]", "")
-	result := r.Replace(jsondata)
-	result1 := strings.Replace(result, "\\\"", "\"", -1)
-	return result1
+	// if value for key "ves" is string, we convert it to json
+	vesCleaned := jsondata
+	sub := rexForVes.FindStringSubmatch(jsondata)
+	if len(sub) == 2 {
+		nested := rexForNestedQuote.ReplaceAllString(sub[1], `"`)
+		vesCleaned = rexForVes.ReplaceAllString(jsondata, fmt.Sprintf(`"ves":{%s}`, nested))
+	}
+
+	almostFinal := strings.TrimLeft(vesCleaned, "[")
+	return strings.TrimRight(almostFinal, "]")
 }
 
 //GetIndexNameType ...
