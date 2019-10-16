@@ -103,9 +103,9 @@ type SanitizeTestMatrix struct {
 
 func TestSanitize(t *testing.T) {
 	matrix := []SanitizeTestMatrix{
-		SanitizeTestMatrix{procEventDirtySample1, procEventDataSample1},
-		SanitizeTestMatrix{procEventDirtySample2, procEventDataSample2},
-		SanitizeTestMatrix{ovsEventDirtySample, ovsEventDataSample},
+		{procEventDirtySample1, procEventDataSample1},
+		{procEventDirtySample2, procEventDataSample2},
+		{ovsEventDirtySample, ovsEventDataSample},
 	}
 
 	var unstructuredResult map[string]interface{}

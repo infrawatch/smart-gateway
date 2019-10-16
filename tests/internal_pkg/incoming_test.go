@@ -67,15 +67,15 @@ func TestCollectdIncoming(t *testing.T) {
 		_, errr := emptySample.ParseInputJSON("Error Json")
 		assert.Error(t, errr, "Expected error got nil")
 		data := []IncommingCollecdDataMatrix{
-			IncommingCollecdDataMatrix{"Host", GetFieldStr(sample, "Host")},
-			IncommingCollecdDataMatrix{"Plugin", GetFieldStr(sample, "Plugin")},
-			IncommingCollecdDataMatrix{"Type", GetFieldStr(sample, "Type")},
-			IncommingCollecdDataMatrix{"PluginInstance", GetFieldStr(sample, "PluginInstance")},
-			IncommingCollecdDataMatrix{"Dstypes", GetFieldStr(sample, "Dstypes")},
-			IncommingCollecdDataMatrix{"Dsnames", GetFieldStr(sample, "Dsnames")},
-			IncommingCollecdDataMatrix{"TypeInstance", GetFieldStr(sample, "TypeInstance")},
-			IncommingCollecdDataMatrix{"Values", GetFieldStr(sample, "Values")},
-			IncommingCollecdDataMatrix{"Time", GetFieldStr(sample, "Time")},
+			{"Host", GetFieldStr(sample, "Host")},
+			{"Plugin", GetFieldStr(sample, "Plugin")},
+			{"Type", GetFieldStr(sample, "Type")},
+			{"PluginInstance", GetFieldStr(sample, "PluginInstance")},
+			{"Dstypes", GetFieldStr(sample, "Dstypes")},
+			{"Dsnames", GetFieldStr(sample, "Dsnames")},
+			{"TypeInstance", GetFieldStr(sample, "TypeInstance")},
+			{"Values", GetFieldStr(sample, "Values")},
+			{"Time", GetFieldStr(sample, "Time")},
 		}
 		sample2, errr := emptySample.ParseInputJSON(jsonString)
 		if errr == nil {
