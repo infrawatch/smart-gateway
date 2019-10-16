@@ -73,7 +73,11 @@ func StartEvents() {
 	flag.Parse()
 
 	if len(*fConfigLocation) > 0 { //load configuration
-		serverConfig = saconfig.LoadEventConfig(*fConfigLocation)
+		conf, err := saconfig.LoadConfiguration(*fConfigLocation, "event")
+		if err != nil {
+			log.Fatal("Config Parse Error: ", err)
+		}
+		serverConfig = conf.(saconfig.EventConfiguration)
 		serverConfig.ServiceType = *fServiceType
 		if *fDebug {
 			serverConfig.Debug = true

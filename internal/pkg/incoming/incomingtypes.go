@@ -1,5 +1,7 @@
 package incoming
 
+import "github.com/redhat-service-assurance/smart-gateway/internal/pkg/saconfig"
+
 //DataTypeInterface   ...
 type DataTypeInterface interface {
 	GetName() string
@@ -22,19 +24,13 @@ type TSDB interface {
 	GetMetricDesc(index int) string
 }
 
-//DataType   ..
-type DataType int
-
-//COLLECTD
-const (
-	COLLECTD DataType = 1 << iota
-)
-
 //NewInComing   ..
-func NewInComing(t DataType) DataTypeInterface {
+func NewInComing(t saconfig.DataType) DataTypeInterface {
 	switch t {
-	case COLLECTD:
+	case saconfig.DATA_TYPE_COLLECTD:
 		return newCollectd( /*...*/ )
+	case saconfig.DATA_TYPE_CEILOMETER:
+		return newCeilometer()
 	}
 	return nil
 }
@@ -42,6 +38,10 @@ func NewInComing(t DataType) DataTypeInterface {
 //newCollectd  -- avoid calling this . Use factory method in incoming package
 func newCollectd() *Collectd {
 	return new(Collectd)
+}
+
+func newCeilometer() *Ceilometer {
+	return new(Ceilometer)
 }
 
 //ParseByte  parse incoming data

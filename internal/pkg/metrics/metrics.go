@@ -110,7 +110,11 @@ func StartMetrics() {
 	flag.Parse()
 
 	if len(*fConfigLocation) > 0 { //load configuration
-		serverConfig = saconfig.LoadMetricConfig(*fConfigLocation)
+		conf, err := saconfig.LoadConfiguration(*fConfigLocation, "metric")
+		if err != nil {
+			log.Fatal("Config Parse Error: ", err)
+		}
+		serverConfig = conf.(saconfig.MetricConfiguration)
 		serverConfig.ServiceType = *fServiceType
 		if *fDebug {
 			serverConfig.Debug = true
@@ -208,7 +212,7 @@ msgloop:
 		case data := <-amqpMetricServer.GetNotifier():
 			amqpMetricServer.GetHandler().IncTotalMsgProcessed()
 			debugm("Debug: Getting incoming data from notifier channel : %#v\n", data)
-			incomingType := incoming.NewInComing(incoming.COLLECTD)
+			incomingType := incoming.NewInComing(saconfig.DATA_TYPE_COLLECTD)
 			metrics, _ := incomingType.ParseInputJSON(data)
 			for _, m := range metrics {
 				amqpMetricServer.UpdateMinCollectInterval(m.GetInterval())

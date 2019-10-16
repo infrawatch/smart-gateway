@@ -10,6 +10,7 @@ import (
 
 	"collectd.org/cdtime"
 	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/incoming"
+	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/saconfig"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -21,7 +22,7 @@ type IncommingCollecdDataMatrix struct {
 /*----------------------------- helper functions -----------------------------*/
 //GenerateSampleCollectdData ...
 func GenerateSampleCollectdData(hostname string, pluginname string) *incoming.Collectd {
-	citfc := incoming.NewInComing(incoming.COLLECTD)
+	citfc := incoming.NewInComing(saconfig.DATA_TYPE_COLLECTD)
 	collectd := citfc.(*incoming.Collectd)
 	collectd.Host = hostname
 	collectd.Plugin = pluginname
@@ -45,7 +46,7 @@ func GetFieldStr(dataItem incoming.DataTypeInterface, field string) string {
 /*----------------------------------------------------------------------------*/
 
 func TestCollectdIncoming(t *testing.T) {
-	emptySample := incoming.NewInComing(incoming.COLLECTD)
+	emptySample := incoming.NewInComing(saconfig.DATA_TYPE_COLLECTD)
 	sample := GenerateSampleCollectdData("hostname", "pluginname")
 	jsonBytes, err := json.Marshal([]*incoming.Collectd{sample})
 	if err != nil {
@@ -87,7 +88,7 @@ func TestCollectdIncoming(t *testing.T) {
 		}
 		errr = emptySample.ParseInputByte([]byte("error string"))
 		assert.Error(t, errr, "Expected error got nil")
-		esample := incoming.NewInComing(incoming.COLLECTD)
+		esample := incoming.NewInComing(saconfig.DATA_TYPE_COLLECTD)
 		errs := esample.ParseInputByte(jsonBytes)
 		if errs == nil {
 			sample3 := esample.(*incoming.Collectd)
