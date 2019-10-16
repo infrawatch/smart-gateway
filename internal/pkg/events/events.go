@@ -251,8 +251,6 @@ func StartEvents() {
 			continue // priority channel
 		case status := <-amqpEventServer.GetStatus():
 			applicationHealth.QpidRouterState = status
-		default:
-			//no activity
 		}
 	}
 }
