@@ -42,7 +42,6 @@ const (
 type ElasticClient struct {
 	client *elastic.Client
 	ctx    context.Context
-	err    error
 }
 
 //InitAllMappings ....
@@ -137,6 +136,7 @@ func (ec *ElasticClient) CreateIndex(index string, mapping string) {
 	exists, err := ec.client.IndexExists(string(index)).Do(ec.ctx)
 	if err != nil {
 		// Handle error nothing to do index exists
+		debuges("Debug:ElasticSearch indexExists returned an error: %s", err)
 	}
 	if !exists {
 		// Index does not exist yet.
@@ -197,7 +197,7 @@ func (ec *ElasticClient) DeleteIndex(index string) error {
 		return err
 	}
 	if !deleteIndex.Acknowledged {
-		// Not acknowledged
+		debuges("Debug:ElasticSearch DeleteIndex not acknowledged")
 	}
 	return nil
 }

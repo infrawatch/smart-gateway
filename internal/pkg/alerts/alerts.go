@@ -22,11 +22,6 @@ var alertSeverity = map[string]string{
 	"WARNING": "warning",
 	"FAILURE": "critical",
 }
-var alertStatus = map[string]string{
-	"OKAY":    "resolved",
-	"WARNING": "firing",
-	"FAILURE": "firing",
-}
 
 //SetSummary ...
 func (a *Alerts) SetSummary() {

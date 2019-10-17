@@ -10,7 +10,6 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
-	"sync"
 	"time"
 
 	"github.com/MakeNowJust/heredoc"
@@ -23,13 +22,9 @@ import (
 )
 
 var (
-	cacheServer   cacheutil.CacheServer
-	debugm        = func(format string, data ...interface{}) {} // Default no debugging output
-	debugs        = func(count int) {}                          // Default no debugging output
-	serverConfig  saconfig.MetricConfiguration
-	amqpHandler   *amqp10.AMQPHandler
-	myHandler     *cacheHandler
-	hostwaitgroup sync.WaitGroup
+	debugm       = func(format string, data ...interface{}) {} // Default no debugging output
+	debugs       = func(count int) {}                          // Default no debugging output
+	serverConfig saconfig.MetricConfiguration
 )
 
 /*************** HTTP HANDLER***********************/
@@ -166,7 +161,7 @@ func StartMetrics() {
 	amqpHandler := amqp10.NewAMQPHandler("Metric Consumer")
 	prometheus.MustRegister(myHandler, amqpHandler)
 
-	if serverConfig.CPUStats == false {
+	if !serverConfig.CPUStats {
 		// Including these stats kills performance when Prometheus polls with multiple targets
 		prometheus.Unregister(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}))
 		prometheus.Unregister(prometheus.NewGoCollector())

@@ -69,8 +69,6 @@ type ConfigDataMatrix struct {
 	Value interface{}
 }
 
-type LoadFunc func(p []byte) (n int, err error)
-
 type ConfigDataTestRun struct {
 	Name    string
 	Content string

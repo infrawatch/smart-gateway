@@ -48,9 +48,7 @@ func eventusage() {
 var (
 	debuge          = func(format string, data ...interface{}) {} // Default no debugging output
 	amqpEventServer *amqp10.AMQPServer
-	amqpHandler     *amqp10.AMQPHandler
 	serverConfig    saconfig.EventConfiguration
-	elasticClient   *saelastic.ElasticClient
 )
 
 //StartEvents ... entry point to events
@@ -190,11 +188,11 @@ func StartEvents() {
 																	</body>
 																	</html>`))
 		})
-		APIEndpointURL := fmt.Sprintf("%s", serverConfig.API.APIEndpointURL)
-		go func(APIEndpointURL string) {
+		go func() {
+			APIEndpointURL := serverConfig.API.APIEndpointURL
 			log.Printf("APIEndpoint server ready at : %s\n", APIEndpointURL)
 			log.Fatal(http.ListenAndServe(APIEndpointURL, nil))
-		}(APIEndpointURL)
+		}()
 		time.Sleep(2 * time.Second)
 	}
 	log.Println("Ready....")

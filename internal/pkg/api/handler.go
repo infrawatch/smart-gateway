@@ -3,7 +3,6 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"time"
@@ -63,10 +62,6 @@ func NewContext(serverConfig saconfig.EventConfiguration) *Context {
 		debugh = func(format string, data ...interface{}) { log.Printf(format, data...) }
 	}
 	return context
-}
-
-func healthzHandler(w http.ResponseWriter, r *http.Request) {
-	io.WriteString(w, "ok\n")
 }
 
 //ServeHTTP...
