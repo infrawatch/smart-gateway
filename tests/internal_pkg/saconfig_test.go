@@ -80,32 +80,32 @@ type ConfigDataTestRun struct {
 
 func TestUnstructuredData(t *testing.T) {
 	testRuns := []ConfigDataTestRun{
-		ConfigDataTestRun{
+		{
 			Name:    "Test events config",
 			Content: EventsConfig,
 			Loader:  "LoadEventConfig",
 			Matrix: []ConfigDataMatrix{
-				ConfigDataMatrix{"AMQP1EventURL", "127.0.0.1:5672/collectd/notify"},
-				ConfigDataMatrix{"ElasticHostURL", "http://127.0.0.1:9200"},
-				ConfigDataMatrix{"AlertManagerURL", "http://127.0.0.1:9093/api/v1/alerts"},
-				ConfigDataMatrix{"ResetIndex", false},
-				ConfigDataMatrix{"Debug", true},
-				ConfigDataMatrix{"Prefetch", 101},
+				{"AMQP1EventURL", "127.0.0.1:5672/collectd/notify"},
+				{"ElasticHostURL", "http://127.0.0.1:9200"},
+				{"AlertManagerURL", "http://127.0.0.1:9093/api/v1/alerts"},
+				{"ResetIndex", false},
+				{"Debug", true},
+				{"Prefetch", 101},
 			},
 		},
-		ConfigDataTestRun{
+		{
 			Name:    "Test metrics config",
 			Content: MetricsConfig,
 			Loader:  "LoadMetricConfig",
 			Matrix: []ConfigDataMatrix{
-				ConfigDataMatrix{"AMQP1MetricURL", "127.0.0.1:5672/collectd/telemetry"},
-				ConfigDataMatrix{"Exporterhost", "localhost"},
-				ConfigDataMatrix{"Exporterport", 8081},
-				ConfigDataMatrix{"CPUStats", false},
-				ConfigDataMatrix{"DataCount", -1},
-				ConfigDataMatrix{"UseTimeStamp", true},
-				ConfigDataMatrix{"Debug", false},
-				ConfigDataMatrix{"Prefetch", 102},
+				{"AMQP1MetricURL", "127.0.0.1:5672/collectd/telemetry"},
+				{"Exporterhost", "localhost"},
+				{"Exporterport", 8081},
+				{"CPUStats", false},
+				{"DataCount", -1},
+				{"UseTimeStamp", true},
+				{"Debug", false},
+				{"Prefetch", 102},
 			},
 		},
 	}
