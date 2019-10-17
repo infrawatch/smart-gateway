@@ -16,6 +16,7 @@ import (
 
 	"github.com/MakeNowJust/heredoc"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/alerts"
 	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/amqp10"
 	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/api"
@@ -177,7 +178,7 @@ func StartEvents() {
 
 		context := api.NewContext(serverConfig)
 		http.Handle("/alert", api.Handler{Context: context, H: api.AlertHandler}) //creates writer everytime api is called.
-		http.Handle("/metrics", prometheus.Handler())
+		http.Handle("/metrics", promhttp.Handler())
 		http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte(`<html>
 																	<head><title>Smart Gateway Event API</title></head>

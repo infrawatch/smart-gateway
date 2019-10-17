@@ -14,6 +14,7 @@ import (
 
 	"github.com/MakeNowJust/heredoc"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/amqp10"
 	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/api"
 	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/cacheutil"
@@ -168,7 +169,7 @@ func StartMetrics() {
 	}
 	//Set up Metric Exporter
 	handler := http.NewServeMux()
-	handler.Handle("/metrics", prometheus.Handler())
+	handler.Handle("/metrics", promhttp.Handler())
 	handler.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`<html>
                                 <head><title>Collectd Exporter</title></head>
