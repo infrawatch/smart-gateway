@@ -33,10 +33,10 @@ mv_vendor_in() {
 check_results() {
     if [[ "$GOFMT_OK" == "1" && "$GOLINT_OK" == "1" && "$GOVET_OK" == "1" && "$STATICCHECK_OK" == "1" ]]
     then
-        echo "Formatting, Linting, and Vetting all returned OK."
+        echo "Formatting, Linting, Vetting, and Static Checks all returned OK."
         exit 0
     else
-        echo "One of Formatting, Linting, or Vetting is invalid. Check logs for more information."
+        echo "One of Formatting, Linting, Vetting, or Static Checks is invalid. Check logs for more information."
         exit 1
     fi
 }
