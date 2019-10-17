@@ -13,6 +13,7 @@ go get -u golang.org/x/tools/cmd/cover
 go get -u github.com/mattn/goveralls
 go get -u golang.org/x/lint/golint
 go get -u github.com/golang/dep/...
+go get -u honnef.co/go/tools/cmd/staticcheck
 dep ensure -v --vendor-only
 
 # run code validation tools
