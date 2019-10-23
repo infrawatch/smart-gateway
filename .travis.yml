@@ -25,9 +25,9 @@ before_install:
 
 # execute unit testing and code coverage
 install:
-  - docker run -eCOVERALLS_TOKEN -uroot --network host -it --volume $PWD:/go/src/github.com/redhat-service-assurance/smart-gateway:z --workdir /go/src/github.com/redhat-service-assurance/smart-gateway centos:7 /bin/sh -c 'sh ./run_tests.sh'
+  - docker run -eCOVERALLS_TOKEN -uroot --network host -it --volume $PWD:/go/src/github.com/redhat-service-assurance/smart-gateway:z --workdir /go/src/github.com/redhat-service-assurance/smart-gateway centos:7 /bin/sh -c 'sh ./build/test-framework/run_tests.sh'
 
 # functional testing (validate it works)
 script:
-  - docker build --tag redhat-service-assurance/smart_gateway:latest .
+  - docker build --tag redhat-service-assurance/smart_gateway:latest --file build/Dockerfile .
   - docker images
