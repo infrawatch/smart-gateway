@@ -13,11 +13,11 @@ go get -u golang.org/x/tools/cmd/cover
 go get -u github.com/mattn/goveralls
 go get -u golang.org/x/lint/golint
 go get -u github.com/golang/dep/...
-dep ensure -v --vendor-only
+dep ensure -v -vendor-only
 
 # run code validation tools
 echo " *** Running pre-commit code validation"
-./pre-commit
+./build/test-framework/pre-commit
 
 # run unit tests
 echo " *** Running test suite"
