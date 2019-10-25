@@ -29,5 +29,5 @@ install:
 
 # functional testing (validate it works)
 script:
-  - docker build --tag redhat-service-assurance/smart_gateway:latest --file build/Dockerfile .
+  - docker build --tag redhat-service-assurance/smart_gateway:latest .
   - docker images
