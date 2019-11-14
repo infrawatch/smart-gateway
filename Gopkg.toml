@@ -43,8 +43,8 @@ ignored = ["github.com/redhat-service-assurance/smart-gateway"]
   branch = "master"
 
 [[constraint]]
-  revision = "b25d21e6779a011e972a5f00e433e2034b793da1"
   name = "qpid.apache.org"
+  branch = "go1"
 
 [prune]
   go-tests = true

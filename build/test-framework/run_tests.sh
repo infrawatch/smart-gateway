@@ -18,7 +18,7 @@ dep ensure -v --vendor-only
 
 # run code validation tools
 echo " *** Running pre-commit code validation"
-./pre-commit
+./build/test-framework/pre-commit
 
 # run unit tests
 echo " *** Running test suite"

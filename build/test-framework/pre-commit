@@ -5,6 +5,7 @@ GOFMT_OK=1
 GOLINT_OK=1
 GOVET_OK=1
 STATICCHECK_OK=1
+DEPCHECK_OK=1
 
 # TODO: uncomment each of these tests during future pull-requests with
 #       resolving code changes
@@ -31,12 +32,12 @@ mv_vendor_in() {
 }
 
 check_results() {
-    if [[ "$GOFMT_OK" == "1" && "$GOLINT_OK" == "1" && "$GOVET_OK" == "1" && "$STATICCHECK_OK" == "1" ]]
+    if [[ "$GOFMT_OK" == "1" && "$GOLINT_OK" == "1" && "$GOVET_OK" == "1" && "$STATICCHECK_OK" == "1" && "$DEPCHECK_OK" == "1" ]]
     then
         echo "Formatting, Linting, Vetting, and Static Checks all returned OK."
         exit 0
     else
-        echo "One of Formatting, Linting, Vetting, or Static Checks is invalid. Check logs for more information."
+        echo "One of Formatting, Linting, Vetting, or Static Checks, or vendor check is invalid. Check logs for more information."
         exit 1
     fi
 }
@@ -86,6 +87,18 @@ $GOVET_ERRORS
 
 please run 'go tool vet ./*.go' on your changes before committing."
     GOVET_OK=0
+  fi
+}
+
+run_dep_check() {
+  DEPCHECK_ERRORS=$(dep check)
+  if [ -n "$DEPCHECK_ERRORS" ]
+  then
+    log_error "dep check failed for the following reasons:
+$DEPCHECK_ERRORS
+
+please run 'dep check' on your changes before committing."
+    DEPCHECK_OK=0
   fi
 }
 

@@ -176,7 +176,8 @@
   version = "v1.3.0"
 
 [[projects]]
-  digest = "1:f92bb8613c0405d38ea5c84ad793fa0e3f594d8078129e6cd2c95c496276d9a1"
+  branch = "go1"
+  digest = "1:8891472a79c8ba147f22c847f6ee30a6fc17be2542b74511f69fbb98c2295772"
   name = "qpid.apache.org"
   packages = [
     "amqp",
@@ -184,7 +185,7 @@
     "proton",
   ]
   pruneopts = "UT"
-  revision = "b25d21e6779a011e972a5f00e433e2034b793da1"
+  revision = "7bf92569070b69a52dc8ff2cf0c2635e9d5bbf3a"
 
 [solve-meta]
   analyzer-name = "dep"
