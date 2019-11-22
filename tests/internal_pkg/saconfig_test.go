@@ -14,9 +14,9 @@ const (
 	EventsConfig = `
 {
 	"AMQP1Connections": [
-		{"Url": "127.0.0.1:5672/collectd/notify", "DataType": "collectd"},
-		{"Url": "127.0.0.1:5672/ceilometer/events", "DataType": "ceilometer"},
-		{"Url": "127.0.0.1:5672/universal/events", "DataType": "universal"}
+		{"Url": "127.0.0.1:5672/collectd/notify", "DataSource": "collectd"},
+		{"Url": "127.0.0.1:5672/ceilometer/events", "DataSource": "ceilometer"},
+		{"Url": "127.0.0.1:5672/universal/events", "DataSource": "universal"}
 	],
 	"AMQP1EventURL": "127.0.0.1:5672/collectd/notify",
 	"ElasticHostURL": "http://127.0.0.1:9200",
@@ -34,9 +34,9 @@ const (
 	MetricsConfig = `
 {
 	"AMQP1Connections": [
-		{"Url": "127.0.0.1:5672/collectd/telemetry", "DataType": "collectd"},
-		{"Url": "127.0.0.1:5672/ceilometer/telemetry", "DataType": "ceilometer"},
-		{"Url": "127.0.0.1:5672/universal/telemetry", "DataType": "universal"}
+		{"Url": "127.0.0.1:5672/collectd/telemetry", "DataSource": "collectd"},
+		{"Url": "127.0.0.1:5672/ceilometer/telemetry", "DataSource": "ceilometer"},
+		{"Url": "127.0.0.1:5672/universal/telemetry", "DataSource": "universal"}
 	],
 	"AMQP1MetricURL": "127.0.0.1:5672/collectd/telemetry",
 	"Exporterhost": "localhost",
@@ -176,9 +176,9 @@ func TestStructuredData(t *testing.T) {
 
 	t.Run("Test structured AMQP connections", func(t *testing.T) {
 		connStruct := []saconfig.AMQPConnection{
-			saconfig.AMQPConnection{Url: "127.0.0.1:5672/collectd/notify", DataType: "collectd", DataTypeId: 1},
-			saconfig.AMQPConnection{Url: "127.0.0.1:5672/ceilometer/events", DataType: "ceilometer", DataTypeId: 2},
-			saconfig.AMQPConnection{Url: "127.0.0.1:5672/universal/events", DataType: "universal", DataTypeId: 0},
+			saconfig.AMQPConnection{Url: "127.0.0.1:5672/collectd/notify", DataSource: "collectd", DataSourceId: 1},
+			saconfig.AMQPConnection{Url: "127.0.0.1:5672/ceilometer/events", DataSource: "ceilometer", DataSourceId: 2},
+			saconfig.AMQPConnection{Url: "127.0.0.1:5672/universal/events", DataSource: "universal", DataSourceId: 0},
 		}
 		assert.Equal(t, connStruct, cfg.(*saconfig.EventConfiguration).AMQP1Connections)
 	})

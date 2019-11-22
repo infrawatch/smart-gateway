@@ -18,7 +18,7 @@ import (
 	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/amqp10"
 	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/api"
 	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/cacheutil"
-	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/incoming"
+	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/metrics/incoming"
 	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/saconfig"
 )
 
@@ -212,7 +212,7 @@ msgloop:
 		case data := <-amqpMetricServer.GetNotifier():
 			amqpMetricServer.GetHandler().IncTotalMsgProcessed()
 			debugm("Debug: Getting incoming data from notifier channel : %#v\n", data)
-			incomingType := incoming.NewInComing(saconfig.DATA_TYPE_COLLECTD)
+			incomingType := incoming.NewFromDataSource(saconfig.DATA_SOURCE_COLLECTD)
 			metrics, _ := incomingType.ParseInputJSON(data)
 			for _, m := range metrics {
 				amqpMetricServer.UpdateMinCollectInterval(m.GetInterval())

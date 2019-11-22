@@ -7,27 +7,27 @@ import (
 	"log"
 )
 
-/************************** DataType implementation **************************/
+/************************** DataSource implementation **************************/
 
-//DataType indentifies a format of incoming data in the message bus channel.
-type DataType int
+//DataSource indentifies a format of incoming data in the message bus channel.
+type DataSource int
 
 const (
-	DATA_TYPE_UNIVERSAL DataType = iota
-	DATA_TYPE_COLLECTD
-	DATA_TYPE_CEILOMETER
+	DATA_SOURCE_UNIVERSAL DataSource = iota
+	DATA_SOURCE_COLLECTD
+	DATA_SOURCE_CEILOMETER
 )
 
 //String returns human readable data type identification.
-func (self *DataType) String() string {
+func (self *DataSource) String() string {
 	return []string{"universal", "collectd", "ceilometer"}[*self]
 }
 
 //SetFromString resets value according to given human readable identification. Returns false if invalid identification was given.
-func (self *DataType) SetFromString(name string) bool {
+func (self *DataSource) SetFromString(name string) bool {
 	for index, value := range []string{"universal", "collectd", "ceilometer"} {
 		if name == value {
-			*self = DataType(index)
+			*self = DataSource(index)
 			return true
 		}
 	}
@@ -38,9 +38,9 @@ func (self *DataType) SetFromString(name string) bool {
 
 //AMQPConnection identifies single messagebus connection and expected format of incoming data.
 type AMQPConnection struct {
-	Url        string `json:"Url"`
-	DataType   string `json:"DataType"`
-	DataTypeId DataType
+	Url          string `json:"Url"`
+	DataSource   string `json:"DataSource"`
+	DataSourceId DataSource
 }
 
 /********************* EventConfiguration implementation *********************/
@@ -118,15 +118,15 @@ func LoadConfiguration(path string, confType string) (interface{}, error) {
 		connections = config.(*EventConfiguration).AMQP1Connections
 	}
 	for index, conn := range connections {
-		var dti *DataType
+		var dts *DataSource
 		switch confType {
 		case "metric":
-			dti = &config.(*MetricConfiguration).AMQP1Connections[index].DataTypeId
+			dts = &config.(*MetricConfiguration).AMQP1Connections[index].DataSourceId
 		case "event":
-			dti = &config.(*EventConfiguration).AMQP1Connections[index].DataTypeId
+			dts = &config.(*EventConfiguration).AMQP1Connections[index].DataSourceId
 		}
-		if ok := dti.SetFromString(conn.DataType); !ok {
-			err = fmt.Errorf("Invalid AMQP connection data type %s", conn.DataType)
+		if ok := dts.SetFromString(conn.DataSource); !ok {
+			err = fmt.Errorf("Invalid AMQP connection data source '%s'", conn.DataSource)
 		}
 	}
 	return config, err

@@ -5,8 +5,16 @@ import (
 	"regexp"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/incoming"
+	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/metrics/incoming"
 )
+
+//TSDB  interface
+type TSDB interface {
+	//prometheus specifivreflect
+	GetLabels() map[string]string
+	GetMetricName(index int) string
+	GetMetricDesc(index int) string
+}
 
 var (
 	metricNameRe = regexp.MustCompile("[^a-zA-Z0-9_:]")
@@ -37,7 +45,7 @@ func AddMetricsByHost(instance string, value float64) (prometheus.Metric, error)
 }
 
 //NewCollectdMetric converts one data source of a value list to a Prometheus metric.
-func NewCollectdMetric(usetimestamp bool, collectd incoming.Collectd, index int) (prometheus.Metric, error) {
+func NewCollectdMetric(usetimestamp bool, collectd incoming.CollectdMetric, index int) (prometheus.Metric, error) {
 	var value float64
 	var valueType prometheus.ValueType
 

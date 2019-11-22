@@ -5,7 +5,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/incoming"
+	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/metrics/incoming"
+	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/saconfig"
 )
 
 // MAXTTL to remove plugin is stale for 5
@@ -23,7 +24,7 @@ type ApplicationHealthCache struct {
 //IncomingBuffer  this is inut data send to cache server
 //IncomingBuffer  ..its of type collectd or anything else
 type IncomingBuffer struct {
-	data incoming.DataTypeInterface
+	data incoming.MetricDataFormat
 }
 
 //IncomingDataCache cache server converts it into this
@@ -36,7 +37,7 @@ type IncomingDataCache struct {
 //ShardedIncomingDataCache types of sharded cache collectd, influxdb etc
 //ShardedIncomingDataCache  ..
 type ShardedIncomingDataCache struct {
-	plugin     map[string]incoming.DataTypeInterface
+	plugin     map[string]incoming.MetricDataFormat
 	lastAccess int64
 	maxTTL     int64
 	lock       *sync.RWMutex
@@ -66,7 +67,7 @@ func NewCache(maxttl int64) IncomingDataCache {
 //NewShardedIncomingDataCache   .
 func NewShardedIncomingDataCache(maxttl int64) *ShardedIncomingDataCache {
 	return &ShardedIncomingDataCache{
-		plugin: make(map[string]incoming.DataTypeInterface),
+		plugin: make(map[string]incoming.MetricDataFormat),
 		maxTTL: maxttl,
 		lock:   new(sync.RWMutex),
 	}
@@ -126,7 +127,7 @@ func (i IncomingDataCache) GetShard(key string) *ShardedIncomingDataCache {
 }
 
 //GetData ...
-func (shard *ShardedIncomingDataCache) GetData(itemKey string) incoming.DataTypeInterface {
+func (shard *ShardedIncomingDataCache) GetData(itemKey string) incoming.MetricDataFormat {
 	shard.lock.Lock()
 	defer shard.lock.Unlock()
 	return shard.plugin[itemKey]
@@ -150,12 +151,12 @@ func (shard *ShardedIncomingDataCache) Size() int {
 //TODO : add generic
 //TODO(mmagr): either don't export or maybe make sure data.Host has the same
 //value as is saved under in DataCache
-func (shard *ShardedIncomingDataCache) SetData(data incoming.DataTypeInterface) error {
+func (shard *ShardedIncomingDataCache) SetData(data incoming.MetricDataFormat) error {
 	shard.lock.Lock()
 	defer shard.lock.Unlock()
 	if shard.plugin[data.GetItemKey()] == nil {
 		//TODO: change this to more generic later
-		shard.plugin[data.GetItemKey()] = incoming.NewInComing(incoming.COLLECTD)
+		shard.plugin[data.GetItemKey()] = incoming.NewFromDataSource(saconfig.DATA_SOURCE_COLLECTD)
 	}
 	shard.lastAccess = time.Now().Unix()
 	collectd := shard.plugin[data.GetItemKey()]
@@ -190,7 +191,7 @@ func NewCacheServer(maxTTL int64, debug bool) *CacheServer {
 }
 
 //Put   ..
-func (cs *CacheServer) Put(incomingData incoming.DataTypeInterface) {
+func (cs *CacheServer) Put(incomingData incoming.MetricDataFormat) {
 	var buffer *IncomingBuffer
 	select {
 	case buffer = <-freeList:

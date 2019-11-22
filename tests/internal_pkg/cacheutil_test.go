@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/cacheutil"
-	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/incoming"
+	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/metrics/incoming"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -51,7 +51,7 @@ func TestCacheServer(t *testing.T) {
 		//             should be saved to appropriate shard), but will fix that in later release
 		data := shard.GetData(key)
 		assert.NotNil(t, data)
-		assert.Equal(t, "shardtest", data.(*incoming.Collectd).Host)
+		assert.Equal(t, "shardtest", data.(*incoming.CollectdMetric).Host)
 	})
 }
 

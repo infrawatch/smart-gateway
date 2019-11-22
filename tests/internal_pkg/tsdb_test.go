@@ -6,7 +6,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	dto "github.com/prometheus/client_model/go"
-	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/incoming"
+	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/metrics/incoming"
 	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/tsdb"
 	"github.com/stretchr/testify/assert"
 )
@@ -14,7 +14,7 @@ import (
 /*----------------------------- helper functions -----------------------------*/
 
 //GenerateSampleCacheData  ....
-func GenerateCollectdMetric(hostname string, pluginname string, useTimestamp bool, index int) (*incoming.Collectd, prometheus.Metric, dto.Metric) {
+func GenerateCollectdMetric(hostname string, pluginname string, useTimestamp bool, index int) (*incoming.CollectdMetric, prometheus.Metric, dto.Metric) {
 	sample := GenerateSampleCollectdData(hostname, pluginname)
 	collectdMetric, _ := tsdb.NewCollectdMetric(useTimestamp, *sample, index)
 	metric := dto.Metric{}
