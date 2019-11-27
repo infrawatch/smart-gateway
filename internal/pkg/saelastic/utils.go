@@ -50,19 +50,16 @@ func typeSwitchAlertname(tst interface{}) (string, IndexType, error) {
 	switch v := tst.(type) {
 	case map[string]interface{}:
 		if val, ok := v["labels"]; ok {
-			switch val.(type) {
+			switch rec := val.(type) {
 			case map[string]interface{}:
-				if rec, ok := val.(map[string]interface{}); ok {
-					if value, ok := rec["alertname"].(string); ok {
-						index := strings.LastIndex(value, "_")
-						if index > len("collectd_") {
-							return value[0:index], EVENTINDEXTYPE, nil
-						}
-						return value, EVENTINDEXTYPE, nil
+				if value, ok := rec["alertname"].(string); ok {
+					index := strings.LastIndex(value, "_")
+					if index > len("collectd_") {
+						return value[0:index], EVENTINDEXTYPE, nil
 					}
-					//else
-					return string(GENERICINDEX), GENERICINDEXTYPE, nil
-				} //else
+					return value, EVENTINDEXTYPE, nil
+				}
+				//else
 				return string(GENERICINDEX), GENERICINDEXTYPE, nil
 			}
 		}
@@ -72,24 +69,21 @@ func typeSwitchAlertname(tst interface{}) (string, IndexType, error) {
 	return string(GENERICINDEX), GENERICINDEXTYPE, nil
 }
 
-// Not used
+//lint:ignore U1000 we might be able to delete this, but we should dig into the history of what it's for
 func typeSwitch(tst interface{}) (IndexName, IndexType, error) {
 	switch v := tst.(type) {
 	case map[string]interface{}:
 		if val, ok := v["labels"]; ok {
-			switch val.(type) {
+			switch rec := val.(type) {
 			case map[string]interface{}:
-				if rec, ok := val.(map[string]interface{}); ok {
-					if _, ok := rec["connectivity"]; ok {
-						return CONNECTIVITYINDEX, EVENTINDEXTYPE, nil
-					} else if _, ok := rec["procevent"]; ok {
-						return PROCEVENTINDEX, EVENTINDEXTYPE, nil
-					} else if _, ok := rec["sysevent"]; ok {
-						return SYSEVENTINDEX, EVENTINDEXTYPE, nil
-					}
-					//else
-					return GENERICINDEX, GENERICINDEXTYPE, nil
-				} //else
+				if _, ok := rec["connectivity"]; ok {
+					return CONNECTIVITYINDEX, EVENTINDEXTYPE, nil
+				} else if _, ok := rec["procevent"]; ok {
+					return PROCEVENTINDEX, EVENTINDEXTYPE, nil
+				} else if _, ok := rec["sysevent"]; ok {
+					return SYSEVENTINDEX, EVENTINDEXTYPE, nil
+				}
+				//else
 				return GENERICINDEX, GENERICINDEXTYPE, nil
 			}
 		}

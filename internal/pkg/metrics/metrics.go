@@ -10,11 +10,11 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
-	"sync"
 	"time"
 
 	"github.com/MakeNowJust/heredoc"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/amqp10"
 	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/api"
 	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/cacheutil"
@@ -23,13 +23,9 @@ import (
 )
 
 var (
-	cacheServer   cacheutil.CacheServer
-	debugm        = func(format string, data ...interface{}) {} // Default no debugging output
-	debugs        = func(count int) {}                          // Default no debugging output
-	serverConfig  saconfig.MetricConfiguration
-	amqpHandler   *amqp10.AMQPHandler
-	myHandler     *cacheHandler
-	hostwaitgroup sync.WaitGroup
+	debugm       = func(format string, data ...interface{}) {} // Default no debugging output
+	debugs       = func(count int) {}                          // Default no debugging output
+	serverConfig saconfig.MetricConfiguration
 )
 
 /*************** HTTP HANDLER***********************/
@@ -166,14 +162,14 @@ func StartMetrics() {
 	amqpHandler := amqp10.NewAMQPHandler("Metric Consumer")
 	prometheus.MustRegister(myHandler, amqpHandler)
 
-	if serverConfig.CPUStats == false {
+	if !serverConfig.CPUStats {
 		// Including these stats kills performance when Prometheus polls with multiple targets
 		prometheus.Unregister(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}))
 		prometheus.Unregister(prometheus.NewGoCollector())
 	}
 	//Set up Metric Exporter
 	handler := http.NewServeMux()
-	handler.Handle("/metrics", prometheus.Handler())
+	handler.Handle("/metrics", promhttp.Handler())
 	handler.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`<html>
                                 <head><title>Collectd Exporter</title></head>

@@ -11,7 +11,6 @@ import (
 // MAXTTL to remove plugin is stale for 5
 var MAXTTL int64 = 300
 var freeList = make(chan *IncomingBuffer, 1000)
-var quitCacheServerCh = make(chan bool)
 var debugc = func(format string, data ...interface{}) {} // Default no debugging output
 
 //ApplicationHealthCache  ...
@@ -114,10 +113,7 @@ func (shard *ShardedIncomingDataCache) GetLastAccess() int64 {
 //Expired  ... add expired test
 func (shard *ShardedIncomingDataCache) Expired() bool {
 	//clean up if data is not access for max TTL specified
-	if time.Now().Unix()-shard.GetLastAccess() > int64(shard.maxTTL) {
-		return true
-	}
-	return false
+	return time.Now().Unix()-shard.GetLastAccess() > int64(shard.maxTTL)
 }
 
 //GetShard  ..
@@ -170,9 +166,8 @@ func (shard *ShardedIncomingDataCache) SetData(data incoming.DataTypeInterface) 
 
 //CacheServer   ..
 type CacheServer struct {
-	cache              IncomingDataCache
-	ch                 chan *IncomingBuffer
-	mincollectinterval int
+	cache IncomingDataCache
+	ch    chan *IncomingBuffer
 }
 
 //GetCache  Get All hosts
@@ -208,13 +203,8 @@ func (cs *CacheServer) Put(incomingData incoming.DataTypeInterface) {
 
 }
 
-func (cs CacheServer) close() {
-	quitCacheServerCh <- true
-	close(quitCacheServerCh)
-}
-
 func (cs CacheServer) loop() {
-LOOP:
+	debugc("Debug:CacheServer loop started")
 	for {
 		// Reuse buffer if there's room.
 		buffer := <-cs.ch
@@ -222,9 +212,7 @@ LOOP:
 		shard.SetData(buffer.data)
 		select {
 		case freeList <- buffer:
-		// Buffer on free list; nothing more to do.
-		case <-quitCacheServerCh:
-			break LOOP
+			// Buffer on free list; nothing more to do.
 		default:
 			// Free list full, just carry on.
 		}

@@ -16,6 +16,7 @@ import (
 
 	"github.com/MakeNowJust/heredoc"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/alerts"
 	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/amqp10"
 	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/api"
@@ -48,9 +49,7 @@ func eventusage() {
 var (
 	debuge          = func(format string, data ...interface{}) {} // Default no debugging output
 	amqpEventServer *amqp10.AMQPServer
-	amqpHandler     *amqp10.AMQPHandler
 	serverConfig    saconfig.EventConfiguration
-	elasticClient   *saelastic.ElasticClient
 )
 
 //StartEvents ... entry point to events
@@ -179,7 +178,7 @@ func StartEvents() {
 
 		context := api.NewContext(serverConfig)
 		http.Handle("/alert", api.Handler{Context: context, H: api.AlertHandler}) //creates writer everytime api is called.
-		http.Handle("/metrics", prometheus.Handler())
+		http.Handle("/metrics", promhttp.Handler())
 		http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte(`<html>
 																	<head><title>Smart Gateway Event API</title></head>
@@ -190,11 +189,11 @@ func StartEvents() {
 																	</body>
 																	</html>`))
 		})
-		APIEndpointURL := fmt.Sprintf("%s", serverConfig.API.APIEndpointURL)
-		go func(APIEndpointURL string) {
+		go func() {
+			APIEndpointURL := serverConfig.API.APIEndpointURL
 			log.Printf("APIEndpoint server ready at : %s\n", APIEndpointURL)
 			log.Fatal(http.ListenAndServe(APIEndpointURL, nil))
-		}(APIEndpointURL)
+		}()
 		time.Sleep(2 * time.Second)
 	}
 	log.Println("Ready....")
