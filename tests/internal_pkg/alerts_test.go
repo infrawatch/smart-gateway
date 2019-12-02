@@ -8,6 +8,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+//REMOVE: Whole file. Those tests moved to events_incoming_test.go
+
 type AlertDataMatrix struct {
 	Label    string
 	Expected string

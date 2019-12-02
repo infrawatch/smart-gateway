@@ -2,6 +2,8 @@ package saemapping
 
 import "time"
 
+//REMOVE: Whole file. Not used anywhere
+
 //ConnectivityMapping ...
 const ConnectivityMapping = `
 {

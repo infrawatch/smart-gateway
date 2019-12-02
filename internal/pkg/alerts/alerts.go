@@ -7,6 +7,8 @@ import (
 	"strings"
 )
 
+//REMOVE: Whole file. Logic moved to events/incoming package
+
 //Alerts  ...
 type Alerts struct {
 	//Status       string            `json:"status"`
@@ -98,20 +100,8 @@ func (a *Alerts) Parse(eventJSON []byte, generatorURL string) {
 	a.Labels["alertsource"] = "SMARTAGENT"
 	a.Labels["service"] = "SmartGateway"
 	a.Labels["location"] = labels["instance"].(string)
-
-	for key, val := range annotaions {
-		switch concreteVal := val.(type) {
-		case map[string]interface{}:
-			a.parseMap(val.(map[string]interface{}))
-		case []interface{}:
-			//do nothing
-		default:
-			a.Labels[key] = concreteVal.(string)
-
-		}
-	}
+	a.parseMap(annotaions)
 	a.SetSummary()
-
 }
 
 func (a *Alerts) parseMap(aMap map[string]interface{}) {
@@ -120,7 +110,7 @@ func (a *Alerts) parseMap(aMap map[string]interface{}) {
 		case map[string]interface{}:
 			a.parseMap(val.(map[string]interface{}))
 		case []interface{}:
-			//donothing now
+			//do nothing now
 		default:
 			a.Labels[key] = concreteVal.(string)
 		}

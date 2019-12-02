@@ -16,12 +16,15 @@ import (
 
 var debuges = func(format string, data ...interface{}) {} // Default no debugging output
 
+//REMOVE: We don't need to rename string for this information
 //IndexName   ..
 type IndexName string
 
+//REMOVE: Not used anywhere
 //IndexType ....
 type IndexType string
 
+//REMOVE: Once factored only GENERICINDEX will be used and this const move to events/incoming/collectd
 //COLLECTD
 const (
 	CONNECTIVITYINDEX IndexName = "collectd_connectivity"
@@ -30,6 +33,7 @@ const (
 	GENERICINDEX      IndexName = "collectd_generic"
 )
 
+//REMOVE: Index type is always "event" for all events, so this is only a boilerplate
 //Index Type
 const (
 	CONNECTIVITYINDEXTYPE IndexType = "event"
@@ -44,6 +48,7 @@ type ElasticClient struct {
 	ctx    context.Context
 }
 
+//REMOVE: Not used anywhere
 //InitAllMappings ....
 func (ec *ElasticClient) InitAllMappings() {
 	ec.DeleteIndex(string(CONNECTIVITYINDEX))

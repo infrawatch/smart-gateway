@@ -8,12 +8,7 @@ import (
 	"strings"
 )
 
-//EventNotification ....
-type EventNotification struct {
-	Labels      func() interface{}
-	Annotations func() interface{}
-	StartsAt    string
-}
+//REMOVE: Whole file. Logic in this file is refactored in events/incoming/collectd.go
 
 var rexForNestedQuote = regexp.MustCompile(`\\\"`)
 var rexForVes = regexp.MustCompile(`"ves":"{(.*)}"`)
@@ -67,28 +62,4 @@ func typeSwitchAlertname(tst interface{}) (string, IndexType, error) {
 		return string(GENERICINDEX), GENERICINDEXTYPE, nil
 	}
 	return string(GENERICINDEX), GENERICINDEXTYPE, nil
-}
-
-//lint:ignore U1000 we might be able to delete this, but we should dig into the history of what it's for
-func typeSwitch(tst interface{}) (IndexName, IndexType, error) {
-	switch v := tst.(type) {
-	case map[string]interface{}:
-		if val, ok := v["labels"]; ok {
-			switch rec := val.(type) {
-			case map[string]interface{}:
-				if _, ok := rec["connectivity"]; ok {
-					return CONNECTIVITYINDEX, EVENTINDEXTYPE, nil
-				} else if _, ok := rec["procevent"]; ok {
-					return PROCEVENTINDEX, EVENTINDEXTYPE, nil
-				} else if _, ok := rec["sysevent"]; ok {
-					return SYSEVENTINDEX, EVENTINDEXTYPE, nil
-				}
-				//else
-				return GENERICINDEX, GENERICINDEXTYPE, nil
-			}
-		}
-	default:
-		return GENERICINDEX, GENERICINDEXTYPE, nil
-	}
-	return GENERICINDEX, GENERICINDEXTYPE, nil
 }

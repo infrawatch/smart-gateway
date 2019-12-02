@@ -1,5 +1,7 @@
 package saemapping
 
+//REMOVE: Whole file. Not used anywhere
+
 //SyseventMapping ...
 const SyseventMapping = `
 {

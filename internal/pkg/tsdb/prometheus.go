@@ -10,7 +10,7 @@ import (
 
 //TSDB  interface
 type TSDB interface {
-	//prometheus specifivreflect
+	//prometheus specific reflect
 	GetLabels() map[string]string
 	GetMetricName(index int) string
 	GetMetricDesc(index int) string
