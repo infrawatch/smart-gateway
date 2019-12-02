@@ -101,6 +101,12 @@ type SanitizeTestMatrix struct {
 	Sanitized string
 }
 
+type IndexTestMatrix struct {
+	Event     string
+	IndexName string
+	IndexType saelastic.IndexType
+}
+
 func TestSanitize(t *testing.T) {
 	matrix := []SanitizeTestMatrix{
 		{procEventDirtySample1, procEventDataSample1},
@@ -115,6 +121,24 @@ func TestSanitize(t *testing.T) {
 		if err := json.Unmarshal([]byte(result), &unstructuredResult); err != nil {
 			t.Fatal(err)
 		}
+	}
+}
+
+func TestIndexName(t *testing.T) {
+	matrix := []IndexTestMatrix{
+		{procEventDirtySample1, "collectd_procevent", saelastic.IndexType("event")},
+		{procEventDirtySample2, "collectd_interface_if", saelastic.IndexType("event")},
+		{ovsEventDirtySample, "collectd_ovs_events", saelastic.IndexType("event")},
+		{connectivityDirty, "collectd_connectivity", saelastic.IndexType("event")},
+	}
+
+	for _, testCase := range matrix {
+		iName, iType, err := saelastic.GetIndexNameType(testCase.Event)
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Equal(t, testCase.IndexName, iName)
+		assert.Equal(t, testCase.IndexType, iType)
 	}
 }
 
