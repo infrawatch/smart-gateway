@@ -16,50 +16,17 @@ import (
 
 var debuges = func(format string, data ...interface{}) {} // Default no debugging output
 
-//REMOVE: We don't need to rename string for this information
-//IndexName   ..
-type IndexName string
-
-//REMOVE: Not used anywhere
-//IndexType ....
-type IndexType string
-
-//REMOVE: Once factored only GENERICINDEX will be used and this const move to events/incoming/collectd
-//COLLECTD
-const (
-	CONNECTIVITYINDEX IndexName = "collectd_connectivity"
-	PROCEVENTINDEX    IndexName = "collectd_procevent"
-	SYSEVENTINDEX     IndexName = "collectd_syslogs"
-	GENERICINDEX      IndexName = "collectd_generic"
-)
-
-//REMOVE: Index type is always "event" for all events, so this is only a boilerplate
-//Index Type
-const (
-	CONNECTIVITYINDEXTYPE IndexType = "event"
-	PROCEVENTINDEXTYPE    IndexType = "event"
-	EVENTINDEXTYPE        IndexType = "event"
-	GENERICINDEXTYPE      IndexType = "event"
-)
-
 //ElasticClient  ....
 type ElasticClient struct {
 	client *elastic.Client
 	ctx    context.Context
 }
 
-//REMOVE: Not used anywhere
-//InitAllMappings ....
+//InitAllMappings removes all indices with prefixes used by smart-gateway
 func (ec *ElasticClient) InitAllMappings() {
-	ec.DeleteIndex(string(CONNECTIVITYINDEX))
-	ec.DeleteIndex(string(PROCEVENTINDEX))
-	ec.DeleteIndex(string(SYSEVENTINDEX))
-	ec.DeleteIndex(string(GENERICINDEX))
-	//do not create now and leave it for defaults
-	/*ec.CreateIndex(string(CONNECTIVITYINDEX), saelastic.ConnectivityMapping)
-	ec.CreateIndex(string(PROCEVENTINDEX), saelastic.ConnectivityMapping)
-	ec.CreateIndex(string(SYSEVENTINDEX), saelastic.ConnectivityMapping)
-	*/
+	ec.DeleteIndex(string("collectd_*"))
+	ec.DeleteIndex(string("ceilometer_*"))
+	ec.DeleteIndex(string("generic_*"))
 }
 
 //createTLSClient creates http.Client for elastic.Client with enabled
@@ -167,16 +134,15 @@ func genUUIDv4() string {
 }
 
 //Create ...  it can be BodyJson or BodyString.. BodyJson needs struct defined
-func (ec *ElasticClient) Create(indexname string, indextype IndexType, jsondata string) (string, error) {
+func (ec *ElasticClient) Create(indexname string, indextype string, jsondata string) (string, error) {
 	ctx := ec.ctx
 	id := genUUIDv4()
-	body := Sanitize(jsondata)
-	debuges("Debug:Printing body %s\n", body)
+	debuges("Debug:Printing body %s\n", jsondata)
 	result, err := ec.client.Index().
 		Index(string(indexname)).
 		Type(string(indextype)).
 		Id(id).
-		BodyString(body).
+		BodyString(jsondata).
 		Do(ctx)
 	if err != nil {
 		// Handle error
@@ -208,7 +174,7 @@ func (ec *ElasticClient) DeleteIndex(index string) error {
 }
 
 //Delete  ....
-func (ec *ElasticClient) Delete(indexname string, indextype IndexType, id string) error {
+func (ec *ElasticClient) Delete(indexname string, indextype string, id string) error {
 	_, err := ec.client.Delete().
 		Index(string(indexname)).
 		Type(string(indextype)).
@@ -218,7 +184,7 @@ func (ec *ElasticClient) Delete(indexname string, indextype IndexType, id string
 }
 
 //Get  ....
-func (ec *ElasticClient) Get(indexname string, indextype IndexType, id string) (*elastic.GetResult, error) {
+func (ec *ElasticClient) Get(indexname string, indextype string, id string) (*elastic.GetResult, error) {
 	result, err := ec.client.Get().
 		Index(string(indexname)).
 		Type(string(indextype)).
