@@ -90,6 +90,61 @@ func spawnSignalHandler(watchedSignals ...os.Signal) {
 	}()
 }
 
+//spawnApiServer spawns goroutine which provides http API for alerts and metrics statistics for Prometheus
+func spawnApiServer(serverConfig saconfig.EventConfiguration, metricHandler *api.EventMetricHandler, amqpHandler *amqp10.AMQPHandler) {
+	prometheus.MustRegister(metricHandler, amqpHandler)
+	// Including these stats kills performance when Prometheus polls with multiple targets
+	prometheus.Unregister(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}))
+	prometheus.Unregister(prometheus.NewGoCollector())
+
+	context := api.NewContext(serverConfig)
+	http.Handle("/alert", api.Handler{Context: context, H: api.AlertHandler})
+	http.Handle("/metrics", promhttp.Handler())
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(APIHOME))
+	})
+
+	go func() {
+		log.Printf("API server is listening at '%s'\n", serverConfig.API.APIEndpointURL)
+		log.Fatal(http.ListenAndServe(serverConfig.API.APIEndpointURL, nil))
+	}()
+}
+
+//spawnQpidStatusReporter builds gynamic select for reporting status of AMQP connections
+func spawnQpidStatusReporter(applicationHealth *cacheutil.ApplicationHealthCache, qpidStatusCases []reflect.SelectCase) {
+	go func() {
+		for {
+			_, status, _ := reflect.Select(qpidStatusCases)
+			// Note: status here is always very low integer, so we don't need to be afraid of int64>int conversion
+			applicationHealth.QpidRouterState = int(status.Int())
+		}
+	}()
+}
+
+//notifyAlertManager generates alert from event for Prometheus Alert Manager
+func notifyAlertManager(serverConfig saconfig.EventConfiguration, event *incoming.EventDataFormat, record string) {
+	go func() {
+		generatorUrl := fmt.Sprintf("%s/%s/%s/%s", serverConfig.ElasticHostURL, (*event).GetIndexName(), EVENTSINDEXTYPE, record)
+		alert, err := (*event).GeneratePrometheusAlertBody(generatorUrl)
+		debuge("Debug: Generated alert:\n%s\n", alert)
+		var byteAlertBody = []byte(fmt.Sprintf("[%s]", alert))
+		req, _ := http.NewRequest("POST", serverConfig.AlertManagerURL, bytes.NewBuffer(byteAlertBody))
+		req.Header.Set("X-Custom-Header", "smartgateway")
+		req.Header.Set("Content-Type", "application/json")
+
+		client := &http.Client{}
+		resp, err := client.Do(req)
+		if err != nil {
+			log.Printf("Failed to report alert to AlertManager:\n- error: %s\n- alert: %s\n", err, alert)
+			body, _ := ioutil.ReadAll(resp.Body)
+			defer resp.Body.Close()
+			debuge("Debug:response Status:%s\n", resp.Status)
+			debuge("Debug:response Headers:%s\n", resp.Header)
+			debuge("Debug:response Body:%s\n", string(body))
+		}
+	}()
+}
+
 //StartEvents is the entry point for running smart-gateway in events mode
 func StartEvents() {
 	spawnSignalHandler(os.Interrupt)
@@ -200,23 +255,7 @@ func StartEvents() {
 
 	// API spawn
 	if serverConfig.APIEnabled {
-		prometheus.MustRegister(metricHandler, amqpHandler)
-		// Including these stats kills performance when Prometheus polls with multiple targets
-		prometheus.Unregister(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}))
-		prometheus.Unregister(prometheus.NewGoCollector())
-
-		context := api.NewContext(serverConfig)
-		http.Handle("/alert", api.Handler{Context: context, H: api.AlertHandler})
-		http.Handle("/metrics", promhttp.Handler())
-		http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-			w.Write([]byte(APIHOME))
-		})
-
-		go func() {
-			APIEndpointURL := serverConfig.API.APIEndpointURL
-			log.Printf("API server is listening at '%s'\n", APIEndpointURL)
-			log.Fatal(http.ListenAndServe(APIEndpointURL, nil))
-		}()
+		spawnApiServer(serverConfig, metricHandler, amqpHandler)
 	}
 
 	// AMQP connection(s)
@@ -237,14 +276,7 @@ func StartEvents() {
 		})
 		amqpServers = append(amqpServers, AMQPServerItem{amqpServer, conn.DataSourceId})
 	}
-	// spawn QPID status reporter
-	go func() {
-		for {
-			_, status, _ := reflect.Select(qpidStatusCases)
-			// Note: status here is always very low integer, so we don't need to be afraid of int64>int conversion
-			applicationHealth.QpidRouterState = int(status.Int())
-		}
-	}()
+	spawnQpidStatusReporter(applicationHealth, qpidStatusCases)
 	// spawn event processor
 	go func() {
 		for {
@@ -276,26 +308,7 @@ func StartEvents() {
 				applicationHealth.ElasticSearchState = 1
 			}
 			if serverConfig.AlertManagerEnabled {
-				go func() {
-					generatorUrl := fmt.Sprintf("%s/%s/%s/%s", serverConfig.ElasticHostURL, event.GetIndexName(), EVENTSINDEXTYPE, record)
-					alert, err := event.GeneratePrometheusAlertBody(generatorUrl)
-					debuge("Debug: Generated alert:\n%s\n", alert)
-					var byteAlertBody = []byte(fmt.Sprintf("[%s]", alert))
-					req, _ := http.NewRequest("POST", serverConfig.AlertManagerURL, bytes.NewBuffer(byteAlertBody))
-					req.Header.Set("X-Custom-Header", "smartgateway")
-					req.Header.Set("Content-Type", "application/json")
-
-					client := &http.Client{}
-					resp, err := client.Do(req)
-					if err != nil {
-						log.Printf("Failed to report alert to AlertManager:\n- error: %s\n- alert: %s\n", err, alert)
-						body, _ := ioutil.ReadAll(resp.Body)
-						defer resp.Body.Close()
-						debuge("Debug:response Status:%s\n", resp.Status)
-						debuge("Debug:response Headers:%s\n", resp.Header)
-						debuge("Debug:response Body:%s\n", string(body))
-					}
-				}()
+				notifyAlertManager(serverConfig, &event, record)
 			}
 		}
 	}()
