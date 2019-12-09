@@ -22,6 +22,7 @@ var (
 )
 
 type CollectdEvent struct {
+	sanitized string
 	parsed    map[string]interface{}
 	indexName string
 }
@@ -52,7 +53,12 @@ func (self *CollectdEvent) GetRawData() interface{} {
 	return self.parsed
 }
 
-//Sanitize search and removes all known issues in received data.
+//GetSanitized returns sanitized event data
+func (self *CollectdEvent) GetSanitized() string {
+	return self.sanitized
+}
+
+//sanitize search and removes all known issues in received data.
 func (self *CollectdEvent) sanitize(jsondata string) string {
 	// 1) if value for key "ves" is string, we convert it to json
 	vesCleaned := jsondata
@@ -68,8 +74,8 @@ func (self *CollectdEvent) sanitize(jsondata string) string {
 
 //ParseEvent sanitizes and unmarshals received event data.
 func (self *CollectdEvent) ParseEvent(data string) error {
-	sanitized := self.sanitize(data)
-	err := json.Unmarshal([]byte(sanitized), &self.parsed)
+	self.sanitized = self.sanitize(data)
+	err := json.Unmarshal([]byte(self.sanitized), &self.parsed)
 	if err != nil {
 		log.Fatal(err)
 		return err
@@ -100,7 +106,7 @@ func assimilateMap(theMap map[string]interface{}, destination *map[string]string
 	}
 }
 
-//GeneratePrometheusAlert generates alert PrometheusAlert from the event data
+//GeneratePrometheusAlert generates PrometheusAlert from the event data
 func (self *CollectdEvent) GeneratePrometheusAlert(generatorUrl string) PrometheusAlert {
 	alert := PrometheusAlert{
 		Labels:       make(map[string]string),

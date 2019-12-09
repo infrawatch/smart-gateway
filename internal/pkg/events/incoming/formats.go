@@ -5,15 +5,17 @@ import (
 	"strings"
 )
 
-type EventMetricDataFormat interface {
+type EventDataFormat interface {
 	//GetIndexName returns Elasticsearch index to which this event is or should be saved.
 	GetIndexName() string
 	//GetRawData returns sanitized and umarshalled event data.
 	GetRawData() interface{}
+	//GetSanitized returns sanitized event data
+	GetSanitized() string
 	//ParseEvent sanitizes and unmarshals received event data.
 	ParseEvent(string) error
-	//GeneratePrometheusAlert generates alert body for Prometheus Alert manager API
-	GeneratePrometheusAlert(string) ([]byte, error)
+	//GeneratePrometheusAlertBody generates alert body for Prometheus Alert manager API
+	GeneratePrometheusAlertBody(string) ([]byte, error)
 }
 
 type PrometheusAlert struct {
