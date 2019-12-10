@@ -212,7 +212,7 @@ msgloop:
 		case data := <-amqpMetricServer.GetNotifier():
 			amqpMetricServer.GetHandler().IncTotalMsgProcessed()
 			debugm("Debug: Getting incoming data from notifier channel : %#v\n", data)
-			incomingType := incoming.NewFromDataSource(saconfig.DATA_SOURCE_COLLECTD)
+			incomingType := incoming.NewFromDataSource(saconfig.DataSourceCollectd)
 			metrics, _ := incomingType.ParseInputJSON(data)
 			for _, m := range metrics {
 				amqpMetricServer.UpdateMinCollectInterval(m.GetInterval())

@@ -13,21 +13,24 @@ import (
 type DataSource int
 
 const (
-	DATA_SOURCE_UNIVERSAL DataSource = iota
-	DATA_SOURCE_COLLECTD
-	DATA_SOURCE_CEILOMETER
+	//DataSourceUniversal marks all types of data sorces which send data in smart-gateway universal format
+	DataSourceUniversal DataSource = iota
+	//DataSourceCollectd marks collectd as data source for metrics and(or) events
+	DataSourceCollectd
+	//DataSourceCeilometer marks Ceilometer as data source for metrics and(or) events
+	DataSourceCeilometer
 )
 
 //String returns human readable data type identification.
-func (self *DataSource) String() string {
-	return []string{"universal", "collectd", "ceilometer"}[*self]
+func (src *DataSource) String() string {
+	return []string{"universal", "collectd", "ceilometer"}[*src]
 }
 
 //SetFromString resets value according to given human readable identification. Returns false if invalid identification was given.
-func (self *DataSource) SetFromString(name string) bool {
+func (src *DataSource) SetFromString(name string) bool {
 	for index, value := range []string{"universal", "collectd", "ceilometer"} {
 		if name == value {
-			*self = DataSource(index)
+			*src = DataSource(index)
 			return true
 		}
 	}
@@ -38,9 +41,9 @@ func (self *DataSource) SetFromString(name string) bool {
 
 //AMQPConnection identifies single messagebus connection and expected format of incoming data.
 type AMQPConnection struct {
-	Url          string `json:"Url"`
+	URL          string `json:"URL"`
 	DataSource   string `json:"DataSource"`
-	DataSourceId DataSource
+	DataSourceID DataSource
 }
 
 /********************* EventConfiguration implementation *********************/
@@ -94,7 +97,7 @@ type MetricConfiguration struct {
 
 /*****************************************************************************/
 
-//LoadConfig loads and unmarshals configuration file by given path and type
+//LoadConfiguration loads and unmarshals configuration file by given path and type
 func LoadConfiguration(path string, confType string) (interface{}, error) {
 	file, err := ioutil.ReadFile(path)
 	if err != nil {
@@ -121,12 +124,12 @@ func LoadConfiguration(path string, confType string) (interface{}, error) {
 		var dts *DataSource
 		switch confType {
 		case "metric":
-			dts = &config.(*MetricConfiguration).AMQP1Connections[index].DataSourceId
+			dts = &config.(*MetricConfiguration).AMQP1Connections[index].DataSourceID
 		case "event":
-			dts = &config.(*EventConfiguration).AMQP1Connections[index].DataSourceId
+			dts = &config.(*EventConfiguration).AMQP1Connections[index].DataSourceID
 		}
 		if ok := dts.SetFromString(conn.DataSource); !ok {
-			err = fmt.Errorf("Invalid AMQP connection data source '%s'", conn.DataSource)
+			err = fmt.Errorf("invalid AMQP connection data source '%s'", conn.DataSource)
 		}
 	}
 	return config, err

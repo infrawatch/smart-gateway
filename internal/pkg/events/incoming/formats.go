@@ -5,6 +5,7 @@ import (
 	"strings"
 )
 
+//EventDataFormat interface for storing event data from various sources
 type EventDataFormat interface {
 	//GetIndexName returns Elasticsearch index to which this event is or should be saved.
 	GetIndexName() string
@@ -18,41 +19,42 @@ type EventDataFormat interface {
 	GeneratePrometheusAlertBody(string) ([]byte, error)
 }
 
+//PrometheusAlert represents data structure used for sending alerts to Prometheus Alert Manager
 type PrometheusAlert struct {
 	Labels       map[string]string `json:"labels"`
 	Annotations  map[string]string `json:"annotations"`
 	StartsAt     string            `json:"startsAt,omitempty"`
 	EndsAt       string            `json:"endsAt,omitempty"`
-	GeneratorUrl string            `json:"generatorURL"`
+	GeneratorURL string            `json:"generatorURL"`
 }
 
 //SetName generates unique name and description for the alert and creates new key/value pair for it in Labels
-func (self *PrometheusAlert) SetName() {
-	if _, ok := self.Labels["name"]; !ok {
-		keys := make([]string, 0, len(self.Labels))
-		for k := range self.Labels {
+func (alert *PrometheusAlert) SetName() {
+	if _, ok := alert.Labels["name"]; !ok {
+		keys := make([]string, 0, len(alert.Labels))
+		for k := range alert.Labels {
 			keys = append(keys, k)
 		}
 		sort.Strings(keys)
 
-		values := make([]string, 0, len(self.Labels)-1)
-		desc := make([]string, 0, len(self.Labels))
+		values := make([]string, 0, len(alert.Labels)-1)
+		desc := make([]string, 0, len(alert.Labels))
 		for _, k := range keys {
 			if k != "severity" {
-				values = append(values, self.Labels[k])
+				values = append(values, alert.Labels[k])
 			}
-			desc = append(desc, self.Labels[k])
+			desc = append(desc, alert.Labels[k])
 		}
-		self.Labels["name"] = strings.Join(values, "_")
-		self.Annotations["description"] = strings.Join(desc, " ")
+		alert.Labels["name"] = strings.Join(values, "_")
+		alert.Annotations["description"] = strings.Join(desc, " ")
 	}
 }
 
 //SetSummary generates summary annotation in case it is empty
-func (self *PrometheusAlert) SetSummary() {
+func (alert *PrometheusAlert) SetSummary() {
 	generate := false
-	if _, ok := self.Annotations["summary"]; ok {
-		if self.Annotations["summary"] == "" {
+	if _, ok := alert.Annotations["summary"]; ok {
+		if alert.Annotations["summary"] == "" {
 			generate = true
 		}
 	} else {
@@ -60,16 +62,16 @@ func (self *PrometheusAlert) SetSummary() {
 	}
 
 	if generate {
-		if val, ok := self.Labels["summary"]; ok && self.Labels["summary"] != "" {
-			self.Annotations["summary"] = val
+		if val, ok := alert.Labels["summary"]; ok && alert.Labels["summary"] != "" {
+			alert.Annotations["summary"] = val
 		} else {
 			values := make([]string, 0, 3)
 			for _, key := range []string{"sourceName", "type", "eventName"} {
-				if val, ok := self.Labels[key]; ok {
+				if val, ok := alert.Labels[key]; ok {
 					values = append(values, val)
 				}
 			}
-			self.Annotations["summary"] = strings.Join(values, " ")
+			alert.Annotations["summary"] = strings.Join(values, " ")
 		}
 	}
 }

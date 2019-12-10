@@ -9,6 +9,8 @@ import (
 	"time"
 )
 
+//GENERICINDEX value represents ElasticSearch index name for data from which it
+// is not possible to clearly construct indexs name
 const GENERICINDEX = "collectd_generic"
 
 var (
@@ -21,6 +23,7 @@ var (
 	}
 )
 
+//CollectdEvent implements EventDataFormat interface and holds event message data from collectd.
 type CollectdEvent struct {
 	sanitized string
 	parsed    map[string]interface{}
@@ -28,10 +31,10 @@ type CollectdEvent struct {
 }
 
 //GetIndexName returns Elasticsearch index to which this event is or should be saved.
-func (self *CollectdEvent) GetIndexName() string {
-	if self.indexName == "" {
+func (evt *CollectdEvent) GetIndexName() string {
+	if evt.indexName == "" {
 		result := GENERICINDEX
-		if val, ok := self.parsed["labels"]; ok {
+		if val, ok := evt.parsed["labels"]; ok {
 			switch rec := val.(type) {
 			case map[string]interface{}:
 				if value, ok := rec["alertname"].(string); ok {
@@ -43,23 +46,23 @@ func (self *CollectdEvent) GetIndexName() string {
 				}
 			}
 		}
-		self.indexName = result
+		evt.indexName = result
 	}
-	return self.indexName
+	return evt.indexName
 }
 
 //GetRawData returns sanitized and umarshalled event data.
-func (self *CollectdEvent) GetRawData() interface{} {
-	return self.parsed
+func (evt *CollectdEvent) GetRawData() interface{} {
+	return evt.parsed
 }
 
 //GetSanitized returns sanitized event data
-func (self *CollectdEvent) GetSanitized() string {
-	return self.sanitized
+func (evt *CollectdEvent) GetSanitized() string {
+	return evt.sanitized
 }
 
 //sanitize search and removes all known issues in received data.
-func (self *CollectdEvent) sanitize(jsondata string) string {
+func (evt *CollectdEvent) sanitize(jsondata string) string {
 	// 1) if value for key "ves" is string, we convert it to json
 	vesCleaned := jsondata
 	sub := rexForVes.FindStringSubmatch(jsondata)
@@ -73,9 +76,9 @@ func (self *CollectdEvent) sanitize(jsondata string) string {
 }
 
 //ParseEvent sanitizes and unmarshals received event data.
-func (self *CollectdEvent) ParseEvent(data string) error {
-	self.sanitized = self.sanitize(data)
-	err := json.Unmarshal([]byte(self.sanitized), &self.parsed)
+func (evt *CollectdEvent) ParseEvent(data string) error {
+	evt.sanitized = evt.sanitize(data)
+	err := json.Unmarshal([]byte(evt.sanitized), &evt.parsed)
 	if err != nil {
 		log.Fatal(err)
 		return err
@@ -107,15 +110,15 @@ func assimilateMap(theMap map[string]interface{}, destination *map[string]string
 }
 
 //GeneratePrometheusAlert generates PrometheusAlert from the event data
-func (self *CollectdEvent) GeneratePrometheusAlert(generatorUrl string) PrometheusAlert {
+func (evt *CollectdEvent) GeneratePrometheusAlert(generatorURL string) PrometheusAlert {
 	alert := PrometheusAlert{
 		Labels:       make(map[string]string),
 		Annotations:  make(map[string]string),
-		GeneratorUrl: generatorUrl,
+		GeneratorURL: generatorURL,
 	}
-	assimilateMap(self.parsed["labels"].(map[string]interface{}), &alert.Labels)
-	assimilateMap(self.parsed["annotations"].(map[string]interface{}), &alert.Annotations)
-	if value, ok := self.parsed["startsAt"].(string); ok {
+	assimilateMap(evt.parsed["labels"].(map[string]interface{}), &alert.Labels)
+	assimilateMap(evt.parsed["annotations"].(map[string]interface{}), &alert.Annotations)
+	if value, ok := evt.parsed["startsAt"].(string); ok {
 		// ensure timestamps is in RFC3339
 		for _, layout := range []string{time.RFC3339, time.RFC3339Nano, time.ANSIC} {
 			stamp, err := time.Parse(layout, value)
@@ -132,14 +135,14 @@ func (self *CollectdEvent) GeneratePrometheusAlert(generatorUrl string) Promethe
 		}
 	}
 	alert.SetName()
-	assimilateMap(self.parsed["annotations"].(map[string]interface{}), &alert.Labels)
+	assimilateMap(evt.parsed["annotations"].(map[string]interface{}), &alert.Labels)
 	alert.SetSummary()
 
 	alert.Labels["alertsource"] = "SmartGateway"
 	return alert
 }
 
-//GeneratePrometheusAlert generates alert body for Prometheus Alert manager API
-func (self *CollectdEvent) GeneratePrometheusAlertBody(generatorUrl string) ([]byte, error) {
-	return json.Marshal(self.GeneratePrometheusAlert(generatorUrl))
+//GeneratePrometheusAlertBody generates alert body for Prometheus Alert manager API
+func (evt *CollectdEvent) GeneratePrometheusAlertBody(generatorURL string) ([]byte, error) {
+	return json.Marshal(evt.GeneratePrometheusAlert(generatorURL))
 }

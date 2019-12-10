@@ -156,7 +156,7 @@ func (shard *ShardedIncomingDataCache) SetData(data incoming.MetricDataFormat) e
 	defer shard.lock.Unlock()
 	if shard.plugin[data.GetItemKey()] == nil {
 		//TODO: change this to more generic later
-		shard.plugin[data.GetItemKey()] = incoming.NewFromDataSource(saconfig.DATA_SOURCE_COLLECTD)
+		shard.plugin[data.GetItemKey()] = incoming.NewFromDataSource(saconfig.DataSourceCollectd)
 	}
 	shard.lastAccess = time.Now().Unix()
 	collectd := shard.plugin[data.GetItemKey()]

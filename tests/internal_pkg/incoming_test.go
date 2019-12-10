@@ -22,7 +22,7 @@ type IncommingCollecdDataMatrix struct {
 /*----------------------------- helper functions -----------------------------*/
 //GenerateSampleCollectdData ...
 func GenerateSampleCollectdData(hostname string, pluginname string) *incoming.CollectdMetric {
-	citfc := incoming.NewFromDataSource(saconfig.DATA_SOURCE_COLLECTD)
+	citfc := incoming.NewFromDataSource(saconfig.DataSourceCollectd)
 	collectd := citfc.(*incoming.CollectdMetric)
 	collectd.Host = hostname
 	collectd.Plugin = pluginname
@@ -46,7 +46,7 @@ func GetFieldStr(dataItem incoming.MetricDataFormat, field string) string {
 /*----------------------------------------------------------------------------*/
 
 func TestCollectdIncoming(t *testing.T) {
-	emptySample := incoming.NewFromDataSource(saconfig.DATA_SOURCE_COLLECTD)
+	emptySample := incoming.NewFromDataSource(saconfig.DataSourceCollectd)
 	sample := GenerateSampleCollectdData("hostname", "pluginname")
 	jsonBytes, err := json.Marshal([]*incoming.CollectdMetric{sample})
 	if err != nil {
@@ -88,7 +88,7 @@ func TestCollectdIncoming(t *testing.T) {
 		}
 		errr = emptySample.ParseInputByte([]byte("error string"))
 		assert.Error(t, errr, "Expected error got nil")
-		esample := incoming.NewFromDataSource(saconfig.DATA_SOURCE_COLLECTD)
+		esample := incoming.NewFromDataSource(saconfig.DataSourceCollectd)
 		errs := esample.ParseInputByte(jsonBytes)
 		if errs == nil {
 			sample3 := esample.(*incoming.CollectdMetric)

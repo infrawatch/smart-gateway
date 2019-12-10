@@ -199,6 +199,6 @@ func TestGenerateAlert(t *testing.T) {
 	})
 	t.Run("Verify proper parsing of rest of data", func(t *testing.T) {
 		assert.Equal(t, "2018-04-09T16:45:16Z", eventAlert.StartsAt)
-		assert.Equal(t, "https://this/is/test", eventAlert.GeneratorUrl)
+		assert.Equal(t, "https://this/is/test", eventAlert.GeneratorURL)
 	})
 }

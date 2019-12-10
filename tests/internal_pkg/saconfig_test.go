@@ -176,9 +176,9 @@ func TestStructuredData(t *testing.T) {
 
 	t.Run("Test structured AMQP connections", func(t *testing.T) {
 		connStruct := []saconfig.AMQPConnection{
-			saconfig.AMQPConnection{Url: "127.0.0.1:5672/collectd/notify", DataSource: "collectd", DataSourceId: 1},
-			saconfig.AMQPConnection{Url: "127.0.0.1:5672/ceilometer/events", DataSource: "ceilometer", DataSourceId: 2},
-			saconfig.AMQPConnection{Url: "127.0.0.1:5672/universal/events", DataSource: "universal", DataSourceId: 0},
+			saconfig.AMQPConnection{URL: "127.0.0.1:5672/collectd/notify", DataSource: "collectd", DataSourceID: 1},
+			saconfig.AMQPConnection{URL: "127.0.0.1:5672/ceilometer/events", DataSource: "ceilometer", DataSourceID: 2},
+			saconfig.AMQPConnection{URL: "127.0.0.1:5672/universal/events", DataSource: "universal", DataSourceID: 0},
 		}
 		assert.Equal(t, connStruct, cfg.(*saconfig.EventConfiguration).AMQP1Connections)
 	})

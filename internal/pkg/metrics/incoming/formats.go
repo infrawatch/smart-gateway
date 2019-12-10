@@ -20,9 +20,9 @@ type MetricDataFormat interface {
 //NewFromDataSource creates empty DataType accorging to given DataSource
 func NewFromDataSource(source saconfig.DataSource) MetricDataFormat {
 	switch source {
-	case saconfig.DATA_SOURCE_COLLECTD:
+	case saconfig.DataSourceCollectd:
 		return newCollectdMetric( /*...*/ )
-	case saconfig.DATA_SOURCE_CEILOMETER:
+	case saconfig.DataSourceCeilometer:
 		return newCeilometerMetric()
 	}
 	return nil

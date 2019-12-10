@@ -26,8 +26,10 @@ import (
 )
 
 const (
+	//EVENTSINDEXTYPE value is used for creating Elasticsearch indexes holding event data
 	EVENTSINDEXTYPE = "event"
-	APIHOME         = `
+	//APIHOME value contains root API endpoint content
+	APIHOME = `
 <html>
 	<head>
 		<title>Smart Gateway Event API</title>
@@ -43,6 +45,7 @@ const (
 `
 )
 
+//AMQPServerItem hold information about data source which is AMQPServer listening to.
 type AMQPServerItem struct {
 	Server     *amqp10.AMQPServer
 	DataSource saconfig.DataSource
@@ -70,9 +73,8 @@ func eventusage() {
 }
 
 var (
-	debuge          = func(format string, data ...interface{}) {} // Default no debugging output
-	amqpEventServer *amqp10.AMQPServer
-	serverConfig    saconfig.EventConfiguration
+	debuge       = func(format string, data ...interface{}) {} // Default no debugging output
+	serverConfig saconfig.EventConfiguration
 )
 
 //spawnSignalHandler spawns goroutine which will wait for interruption signal(s)
@@ -90,8 +92,8 @@ func spawnSignalHandler(watchedSignals ...os.Signal) {
 	}()
 }
 
-//spawnApiServer spawns goroutine which provides http API for alerts and metrics statistics for Prometheus
-func spawnApiServer(serverConfig saconfig.EventConfiguration, metricHandler *api.EventMetricHandler, amqpHandler *amqp10.AMQPHandler) {
+//spawnAPIServer spawns goroutine which provides http API for alerts and metrics statistics for Prometheus
+func spawnAPIServer(serverConfig saconfig.EventConfiguration, metricHandler *api.EventMetricHandler, amqpHandler *amqp10.AMQPHandler) {
 	prometheus.MustRegister(metricHandler, amqpHandler)
 	// Including these stats kills performance when Prometheus polls with multiple targets
 	prometheus.Unregister(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}))
@@ -124,8 +126,11 @@ func spawnQpidStatusReporter(applicationHealth *cacheutil.ApplicationHealthCache
 //notifyAlertManager generates alert from event for Prometheus Alert Manager
 func notifyAlertManager(serverConfig saconfig.EventConfiguration, event *incoming.EventDataFormat, record string) {
 	go func() {
-		generatorUrl := fmt.Sprintf("%s/%s/%s/%s", serverConfig.ElasticHostURL, (*event).GetIndexName(), EVENTSINDEXTYPE, record)
-		alert, err := (*event).GeneratePrometheusAlertBody(generatorUrl)
+		generatorURL := fmt.Sprintf("%s/%s/%s/%s", serverConfig.ElasticHostURL, (*event).GetIndexName(), EVENTSINDEXTYPE, record)
+		alert, err := (*event).GeneratePrometheusAlertBody(generatorURL)
+		if err != nil {
+			log.Printf("Failed generate alert from event:\n- error: %s\n- event: %s\n", err, (*event).GetSanitized())
+		}
 		debuge("Debug: Generated alert:\n%s\n", alert)
 		var byteAlertBody = []byte(fmt.Sprintf("[%s]", alert))
 		req, _ := http.NewRequest("POST", serverConfig.AlertManagerURL, bytes.NewBuffer(byteAlertBody))
@@ -234,8 +239,8 @@ func StartEvents() {
 		//TO-DO(mmagr): Remove this in next major release
 		serverConfig.AMQP1Connections = []saconfig.AMQPConnection{
 			saconfig.AMQPConnection{
-				Url:          serverConfig.AMQP1EventURL,
-				DataSourceId: saconfig.DATA_SOURCE_COLLECTD,
+				URL:          serverConfig.AMQP1EventURL,
+				DataSourceID: saconfig.DataSourceCollectd,
 				DataSource:   "collectd",
 			},
 		}
@@ -255,7 +260,7 @@ func StartEvents() {
 
 	// API spawn
 	if serverConfig.APIEnabled {
-		spawnApiServer(serverConfig, metricHandler, amqpHandler)
+		spawnAPIServer(serverConfig, metricHandler, amqpHandler)
 	}
 
 	// AMQP connection(s)
@@ -263,8 +268,8 @@ func StartEvents() {
 	qpidStatusCases := make([]reflect.SelectCase, 0, len(serverConfig.AMQP1Connections))
 	amqpServers := make([]AMQPServerItem, 0, len(serverConfig.AMQP1Connections))
 	for _, conn := range serverConfig.AMQP1Connections {
-		amqpServer := amqp10.NewAMQPServer(conn.Url, serverConfig.Debug, -1, serverConfig.Prefetch, amqpHandler, *fUniqueName)
-		log.Printf("Listening for AMQP messages at '%s'.\n", conn.Url)
+		amqpServer := amqp10.NewAMQPServer(conn.URL, serverConfig.Debug, -1, serverConfig.Prefetch, amqpHandler, *fUniqueName)
+		log.Printf("Listening for AMQP messages at '%s'.\n", conn.URL)
 		//create select case for this listener
 		processingCases = append(processingCases, reflect.SelectCase{
 			Dir:  reflect.SelectRecv,
@@ -274,7 +279,7 @@ func StartEvents() {
 			Dir:  reflect.SelectRecv,
 			Chan: reflect.ValueOf(amqpServer.GetStatus()),
 		})
-		amqpServers = append(amqpServers, AMQPServerItem{amqpServer, conn.DataSourceId})
+		amqpServers = append(amqpServers, AMQPServerItem{amqpServer, conn.DataSourceID})
 	}
 	spawnQpidStatusReporter(applicationHealth, qpidStatusCases)
 	// spawn event processor
