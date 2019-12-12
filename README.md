@@ -41,7 +41,7 @@ Building the `smart-gateway` with docker using the following commands.
 ```
 git clone --depth=1 --branch=master https://github.com/redhat-service-assurance/smart-gateway.git smart-gateway; rm -rf ./smart-gateway/.git
 cd smart-gateway
-sudo docker build -t smart-gateway --file=build/Dockerfile .
+docker build -t smart-gateway .
 ```
 
 # Testing
