@@ -23,15 +23,15 @@ import (
 )
 
 var (
-	debugm       = func(format string, data ...interface{}) {} // Default no debugging output
-	debugs       = func(count int) {}                          // Default no debugging output
-	serverConfig saconfig.MetricConfiguration
+	debugm = func(format string, data ...interface{}) {} // Default no debugging output
+	debugs = func(count int) {}                          // Default no debugging output
 )
 
 /*************** HTTP HANDLER***********************/
 type cacheHandler struct {
-	cache    *cacheutil.IncomingDataCache
-	appstate *api.MetricHandler
+	useTimestamp bool
+	cache        *cacheutil.IncomingDataCache
+	appstate     *api.MetricHandler
 }
 
 // Describe implements prometheus.Collector.
@@ -52,7 +52,7 @@ func (c *cacheHandler) Collect(ch chan<- prometheus.Metric) {
 	for key, plugin := range allHosts {
 		//fmt.Fprintln(w, hostname)
 		debugm("Debug:Getting metrics for host %s  with total plugin size %d\n", key, plugin.Size())
-		metricCount = plugin.FlushPrometheusMetric(serverConfig.UseTimeStamp, ch)
+		metricCount = plugin.FlushPrometheusMetric(c.useTimestamp, ch)
 		if metricCount > 0 {
 			// add heart if there is atleast one new metrics for the host
 			debugm("Debug:Adding heartbeat for host %s.", key)
@@ -103,24 +103,23 @@ func StartMetrics() {
 	fAMQP1MetricURL := flag.String("amqp1MetricURL", "", "AMQP1.0 metrics listener example 127.0.0.1:5672/collectd/telemetry")
 	fCount := flag.Int("count", -1, "Stop after receiving this many messages in total(-1 forever) (OPTIONAL)")
 	fPrefetch := flag.Int("prefetch", 0, "AMQP1.0 option: Enable prefetc and set capacity(0 is disabled,>0 enabled with capacity of >0) (OPTIONAL)")
-
 	fUsetimestamp := flag.Bool("usetimestamp", true, "Use source time stamp instead of promethues.(default true,OPTIONAL)")
 	fUniqueName := flag.String("uname", "metrics-"+strconv.Itoa(rand.Intn(100)), "Unique name across application")
-
 	flag.Parse()
 
+	var serverConfig *saconfig.MetricConfiguration
 	if len(*fConfigLocation) > 0 { //load configuration
 		conf, err := saconfig.LoadConfiguration(*fConfigLocation, "metric")
 		if err != nil {
 			log.Fatal("Config Parse Error: ", err)
 		}
-		serverConfig = conf.(saconfig.MetricConfiguration)
+		serverConfig = conf.(*saconfig.MetricConfiguration)
 		serverConfig.ServiceType = *fServiceType
 		if *fDebug {
 			serverConfig.Debug = true
 		}
 	} else {
-		serverConfig = saconfig.MetricConfiguration{
+		serverConfig = &saconfig.MetricConfiguration{
 			AMQP1MetricURL: *fAMQP1MetricURL,
 			CPUStats:       *fIncludeStats,
 			Exporterhost:   *fExporterhost,
@@ -162,7 +161,7 @@ func StartMetrics() {
 	cacheServer := cacheutil.NewCacheServer(cacheutil.MAXTTL, serverConfig.Debug)
 	applicationHealth := cacheutil.NewApplicationHealthCache()
 	appStateHandler := api.NewAppStateMetricHandler(applicationHealth)
-	myHandler := &cacheHandler{cache: cacheServer.GetCache(), appstate: appStateHandler}
+	myHandler := &cacheHandler{useTimestamp: serverConfig.UseTimeStamp, cache: cacheServer.GetCache(), appstate: appStateHandler}
 	amqpHandler := amqp10.NewAMQPHandler("Metric Consumer")
 	prometheus.MustRegister(myHandler, amqpHandler)
 

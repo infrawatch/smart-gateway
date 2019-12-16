@@ -72,10 +72,7 @@ func eventusage() {
 	flag.PrintDefaults()
 }
 
-var (
-	debuge       = func(format string, data ...interface{}) {} // Default no debugging output
-	serverConfig saconfig.EventConfiguration
-)
+var debuge = func(format string, data ...interface{}) {} // Default no debugging output
 
 //spawnSignalHandler spawns goroutine which will wait for interruption signal(s)
 // and end smart gateway in case any of the signal is received
@@ -171,18 +168,19 @@ func StartEvents() {
 	flag.Parse()
 
 	//load configuration from given config file or from cmdline parameters
+	var serverConfig *saconfig.EventConfiguration
 	if len(*fConfigLocation) > 0 {
 		conf, err := saconfig.LoadConfiguration(*fConfigLocation, "event")
 		if err != nil {
 			log.Fatal("Config Parse Error: ", err)
 		}
-		serverConfig = conf.(saconfig.EventConfiguration)
+		serverConfig := conf.(*saconfig.EventConfiguration)
 		serverConfig.ServiceType = *fServiceType
 		if *fDebug {
 			serverConfig.Debug = true
 		}
 	} else {
-		serverConfig = saconfig.EventConfiguration{
+		serverConfig = &saconfig.EventConfiguration{
 			AMQP1EventURL:   *fAMQP1EventURL,
 			ElasticHostURL:  *fElasticHostURL,
 			AlertManagerURL: *fAlertManagerURL,
@@ -251,7 +249,7 @@ func StartEvents() {
 	amqpHandler := amqp10.NewAMQPHandler("Event Consumer")
 
 	// Elastic connection
-	elasticClient, err := saelastic.CreateClient(serverConfig)
+	elasticClient, err := saelastic.CreateClient(*serverConfig)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
@@ -260,7 +258,7 @@ func StartEvents() {
 
 	// API spawn
 	if serverConfig.APIEnabled {
-		spawnAPIServer(serverConfig, metricHandler, amqpHandler)
+		spawnAPIServer(*serverConfig, metricHandler, amqpHandler)
 	}
 
 	// AMQP connection(s)
@@ -313,7 +311,7 @@ func StartEvents() {
 				applicationHealth.ElasticSearchState = 1
 			}
 			if serverConfig.AlertManagerEnabled {
-				notifyAlertManager(serverConfig, &event, record)
+				notifyAlertManager(*serverConfig, &event, record)
 			}
 		}
 	}()
