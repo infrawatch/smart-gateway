@@ -1,7 +1,6 @@
 package tests
 
 import (
-	"encoding/json"
 	"io/ioutil"
 	"os"
 	"path"
@@ -9,25 +8,12 @@ import (
 
 	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/saconfig"
 	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/saelastic"
-	"github.com/stretchr/testify/assert"
 )
 
 //COLLECTD
 const (
-	CONNECTIVITYINDEXTEST = "collectd_connectivity_test"
-	PROCEVENTINDEXTEST    = "collectd_procevent_test"
-	SYSEVENTINDEXTEST     = "collectd_syslogs_test"
-	GENERICINDEXTEST      = "collectd_generic_test"
-	connectivitydata      = `[{"labels":{"alertname":"collectd_connectivity_gauge","instance":"d60b3c68f23e","connectivity":"eno2","type":"interface_status","severity":"OKAY","service":"collectd"},"annotations":{"summary":"","ves":{"domain":"stateChange","eventId":2,"eventName":"interface eno2 up","lastEpochMicrosec":1518188764024922,"priority":"high","reportingEntityName":"collectd connectivity plugin","sequence":0,"sourceName":"eno2","startEpochMicrosec":1518188755700851,"version":1.0,"stateChangeFields":{"newState":"inService","oldState":"outOfService","stateChangeFieldsVersion":1.0,"stateInterface":"eno2"}}},"startsAt":"2018-02-09T15:06:04.024859063Z"}]`
-	connectivityDirty     = "[{\"labels\":{\"alertname\":\"collectd_connectivity_gauge\",\"instance\":\"d60b3c68f23e\",\"connectivity\":\"eno2\",\"type\":\"interface_status\",\"severity\":\"FAILURE\",\"service\":\"collectd\"},\"annotations\":{\"summary\":\"\",\"ves\":\"{\\\"domain\\\":\\\"stateChange\\\",\\\"eventId\\\":11,\\\"eventName\\\":\\\"interface eno2 down\\\",\\\"lastEpochMicrosec\\\":1518790014024924,\\\"priority\\\":\\\"high\\\",\\\"reportingEntityName\\\":\\\"collectd connectivity plugin\\\",\\\"sequence\\\":0,\\\"sourceName\\\":\\\"eno2\\\",\\\"startEpochMicrosec\\\":1518790009881440,\\\"version\\\":1.0,\\\"stateChangeFields\\\":{\\\"newState\\\":\\\"outOfService\\\",\\\"oldState\\\":\\\"inService\\\",\\\"stateChangeFieldsVersion\\\":1.0,\\\"stateInterface\\\":\\\"eno2\\\"}}\"},\"startsAt\":\"2018-02-16T14:06:54.024856417Z\"}]"
-	procEventDataSample1  = `{"labels":{"alertname":"collectd_procevent_gauge","instance":"d60b3c68f23e","procevent":"bla.py","type":"process_status","severity":"FAILURE","service":"collectd"},"annotations":{"summary":"","ves":{"domain":"fault","eventId":3,"eventName":"process bla.py (8537) down","lastEpochMicrosec":1518791119579620,"priority":"high","reportingEntityName":"collectd procevent plugin","sequence":0,"sourceName":"bla.py","startEpochMicrosec":1518791111336973,"version":1.0,"faultFields":{"alarmCondition":"process bla.py (8537) state change","alarmInterfaceA":"bla.py","eventSeverity":"CRITICAL","eventSourceType":"process","faultFieldsVersion":1.0,"specificProblem":"process bla.py (8537) down","vfStatus":"Ready to terminate"}}},"startsAt":"2018-02-16T14:25:19.579573212Z"}`
-	procEventDirtySample1 = "[{\"labels\":{\"alertname\":\"collectd_procevent_gauge\",\"instance\":\"d60b3c68f23e\",\"procevent\":\"bla.py\",\"type\":\"process_status\",\"severity\":\"FAILURE\",\"service\":\"collectd\"},\"annotations\":{\"summary\":\"\",\"ves\":\"{\\\"domain\\\":\\\"fault\\\",\\\"eventId\\\":3,\\\"eventName\\\":\\\"process bla.py (8537) down\\\",\\\"lastEpochMicrosec\\\":1518791119579620,\\\"priority\\\":\\\"high\\\",\\\"reportingEntityName\\\":\\\"collectd procevent plugin\\\",\\\"sequence\\\":0,\\\"sourceName\\\":\\\"bla.py\\\",\\\"startEpochMicrosec\\\":1518791111336973,\\\"version\\\":1.0,\\\"faultFields\\\":{\\\"alarmCondition\\\":\\\"process bla.py (8537) state change\\\",\\\"alarmInterfaceA\\\":\\\"bla.py\\\",\\\"eventSeverity\\\":\\\"CRITICAL\\\",\\\"eventSourceType\\\":\\\"process\\\",\\\"faultFieldsVersion\\\":1.0,\\\"specificProblem\\\":\\\"process bla.py (8537) down\\\",\\\"vfStatus\\\":\\\"Ready to terminate\\\"}}\"},\"startsAt\":\"2018-02-16T14:25:19.579573212Z\"}]"
-	procEventDataSample2  = `{"labels":{"alertname":"collectd_interface_if_octets","instance":"localhost.localdomain","interface":"lo","severity":"FAILURE","service":"collectd"},"annotations":{"summary":"Host localhost.localdomain, plugin interface (instance lo) type if_octets: Data source \"rx\" is currently 43596.224329. That is above the failure threshold of 0.000000.","DataSource":"rx","CurrentValue":"43596.2243286703","WarningMin":"nan","WarningMax":"nan","FailureMin":"nan","FailureMax":"0"},"startsAt":"2019-09-18T21:11:19.281603240Z"}`
-	procEventDirtySample2 = `[{"labels":{"alertname":"collectd_interface_if_octets","instance":"localhost.localdomain","interface":"lo","severity":"FAILURE","service":"collectd"},"annotations":{"summary":"Host localhost.localdomain, plugin interface (instance lo) type if_octets: Data source \"rx\" is currently 43596.224329. That is above the failure threshold of 0.000000.","DataSource":"rx","CurrentValue":"43596.2243286703","WarningMin":"nan","WarningMax":"nan","FailureMin":"nan","FailureMax":"0"},"startsAt":"2019-09-18T21:11:19.281603240Z"}]`
-	ovsEventDirtySample   = `[{"labels":{"alertname":"collectd_ovs_events_gauge","instance":"nfvha-comp-03","ovs_events":"br0","type":"link_status","severity":"OKAY","service":"collectd"},"annotations":{"summary":"link state of \"br0\" interface has been changed to \"UP\"","uuid":"c52f2aca-3cb1-48e3-bba3-100b54303d84"},"startsAt":"2018-02-22T20:12:19.547955618Z"}]`
-	ovsEventDataSample    = `{"labels":{"alertname":"collectd_ovs_events_gauge","instance":"nfvha-comp-03","ovs_events":"br0","type":"link_status","severity":"OKAY","service":"collectd"},"annotations":{"summary":"link state of \"br0\" interface has been changed to \"UP\"","uuid":"c52f2aca-3cb1-48e3-bba3-100b54303d84"},"startsAt":"2018-02-22T20:12:19.547955618Z"}`
-	elastichost           = "http://127.0.0.1:9200"
-	testCACert            = `-----BEGIN CERTIFICATE-----
+	elastichost = "http://127.0.0.1:9200"
+	testCACert  = `-----BEGIN CERTIFICATE-----
 MIIDSTCCAjGgAwIBAgIUVLbF9klC/t0fQoG35GAVTjU6tYEwDQYJKoZIhvcNAQEL
 BQAwNDEyMDAGA1UEAxMpRWxhc3RpYyBDZXJ0aWZpY2F0ZSBUb29sIEF1dG9nZW5l
 cmF0ZWQgQ0EwHhcNMTkwOTAzMDkwNTUxWhcNMjIwOTAyMDkwNTUxWjA0MTIwMAYD
@@ -95,28 +81,6 @@ u+Jpmr1o0z9CPvXFmdWGdF2dJrgBImgQnlsNVctK8x1m0azfduPcgPgKSlnMdnRS
 wg4Luw64Vn3osASCHv5gwoIgBepLpOby7KrCEvOwuFyB9QGZXXIxBQ==
 -----END RSA PRIVATE KEY-----`
 )
-
-type SanitizeTestMatrix struct {
-	Dirty     string
-	Sanitized string
-}
-
-func TestSanitize(t *testing.T) {
-	matrix := []SanitizeTestMatrix{
-		{procEventDirtySample1, procEventDataSample1},
-		{procEventDirtySample2, procEventDataSample2},
-		{ovsEventDirtySample, ovsEventDataSample},
-	}
-
-	var unstructuredResult map[string]interface{}
-	for _, testCase := range matrix {
-		result := saelastic.Sanitize(testCase.Dirty)
-		assert.Equal(t, testCase.Sanitized, result)
-		if err := json.Unmarshal([]byte(result), &unstructuredResult); err != nil {
-			t.Fatal(err)
-		}
-	}
-}
 
 /*
 func TestMain(t *testing.T) {

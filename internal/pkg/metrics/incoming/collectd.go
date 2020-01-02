@@ -9,8 +9,8 @@ import (
 	"github.com/json-iterator/go"
 )
 
-// Collectd  ...
-type Collectd struct {
+// CollectdMetric struct represents metric data formated and sent by collectd
+type CollectdMetric struct {
 	Values         []float64   `json:"values"`
 	Dstypes        []string    `json:"dstypes"`
 	Dsnames        []string    `json:"dsnames"`
@@ -24,20 +24,22 @@ type Collectd struct {
 	new            bool
 }
 
+/*************************** MetricDataFormat interface ****************************/
+
 // GetName implement interface
-func (c Collectd) GetName() string {
+func (c CollectdMetric) GetName() string {
 	return c.Plugin
 }
 
 // GetKey ...
-func (c Collectd) GetKey() string {
+func (c CollectdMetric) GetKey() string {
 	return c.Host
 }
 
 //ParseInputByte ...
 //TODO(mmagr): probably unify interface with ParseInputJSON
-func (c *Collectd) ParseInputByte(data []byte) error {
-	cparse := make([]Collectd, 1)
+func (c *CollectdMetric) ParseInputByte(data []byte) error {
+	cparse := make([]CollectdMetric, 1)
 	var json = jsoniter.ConfigCompatibleWithStandardLibrary
 	err := json.Unmarshal(data, &cparse)
 	if err != nil {
@@ -51,23 +53,23 @@ func (c *Collectd) ParseInputByte(data []byte) error {
 }
 
 //SetNew ...
-func (c *Collectd) SetNew(new bool) {
+func (c *CollectdMetric) SetNew(new bool) {
 	c.new = new
 }
 
 //GetInterval ...
-func (c *Collectd) GetInterval() float64 {
+func (c *CollectdMetric) GetInterval() float64 {
 	return c.Interval
 }
 
 // ISNew   ..
-func (c *Collectd) ISNew() bool {
+func (c *CollectdMetric) ISNew() bool {
 	return c.new
 }
 
 //DSName newName converts one data source of a value list to a string
 //representation.
-func (c *Collectd) DSName(index int) string {
+func (c *CollectdMetric) DSName(index int) string {
 	if c.Dsnames != nil {
 		return c.Dsnames[index]
 	} else if len(c.Values) != 1 {
@@ -78,8 +80,8 @@ func (c *Collectd) DSName(index int) string {
 }
 
 //SetData ...
-func (c *Collectd) SetData(data DataTypeInterface) {
-	if collectd, ok := data.(*Collectd); ok { // type assert on it
+func (c *CollectdMetric) SetData(data MetricDataFormat) {
+	if collectd, ok := data.(*CollectdMetric); ok { // type assert on it
 		if c.Host != collectd.Host {
 			c.Host = collectd.Host
 		}
@@ -104,8 +106,27 @@ func (c *Collectd) SetData(data DataTypeInterface) {
 	}
 }
 
+//ParseInputJSON   ...
+func (c *CollectdMetric) ParseInputJSON(jsonString string) ([]MetricDataFormat, error) {
+	collect := []CollectdMetric{}
+	jsonBlob := []byte(jsonString)
+	var json = jsoniter.ConfigCompatibleWithStandardLibrary
+	err := json.Unmarshal(jsonBlob, &collect)
+	if err != nil {
+		log.Println("Error parsing json:", err)
+		return nil, err
+	}
+	retDtype := make([]MetricDataFormat, len(collect))
+	for index, rt := range collect {
+		retDtype[index] = &rt
+	}
+	return retDtype, nil
+}
+
+/*************************** tsdb.TSDB interface *****************************/
+
 //GetLabels ...
-func (c Collectd) GetLabels() map[string]string {
+func (c CollectdMetric) GetLabels() map[string]string {
 	labels := map[string]string{}
 	if c.PluginInstance != "" {
 		labels[c.Plugin] = c.PluginInstance
@@ -133,14 +154,14 @@ func (c Collectd) GetLabels() map[string]string {
 }
 
 //GetMetricDesc   newDesc converts one data source of a value list to a Prometheus description.
-func (c Collectd) GetMetricDesc(index int) string {
+func (c CollectdMetric) GetMetricDesc(index int) string {
 	help := fmt.Sprintf("Service Assurance exporter: '%s' Type: '%s' Dstype: '%s' Dsname: '%s'",
 		c.Plugin, c.Type, c.Dstypes[index], c.DSName(index))
 	return help
 }
 
 //GetMetricName  ...
-func (c Collectd) GetMetricName(index int) string {
+func (c CollectdMetric) GetMetricName(index int) string {
 	name := "sa_collectd_" + c.Plugin + "_" + c.Type
 	if c.Plugin == c.Type {
 		name = "sa_collectd_" + c.Type
@@ -158,7 +179,7 @@ func (c Collectd) GetMetricName(index int) string {
 }
 
 //GetItemKey  ...
-func (c Collectd) GetItemKey() string {
+func (c CollectdMetric) GetItemKey() string {
 	name := c.Plugin + "_" + c.Type
 	if c.Plugin == c.Type {
 		name = c.Type
@@ -170,21 +191,4 @@ func (c Collectd) GetItemKey() string {
 		name += "_" + c.TypeInstance
 	}
 	return name
-}
-
-//ParseInputJSON   ...
-func (c *Collectd) ParseInputJSON(jsonString string) ([]DataTypeInterface, error) {
-	collect := []Collectd{}
-	jsonBlob := []byte(jsonString)
-	var json = jsoniter.ConfigCompatibleWithStandardLibrary
-	err := json.Unmarshal(jsonBlob, &collect)
-	if err != nil {
-		log.Println("Error parsing json:", err)
-		return nil, err
-	}
-	retDtype := make([]DataTypeInterface, len(collect))
-	for index, rt := range collect {
-		retDtype[index] = &rt
-	}
-	return retDtype, nil
 }

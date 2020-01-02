@@ -1,12 +1,12 @@
 {
-	"AMQP1MetricURL": "10.19.110.9/collectd/telemetry",
-	"Exporterhost": "10.18.81.131",
+	"AMQP1MetricURL": "localhost/collectd/telemetry",
+	"Exporterhost": "localhost",
 	"Exporterport": 8081,
 	"CPUStats": false,
 	"DataCount": -1,
 	"UseSample": false,
 	"UseTimeStamp": true,
-	"Debug": false,
+	"Debug": true,
 	"prefetch": 0,
 	"Sample": {
 		"HostCount": 10,

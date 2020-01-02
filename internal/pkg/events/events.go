@@ -2,7 +2,7 @@ package events
 
 import (
 	"bytes"
-	"encoding/json"
+	"context"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -11,19 +11,46 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"reflect"
 	"strconv"
-	"time"
+	"sync"
 
 	"github.com/MakeNowJust/heredoc"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/alerts"
 	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/amqp10"
 	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/api"
 	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/cacheutil"
+	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/events/incoming"
 	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/saconfig"
 	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/saelastic"
 )
+
+const (
+	//EVENTSINDEXTYPE value is used for creating Elasticsearch indexes holding event data
+	EVENTSINDEXTYPE = "event"
+	//APIHOME value contains root API endpoint content
+	APIHOME = `
+<html>
+	<head>
+		<title>Smart Gateway Event API</title>
+	</head>
+	<body>
+		<h1>API</h1>
+		<ul>
+			<li>/alerts POST alerts in JSON format on to AMQP message bus</li>
+			<li>/metrics GET metric data</li>
+		</ul>
+	</body>
+</html>
+`
+)
+
+//AMQPServerItem hold information about data source which is AMQPServer listening to.
+type AMQPServerItem struct {
+	Server     *amqp10.AMQPServer
+	DataSource saconfig.DataSource
+}
 
 /*************** main routine ***********************/
 // eventusage and command-line flags
@@ -46,14 +73,118 @@ func eventusage() {
 	flag.PrintDefaults()
 }
 
-var (
-	debuge          = func(format string, data ...interface{}) {} // Default no debugging output
-	amqpEventServer *amqp10.AMQPServer
-	serverConfig    saconfig.EventConfiguration
-)
+var debuge = func(format string, data ...interface{}) {} // Default no debugging output
 
-//StartEvents ... entry point to events
+//spawnSignalHandler spawns goroutine which will wait for interruption signal(s)
+// and end smart gateway in case any of the signal is received
+func spawnSignalHandler(finish chan bool, watchedSignals ...os.Signal) {
+	interruptChannel := make(chan os.Signal, 1)
+	signal.Notify(interruptChannel, watchedSignals...)
+	go func() {
+	signalLoop:
+		for sig := range interruptChannel {
+			log.Printf("Stopping execution on caught signal: %+v\n", sig)
+			close(finish)
+			break signalLoop
+		}
+	}()
+}
+
+//spawnAPIServer spawns goroutine which provides http API for alerts and metrics statistics for Prometheus
+func spawnAPIServer(wg *sync.WaitGroup, finish chan bool, serverConfig saconfig.EventConfiguration, metricHandler *api.EventMetricHandler, amqpHandler *amqp10.AMQPHandler) {
+	prometheus.MustRegister(metricHandler, amqpHandler)
+	// Including these stats kills performance when Prometheus polls with multiple targets
+	prometheus.Unregister(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}))
+	prometheus.Unregister(prometheus.NewGoCollector())
+
+	ctxt := api.NewContext(serverConfig)
+	http.Handle("/alert", api.Handler{Context: ctxt, H: api.AlertHandler})
+	http.Handle("/metrics", promhttp.Handler())
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(APIHOME))
+	})
+	srv := &http.Server{Addr: serverConfig.API.APIEndpointURL}
+	// spawn shutdown signal handler
+	go func() {
+		//lint:ignore S1000 reason: we are waiting for channel close, value might not be ever received
+		select {
+		case <-finish:
+			if err := srv.Shutdown(context.Background()); err != nil {
+				log.Fatalf("Failed to stop API server: %s\n", err)
+				// in case of error we need to allow wait group to end
+				wg.Done()
+			}
+		}
+	}()
+	// spawn the API server
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		log.Println("Started API server")
+		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
+			log.Fatalf("Failed to start API server: %s\n", err.Error())
+		} else {
+			log.Println("Closing API server")
+		}
+	}()
+}
+
+//spawnQpidStatusReporter builds dynamic select for reporting status of AMQP connections
+func spawnQpidStatusReporter(wg *sync.WaitGroup, applicationHealth *cacheutil.ApplicationHealthCache, qpidStatusCases []reflect.SelectCase) {
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		finishCase := len(qpidStatusCases) - 1
+	statusLoop:
+		for {
+			switch index, status, _ := reflect.Select(qpidStatusCases); index {
+			case finishCase:
+				break statusLoop
+			default:
+				// Note: status here is always very low integer, so we don't need to be afraid of int64>int conversion
+				applicationHealth.QpidRouterState = int(status.Int())
+			}
+		}
+		log.Println("Closing QPID status reporter")
+	}()
+}
+
+//notifyAlertManager generates alert from event for Prometheus Alert Manager
+func notifyAlertManager(wg *sync.WaitGroup, serverConfig saconfig.EventConfiguration, event *incoming.EventDataFormat, record string) {
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		generatorURL := fmt.Sprintf("%s/%s/%s/%s", serverConfig.ElasticHostURL, (*event).GetIndexName(), EVENTSINDEXTYPE, record)
+		alert, err := (*event).GeneratePrometheusAlertBody(generatorURL)
+		if err != nil {
+			log.Printf("Failed generate alert from event:\n- error: %s\n- event: %s\n", err, (*event).GetSanitized())
+		}
+		debuge("Debug: Generated alert:\n%s\n", alert)
+		var byteAlertBody = []byte(fmt.Sprintf("[%s]", alert))
+		req, _ := http.NewRequest("POST", serverConfig.AlertManagerURL, bytes.NewBuffer(byteAlertBody))
+		req.Header.Set("X-Custom-Header", "smartgateway")
+		req.Header.Set("Content-Type", "application/json")
+
+		client := &http.Client{}
+		resp, err := client.Do(req)
+		if err != nil {
+			log.Printf("Failed to report alert to AlertManager:\n- error: %s\n- alert: %s\n", err, alert)
+			body, _ := ioutil.ReadAll(resp.Body)
+			defer resp.Body.Close()
+			debuge("Debug:response Status:%s\n", resp.Status)
+			debuge("Debug:response Headers:%s\n", resp.Header)
+			debuge("Debug:response Body:%s\n", string(body))
+		}
+		log.Println("Closing Alert Manager notifier")
+	}()
+}
+
+//StartEvents is the entry point for running smart-gateway in events mode
 func StartEvents() {
+	var wg sync.WaitGroup
+	finish := make(chan bool)
+
+	spawnSignalHandler(finish, os.Interrupt)
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
 	// set flags for parsing options
@@ -61,7 +192,7 @@ func StartEvents() {
 	fDebug := flag.Bool("debug", false, "Enable debug")
 	fServiceType := flag.String("servicetype", "event", "event type")
 	fConfigLocation := flag.String("config", "", "Path to configuration file(optional).if provided ignores all command line options")
-	fAMQP1EventURL := flag.String("amqp1EventURL", "", "AMQP1.0 events listener example 127.0.0.1:5672/collectd/notify")
+	fAMQP1EventURL := flag.String("amqp1EventURL", "", "AMQP1.0 collectd events listener example 127.0.0.1:5672/collectd/notify")
 	fElasticHostURL := flag.String("eshost", "", "ElasticSearch host http://localhost:9200")
 	fAlertManagerURL := flag.String("alertmanager", "", "(Optional)AlertManager endpoint http://localhost:9090/v1/api/alert")
 	fAPIEndpointURL := flag.String("apiurl", "", "(Optional)API endpoint localhost:8082")
@@ -69,17 +200,22 @@ func StartEvents() {
 	fResetIndex := flag.Bool("resetIndex", false, "Optional Clean all index before on start (default false)")
 	fPrefetch := flag.Int("prefetch", 0, "AMQP1.0 option: Enable prefetc and set capacity(0 is disabled,>0 enabled with capacity of >0) (OPTIONAL)")
 	fUniqueName := flag.String("uname", "metrics-"+strconv.Itoa(rand.Intn(100)), "Unique name across application")
-
 	flag.Parse()
 
-	if len(*fConfigLocation) > 0 { //load configuration
-		serverConfig = saconfig.LoadEventConfig(*fConfigLocation)
+	//load configuration from given config file or from cmdline parameters
+	var serverConfig *saconfig.EventConfiguration
+	if len(*fConfigLocation) > 0 {
+		conf, err := saconfig.LoadConfiguration(*fConfigLocation, "event")
+		if err != nil {
+			log.Fatal("Config Parse Error: ", err)
+		}
+		serverConfig = conf.(*saconfig.EventConfiguration)
 		serverConfig.ServiceType = *fServiceType
 		if *fDebug {
 			serverConfig.Debug = true
 		}
 	} else {
-		serverConfig = saconfig.EventConfiguration{
+		serverConfig = &saconfig.EventConfiguration{
 			AMQP1EventURL:   *fAMQP1EventURL,
 			ElasticHostURL:  *fElasticHostURL,
 			AlertManagerURL: *fAlertManagerURL,
@@ -99,29 +235,19 @@ func StartEvents() {
 		debuge = func(format string, data ...interface{}) { log.Printf(format, data...) }
 	}
 
-	if len(serverConfig.AMQP1EventURL) == 0 {
-		log.Println("AMQP1 Event URL is required")
+	if len(serverConfig.AMQP1EventURL) == 0 && len(serverConfig.AMQP1Connections) == 0 {
+		log.Println("Configuration option 'AMQP1EventURL' or 'AMQP1Connections' is required")
 		eventusage()
 		os.Exit(1)
 	}
 
 	if len(serverConfig.ElasticHostURL) == 0 {
-		log.Println("Elastic Host URL is required")
+		log.Println("Configuration option 'ElasticHostURL' is required")
 		eventusage()
 		os.Exit(1)
+	} else {
+		log.Printf("Elasticsearch configured at %s\n", serverConfig.ElasticHostURL)
 	}
-
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
-	go func() {
-		for sig := range c {
-			// sig is a ^C, handle it
-			log.Printf("caught sig: %+v", sig)
-			log.Println("Wait for 2 second to finish processing")
-			time.Sleep(2 * time.Second)
-			os.Exit(0)
-		}
-	}()
 
 	if len(serverConfig.AlertManagerURL) > 0 {
 		log.Printf("AlertManager configured at %s\n", serverConfig.AlertManagerURL)
@@ -131,125 +257,124 @@ func StartEvents() {
 	}
 
 	if len(serverConfig.API.APIEndpointURL) > 0 {
-		log.Printf("API available at %s\n", serverConfig.API.APIEndpointURL)
+		debuge("API configured at %s\n", serverConfig.API.APIEndpointURL)
 		serverConfig.APIEnabled = true
 	} else {
 		log.Println("API disabled")
 	}
 
 	if len(serverConfig.API.AMQP1PublishURL) > 0 {
-		log.Printf("AMQP1.0 Publish address at %s\n", serverConfig.API.AMQP1PublishURL)
+		log.Printf("AMQP1.0 publish address configured at %s\n", serverConfig.API.AMQP1PublishURL)
 		serverConfig.PublishEventEnabled = true
 	} else {
-		log.Println("AMQP1.0 Publish address disabled")
+		log.Println("AMQP1.0 publish address disabled")
 	}
 
-	/* Print Configuration details */
-	//mertic handler for event mertics to check health status
+	if len(serverConfig.AMQP1EventURL) > 0 {
+		//TO-DO(mmagr): Remove this in next major release
+		serverConfig.AMQP1Connections = []saconfig.AMQPConnection{
+			saconfig.AMQPConnection{
+				URL:          serverConfig.AMQP1EventURL,
+				DataSourceID: saconfig.DataSourceCollectd,
+				DataSource:   "collectd",
+			},
+		}
+	}
+	for _, conn := range serverConfig.AMQP1Connections {
+		log.Printf("AMQP1.0 %s listen address configured at %s\n", conn.DataSource, conn.URL)
+	}
+
 	applicationHealth := cacheutil.NewApplicationHealthCache()
 	metricHandler := api.NewAppStateEventMetricHandler(applicationHealth)
 	amqpHandler := amqp10.NewAMQPHandler("Event Consumer")
-	debuge("Debug:Config %#v\n", serverConfig)
 
-	///Metric Listener
-	amqpEventsurl := fmt.Sprintf("amqp://%s", serverConfig.AMQP1EventURL)
-	log.Printf("Connecting to AMQP1 : %s\n", amqpEventsurl)
-	amqpEventServer = amqp10.NewAMQPServer(amqpEventsurl, serverConfig.Debug, -1, serverConfig.Prefetch, amqpHandler, *fUniqueName)
-
-	log.Printf("Listening.....\n")
-
-	log.Printf("Connecting to ElasticSearch : %s\n", serverConfig.ElasticHostURL)
-	elasticClient, err := saelastic.CreateClient(serverConfig)
+	// Elastic connection
+	elasticClient, err := saelastic.CreateClient(*serverConfig)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
+	log.Println("Connected to Elasticsearch")
 	applicationHealth.ElasticSearchState = 1
 
-	/**** HTTP Listener for alerts from alert manager *******************************
-	*
-	*
-	********************************************************************************/
-	//configure http alert route to amqp1.0
+	// API spawn
 	if serverConfig.APIEnabled {
-		prometheus.MustRegister(metricHandler, amqpHandler)
-		// Including these stats kills performance when Prometheus polls with multiple targets
-		prometheus.Unregister(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}))
-		prometheus.Unregister(prometheus.NewGoCollector())
-
-		context := api.NewContext(serverConfig)
-		http.Handle("/alert", api.Handler{Context: context, H: api.AlertHandler}) //creates writer everytime api is called.
-		http.Handle("/metrics", promhttp.Handler())
-		http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-			w.Write([]byte(`<html>
-																	<head><title>Smart Gateway Event API</title></head>
-																	<body>
-																	<h1>APi </h1>
-																	/alerts Post alerts in Json Format on to amqp bus</br>
-																	/metrics get metric data
-																	</body>
-																	</html>`))
-		})
-		go func() {
-			APIEndpointURL := serverConfig.API.APIEndpointURL
-			log.Printf("APIEndpoint server ready at : %s\n", APIEndpointURL)
-			log.Fatal(http.ListenAndServe(APIEndpointURL, nil))
-		}()
-		time.Sleep(2 * time.Second)
+		spawnAPIServer(&wg, finish, *serverConfig, metricHandler, amqpHandler)
 	}
-	log.Println("Ready....")
 
-	// start processing  events from QDR
-	for {
-		select {
-		case event := <-amqpEventServer.GetNotifier():
-			amqpEventServer.GetHandler().IncTotalMsgProcessed()
-			//log.Printf("Event occurred : %#v\n", event)
-			indexName, indexType, err := saelastic.GetIndexNameType(event)
-			if err != nil {
-				log.Printf("Failed to read event %s type in main %s\n", event, err)
-				applicationHealth.ElasticSearchState = 0
-			} else {
-				id, err := elasticClient.Create(indexName, indexType, event)
-				applicationHealth.ElasticSearchState = 1
-				if err != nil {
-					log.Printf("Error creating event %s in elastic search %s\n", event, err)
-					applicationHealth.ElasticSearchState = 0
+	// AMQP connection(s)
+	processingCases := make([]reflect.SelectCase, 0, len(serverConfig.AMQP1Connections))
+	qpidStatusCases := make([]reflect.SelectCase, 0, len(serverConfig.AMQP1Connections))
+	amqpServers := make([]AMQPServerItem, 0, len(serverConfig.AMQP1Connections))
+	for _, conn := range serverConfig.AMQP1Connections {
+		amqpServer := amqp10.NewAMQPServer(conn.URL, serverConfig.Debug, -1, serverConfig.Prefetch, amqpHandler, *fUniqueName)
+		//create select case for this listener
+		processingCases = append(processingCases, reflect.SelectCase{
+			Dir:  reflect.SelectRecv,
+			Chan: reflect.ValueOf(amqpServer.GetNotifier()),
+		})
+		qpidStatusCases = append(qpidStatusCases, reflect.SelectCase{
+			Dir:  reflect.SelectRecv,
+			Chan: reflect.ValueOf(amqpServer.GetStatus()),
+		})
+		amqpServers = append(amqpServers, AMQPServerItem{amqpServer, conn.DataSourceID})
+	}
+	log.Println("Listening for AMQP1.0 messages")
+	// include also case for finishing the loops
+	processingCases = append(processingCases, reflect.SelectCase{
+		Dir:  reflect.SelectRecv,
+		Chan: reflect.ValueOf(finish),
+	})
+	qpidStatusCases = append(qpidStatusCases, reflect.SelectCase{
+		Dir:  reflect.SelectRecv,
+		Chan: reflect.ValueOf(finish),
+	})
+	spawnQpidStatusReporter(&wg, applicationHealth, qpidStatusCases)
+	// spawn event processor
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		finishCase := len(processingCases) - 1
+	processingLoop:
+		for {
+			switch index, msg, _ := reflect.Select(processingCases); index {
+			case finishCase:
+				break processingLoop
+			default:
+				var event incoming.EventDataFormat
+				switch amqpServers[index].DataSource.String() {
+				case "collectd":
+					event = &incoming.CollectdEvent{}
+				case "ceilometer":
+					// noop for now, gonna panic if configured
+					//event = incoming.CeilometerEvent{}
+					log.Printf("Received Ceilometer event:\n%s\n", msg)
+				case "generic":
+					// noop for now, gonna panic if configured
+					//event = incoming.GenericEvent{}
+					log.Printf("Received generic event:\n%s\n", msg)
 				}
-				//update AlertManager
+				amqpServers[index].Server.GetHandler().IncTotalMsgProcessed()
+				err := event.ParseEvent(msg.String())
+				if err != nil {
+					log.Printf("Failed to parse received event:\n- error: %s\n- event: %s\n", err, event)
+				}
+
+				record, err := elasticClient.Create(event.GetIndexName(), EVENTSINDEXTYPE, event.GetSanitized())
+				if err != nil {
+					applicationHealth.ElasticSearchState = 0
+					log.Printf("Failed to save event to Elasticsearch DB:\n- error: %s\n- event: %s\n", err, event)
+				} else {
+					applicationHealth.ElasticSearchState = 1
+				}
 				if serverConfig.AlertManagerEnabled {
-					go func() {
-						var alert = &alerts.Alerts{}
-						var jsonStr = []byte(event)
-						generatorURL := fmt.Sprintf("%s/%s/%s/%s", serverConfig.ElasticHostURL, indexName, indexType, id)
-						alert.Parse(jsonStr, generatorURL)
-						debuge("Debug:Sending alert..%#v\n", alert)
-						debuge("Debug:Generator URL %s\n", generatorURL)
-						jsonString, err := json.Marshal(*alert)
-						if err != nil {
-							panic(err)
-						}
-						var jsonEvent = []byte("[" + string(jsonString) + "]")
-						debuge("Debug:Posting to  %#s\n", serverConfig.AlertManagerURL)
-						req, _ := http.NewRequest("POST", serverConfig.AlertManagerURL, bytes.NewBuffer(jsonEvent))
-						req.Header.Set("X-Custom-Header", "smartgateway")
-						req.Header.Set("Content-Type", "application/json")
-						client := &http.Client{}
-						resp, err := client.Do(req)
-						if err != nil {
-							panic(err)
-						}
-						defer resp.Body.Close()
-						body, _ := ioutil.ReadAll(resp.Body)
-						debuge("Debug:response Status:%s\n", resp.Status)
-						debuge("Debug:response Headers:%s\n", resp.Header)
-						debuge("Debug:response Body:%s\n", string(body))
-					}()
-					//}
+					notifyAlertManager(&wg, *serverConfig, &event, record)
 				}
 			}
-			continue // priority channel
-		case status := <-amqpEventServer.GetStatus():
-			applicationHealth.QpidRouterState = status
 		}
-	}
+		log.Println("Closing event processor.")
+	}()
+
+	// do not end until all loop goroutines ends
+	wg.Wait()
+	log.Println("Exiting")
 }

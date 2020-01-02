@@ -4,7 +4,7 @@ import (
 	"log"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/incoming"
+	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/metrics/incoming"
 	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/tsdb"
 )
 
@@ -33,7 +33,7 @@ func (shard *ShardedIncomingDataCache) FlushPrometheusMetric(usetimestamp bool, 
 	minMetricCreated := 0 //..minimum of one metrics created
 
 	for _, IncomingDataInterface := range shard.plugin {
-		if collectd, ok := IncomingDataInterface.(*incoming.Collectd); ok {
+		if collectd, ok := IncomingDataInterface.(*incoming.CollectdMetric); ok {
 			if collectd.ISNew() {
 				collectd.SetNew(false)
 				for index := range collectd.Values {
@@ -62,7 +62,7 @@ func (shard *ShardedIncomingDataCache) FlushAllMetrics() {
 	shard.lock.Lock()
 	defer shard.lock.Unlock()
 	for _, dataInterface := range shard.plugin {
-		if collectd, ok := dataInterface.(*incoming.Collectd); ok {
+		if collectd, ok := dataInterface.(*incoming.CollectdMetric); ok {
 			if collectd.ISNew() {
 				collectd.SetNew(false)
 				log.Printf("New Metrics %#v\n", collectd)
