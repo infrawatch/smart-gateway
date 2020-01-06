@@ -1,13 +1,18 @@
 #!/bin/bash
 set -ex
 
+
 # bootstrap
 mkdir -p /go/bin /go/src /go/pkg
 export GOPATH=/go
 export PATH=$PATH:$GOPATH/bin
 
 # get dependencies
+sed -i '/^tsflags=.*/a ip_resolve=4' /etc/yum.conf
 yum install -y epel-release
+yum install -y https://centos7.iuscommunity.org/ius-release.rpm
+yum remove -y git*
+yum install -y git216-all
 yum install -y golang qpid-proton-c-devel iproute
 go get -u golang.org/x/tools/cmd/cover
 go get -u github.com/mattn/goveralls
@@ -40,4 +45,4 @@ done
 
 # upload coverage report
 echo " *** Uploading coverage report to coveralls"
-goveralls -coverprofile=coverage.out
+goveralls -service=travis-ci -coverprofile=coverage.out

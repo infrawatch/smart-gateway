@@ -9,7 +9,8 @@ import (
 	"time"
 
 	"collectd.org/cdtime"
-	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/incoming"
+	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/metrics/incoming"
+	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/saconfig"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -20,9 +21,9 @@ type IncommingCollecdDataMatrix struct {
 
 /*----------------------------- helper functions -----------------------------*/
 //GenerateSampleCollectdData ...
-func GenerateSampleCollectdData(hostname string, pluginname string) *incoming.Collectd {
-	citfc := incoming.NewInComing(incoming.COLLECTD)
-	collectd := citfc.(*incoming.Collectd)
+func GenerateSampleCollectdData(hostname string, pluginname string) *incoming.CollectdMetric {
+	citfc := incoming.NewFromDataSource(saconfig.DataSourceCollectd)
+	collectd := citfc.(*incoming.CollectdMetric)
 	collectd.Host = hostname
 	collectd.Plugin = pluginname
 	collectd.Type = "collectd"
@@ -36,7 +37,7 @@ func GenerateSampleCollectdData(hostname string, pluginname string) *incoming.Co
 }
 
 //GetFieldStr ...
-func GetFieldStr(dataItem incoming.DataTypeInterface, field string) string {
+func GetFieldStr(dataItem incoming.MetricDataFormat, field string) string {
 	r := reflect.ValueOf(dataItem)
 	f := reflect.Indirect(r).FieldByName(field)
 	return string(f.String())
@@ -45,9 +46,9 @@ func GetFieldStr(dataItem incoming.DataTypeInterface, field string) string {
 /*----------------------------------------------------------------------------*/
 
 func TestCollectdIncoming(t *testing.T) {
-	emptySample := incoming.NewInComing(incoming.COLLECTD)
+	emptySample := incoming.NewFromDataSource(saconfig.DataSourceCollectd)
 	sample := GenerateSampleCollectdData("hostname", "pluginname")
-	jsonBytes, err := json.Marshal([]*incoming.Collectd{sample})
+	jsonBytes, err := json.Marshal([]*incoming.CollectdMetric{sample})
 	if err != nil {
 		t.Error("Failed to marshal incoming.Collectd to JSON")
 	}
@@ -56,12 +57,12 @@ func TestCollectdIncoming(t *testing.T) {
 	t.Run("Test initialization of empty incoming.Collectd sample", func(t *testing.T) {
 		assert.Emptyf(t, GetFieldStr(emptySample, "Plugin"), "Collectd data is not empty.")
 		// test DSName behaviour
-		if emptyCollectd, ok := emptySample.(*incoming.Collectd); ok {
+		if emptyCollectd, ok := emptySample.(*incoming.CollectdMetric); ok {
 			assert.Equal(t, "666", emptyCollectd.DSName(666))
 			emptyCollectd.Values = []float64{1}
 			assert.Equal(t, "value", emptyCollectd.DSName(666))
 		} else {
-			t.Errorf("Failed to convert empty incoming.DataTypeInterface to empty incoming.Collectd")
+			t.Errorf("Failed to convert empty incoming.MetricDataFormat to empty incoming.CollectdMetric")
 		}
 		// test loading values from []byte and string
 		_, errr := emptySample.ParseInputJSON("Error Json")
@@ -87,10 +88,10 @@ func TestCollectdIncoming(t *testing.T) {
 		}
 		errr = emptySample.ParseInputByte([]byte("error string"))
 		assert.Error(t, errr, "Expected error got nil")
-		esample := incoming.NewInComing(incoming.COLLECTD)
+		esample := incoming.NewFromDataSource(saconfig.DataSourceCollectd)
 		errs := esample.ParseInputByte(jsonBytes)
 		if errs == nil {
-			sample3 := esample.(*incoming.Collectd)
+			sample3 := esample.(*incoming.CollectdMetric)
 			for _, testCase := range data {
 				assert.Equal(t, testCase.Expected, GetFieldStr(sample3, testCase.Field))
 			}

@@ -2,31 +2,51 @@ package saconfig
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 )
 
-//EventConfiguration  ...
-type EventConfiguration struct {
-	Debug               bool           `json:"Debug"`
-	AMQP1EventURL       string         `json:"AMQP1EventURL"`
-	ElasticHostURL      string         `json:"ElasticHostURL"`
-	API                 EventAPIConfig `json:"API"`
-	AlertManagerURL     string         `json:"AlertManagerURL"`
-	AlertManagerEnabled bool           `json:"AlertManagerEnabled"`
-	APIEnabled          bool           `json:"APIEnabled"`
-	PublishEventEnabled bool           `json:"PublishEventEnabled"`
-	ResetIndex          bool           `json:"ResetIndex"`
-	Prefetch            int            `json:"Prefetch"`
-	UniqueName          string         `json:"UniqueName"`
-	ServiceType         string         `json:"ServiceType"`
-	IgnoreString        string         `json:"-"` //TODO(mmagr): ?
-	UseTLS              bool           `json:"UseTls"`
-	TLSServerName       string         `json:"TlsServerName"`
-	TLSClientCert       string         `json:"TlsClientCert"`
-	TLSClientKey        string         `json:"TlsClientKey"`
-	TLSCaCert           string         `json:"TlsCaCert"`
+/************************** DataSource implementation **************************/
+
+//DataSource indentifies a format of incoming data in the message bus channel.
+type DataSource int
+
+const (
+	//DataSourceUniversal marks all types of data sorces which send data in smart-gateway universal format
+	DataSourceUniversal DataSource = iota
+	//DataSourceCollectd marks collectd as data source for metrics and(or) events
+	DataSourceCollectd
+	//DataSourceCeilometer marks Ceilometer as data source for metrics and(or) events
+	DataSourceCeilometer
+)
+
+//String returns human readable data type identification.
+func (src *DataSource) String() string {
+	return []string{"universal", "collectd", "ceilometer"}[*src]
 }
+
+//SetFromString resets value according to given human readable identification. Returns false if invalid identification was given.
+func (src *DataSource) SetFromString(name string) bool {
+	for index, value := range []string{"universal", "collectd", "ceilometer"} {
+		if name == value {
+			*src = DataSource(index)
+			return true
+		}
+	}
+	return false
+}
+
+/*********************** AMQPConnection implementation ***********************/
+
+//AMQPConnection identifies single messagebus connection and expected format of incoming data.
+type AMQPConnection struct {
+	URL          string `json:"URL"`
+	DataSource   string `json:"DataSource"`
+	DataSourceID DataSource
+}
+
+/********************* EventConfiguration implementation *********************/
 
 //EventAPIConfig ...
 type EventAPIConfig struct {
@@ -34,50 +54,83 @@ type EventAPIConfig struct {
 	AMQP1PublishURL string `json:"AMQP1PublishURL"` // new amqp address to send notifications
 }
 
-//MetricConfiguration   ....
+//EventConfiguration ...
+type EventConfiguration struct {
+	Debug               bool             `json:"Debug"`
+	AMQP1EventURL       string           `json:"AMQP1EventURL"`
+	AMQP1Connections    []AMQPConnection `json:"AMQP1Connections"`
+	ElasticHostURL      string           `json:"ElasticHostURL"`
+	API                 EventAPIConfig   `json:"API"`
+	AlertManagerURL     string           `json:"AlertManagerURL"`
+	AlertManagerEnabled bool             `json:"AlertManagerEnabled"`
+	APIEnabled          bool             `json:"APIEnabled"`
+	PublishEventEnabled bool             `json:"PublishEventEnabled"`
+	ResetIndex          bool             `json:"ResetIndex"`
+	Prefetch            int              `json:"Prefetch"`
+	UniqueName          string           `json:"UniqueName"`
+	ServiceType         string           `json:"ServiceType"`
+	IgnoreString        string           `json:"-"` //TODO(mmagr): ?
+	UseTLS              bool             `json:"UseTls"`
+	TLSServerName       string           `json:"TlsServerName"`
+	TLSClientCert       string           `json:"TlsClientCert"`
+	TLSClientKey        string           `json:"TlsClientKey"`
+	TLSCaCert           string           `json:"TlsCaCert"`
+}
+
+/******************** MetricConfiguration implementation *********************/
+
+//MetricConfiguration ...
 type MetricConfiguration struct {
-	Debug          bool   `json:"Debug"`
-	AMQP1MetricURL string `json:"AMQP1MetricURL"`
-	CPUStats       bool   `json:"CPUStats"`
-	Exporterhost   string `json:"Exporterhost"`
-	Exporterport   int    `json:"Exporterport"`
-	Prefetch       int    `json:"Prefetch"`
-	DataCount      int    `json:"DataCount"` //-1 for ever which is default //TODO(mmagr): config implementation does not have a way to for default value, implement one?
-	UseTimeStamp   bool   `json:"UseTimeStamp"`
-	UniqueName     string `json:"UniqueName"`
-	ServiceType    string `json:"ServiceType"`
-	IgnoreString   string `json:"-"` //TODO(mmagr): ?
+	Debug            bool             `json:"Debug"`
+	AMQP1MetricURL   string           `json:"AMQP1MetricURL"`
+	AMQP1Connections []AMQPConnection `json:"AMQP1Connections"`
+	CPUStats         bool             `json:"CPUStats"`
+	Exporterhost     string           `json:"Exporterhost"`
+	Exporterport     int              `json:"Exporterport"`
+	Prefetch         int              `json:"Prefetch"`
+	DataCount        int              `json:"DataCount"` //-1 for ever which is default //TODO(mmagr): config implementation does not have a way to for default value, implement one?
+	UseTimeStamp     bool             `json:"UseTimeStamp"`
+	UniqueName       string           `json:"UniqueName"`
+	ServiceType      string           `json:"ServiceType"`
+	IgnoreString     string           `json:"-"` //TODO(mmagr): ?
 }
 
-//TODO(mmagr): apply DRY principle here
+/*****************************************************************************/
 
-//LoadMetricConfig ....
-func LoadMetricConfig(path string) MetricConfiguration {
+//LoadConfiguration loads and unmarshals configuration file by given path and type
+func LoadConfiguration(path string, confType string) (interface{}, error) {
 	file, err := ioutil.ReadFile(path)
 	if err != nil {
-		log.Fatal("Config File Missing. ", err)
+		log.Fatal("Config File Missing.", err)
 	}
-	var config MetricConfiguration
 
+	var config interface{}
+	switch confType {
+	case "metric":
+		config = new(MetricConfiguration)
+	case "event":
+		config = new(EventConfiguration)
+	}
 	err = json.Unmarshal(file, &config)
-	if err != nil {
-		log.Fatal("Config Parse Error: ", err)
-	}
 
-	return config
-}
-
-//LoadEventConfig ....
-func LoadEventConfig(path string) EventConfiguration {
-	file, err := ioutil.ReadFile(path)
-	if err != nil {
-		log.Fatal("Config File Missing. ", err)
+	var connections []AMQPConnection
+	switch confType {
+	case "metric":
+		connections = config.(*MetricConfiguration).AMQP1Connections
+	case "event":
+		connections = config.(*EventConfiguration).AMQP1Connections
 	}
-	var config EventConfiguration
-	err = json.Unmarshal(file, &config)
-	if err != nil {
-		log.Fatal("Config Parse Error: ", err)
+	for index, conn := range connections {
+		var dts *DataSource
+		switch confType {
+		case "metric":
+			dts = &config.(*MetricConfiguration).AMQP1Connections[index].DataSourceID
+		case "event":
+			dts = &config.(*EventConfiguration).AMQP1Connections[index].DataSourceID
+		}
+		if ok := dts.SetFromString(conn.DataSource); !ok {
+			err = fmt.Errorf("invalid AMQP connection data source '%s'", conn.DataSource)
+		}
 	}
-
-	return config
+	return config, err
 }
