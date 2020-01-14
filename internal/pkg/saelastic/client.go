@@ -80,6 +80,10 @@ func CreateClient(config saconfig.EventConfiguration) (*ElasticClient, error) {
 		elasticOpts = append(elasticOpts, elastic.SetHttpClient(tlsClient), elastic.SetScheme("https"))
 	}
 
+	if config.UseBasicAuth {
+		elasticOpts = append(elasticOpts, elastic.SetBasicAuth(config.ElasticUser, config.ElasticPass))
+	}
+
 	eclient, err := elastic.NewClient(elasticOpts...)
 	if err != nil {
 		return elasticClient, err
