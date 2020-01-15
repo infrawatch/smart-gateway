@@ -60,6 +60,9 @@ type EventConfiguration struct {
 	AMQP1EventURL       string           `json:"AMQP1EventURL"`
 	AMQP1Connections    []AMQPConnection `json:"AMQP1Connections"`
 	ElasticHostURL      string           `json:"ElasticHostURL"`
+	UseBasicAuth        bool             `json:"UseBasicAuth"`
+	ElasticUser         string           `json:"ElasticUser"`
+	ElasticPass         string           `json:"ElasticPass"`
 	API                 EventAPIConfig   `json:"API"`
 	AlertManagerURL     string           `json:"AlertManagerURL"`
 	AlertManagerEnabled bool             `json:"AlertManagerEnabled"`
