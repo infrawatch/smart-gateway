@@ -340,19 +340,8 @@ func StartEvents() {
 			case finishCase:
 				break processingLoop
 			default:
-				var event incoming.EventDataFormat
-				switch amqpServers[index].DataSource.String() {
-				case "collectd":
-					event = &incoming.CollectdEvent{}
-				case "ceilometer":
-					// noop for now, gonna panic if configured
-					//event = incoming.CeilometerEvent{}
-					log.Printf("Received Ceilometer event:\n%s\n", msg)
-				case "generic":
-					// noop for now, gonna panic if configured
-					//event = incoming.GenericEvent{}
-					log.Printf("Received generic event:\n%s\n", msg)
-				}
+				// NOTE: below will panic for generic data source until the appropriate logic will be implemented
+				event := incoming.NewFromDataSource(amqpServers[index].DataSource)
 				amqpServers[index].Server.GetHandler().IncTotalMsgProcessed()
 				err := event.ParseEvent(msg.String())
 				if err != nil {

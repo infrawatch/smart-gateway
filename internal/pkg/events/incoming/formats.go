@@ -3,6 +3,13 @@ package incoming
 import (
 	"sort"
 	"strings"
+
+	"github.com/infrawatch/smart-gateway/internal/pkg/saconfig"
+)
+
+const (
+	isoTimeLayout   = "2006-01-02 15:04:05.000000"
+	unknownSeverity = "unknown"
 )
 
 //EventDataFormat interface for storing event data from various sources
@@ -17,6 +24,8 @@ type EventDataFormat interface {
 	ParseEvent(string) error
 	//GeneratePrometheusAlertBody generates alert body for Prometheus Alert manager API
 	GeneratePrometheusAlertBody(string) ([]byte, error)
+	//GeneratePrometheusAlertBody generates alert struct
+	GeneratePrometheusAlert(string) PrometheusAlert
 }
 
 //PrometheusAlert represents data structure used for sending alerts to Prometheus Alert Manager
@@ -74,4 +83,15 @@ func (alert *PrometheusAlert) SetSummary() {
 			alert.Annotations["summary"] = strings.Join(values, " ")
 		}
 	}
+}
+
+//NewFromDataSource creates empty EventDataFormat accorging to given DataSource
+func NewFromDataSource(source saconfig.DataSource) EventDataFormat {
+	switch source {
+	case saconfig.DataSourceCollectd:
+		return &CollectdEvent{}
+	case saconfig.DataSourceCeilometer:
+		return &CeilometerEvent{}
+	}
+	return nil
 }
