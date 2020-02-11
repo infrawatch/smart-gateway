@@ -18,8 +18,8 @@ RUN yum install epel-release -y && \
 # --- end build, create smart gateway layer ---
 FROM centos:7
 
-LABEL io.k8s.display-name="Service Assurance Smart Gateway" \
-      io.k8s.description="A component of the Service Assurance Framework on the server side that ingests data from AMQP 1.x and provides a metrics scrape endpoint for Prometheus, and forwards events to ElasticSearch" \
+LABEL io.k8s.display-name="Smart Gateway" \
+      io.k8s.description="A component of the Service Telemetry Framework on the server side that ingests data from AMQP 1.x and provides a metrics scrape endpoint for Prometheus, and forwards events to ElasticSearch" \
       maintainer="Leif Madsen <leif@redhat.com>"
 
 RUN yum install epel-release -y && \

@@ -1,7 +1,7 @@
 # smart-gateway ![build status](https://travis-ci.org/redhat-service-assurance/smart-gateway.svg?branch=master) [![Go Report Card](https://goreportcard.com/badge/github.com/redhat-service-assurance/smart-gateway)](https://goreportcard.com/report/github.com/redhat-service-assurance/smart-gateway) [![Coverage Status](https://coveralls.io/repos/github/redhat-service-assurance/smart-gateway/badge.svg)](https://coveralls.io/github/redhat-service-assurance/smart-gateway) [![Docker Repository on Quay](https://quay.io/repository/redhat-service-assurance/smart-gateway/status "Docker Repository on Quay")](https://quay.io/repository/redhat-service-assurance/smart-gateway)
 
-Smart gateway for service assurance. Includes applications for both metrics and
-events gathering.
+Smart gateway for service telemetry framework. Includes applications for both
+metrics and events gathering.
 
 Provides middleware that connects to an AMQP 1.0 message bus, pulling data off
 the bus and exposing it as a scrape target for Prometheus. Metrics are provided
