@@ -1,7 +1,7 @@
 package incoming
 
 import (
-	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/saconfig"
+	"github.com/infrawatch/smart-gateway/internal/pkg/saconfig"
 )
 
 //MetricDataFormat   ...

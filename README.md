@@ -1,4 +1,4 @@
-# smart-gateway ![build status](https://travis-ci.org/redhat-service-assurance/smart-gateway.svg?branch=master) [![Go Report Card](https://goreportcard.com/badge/github.com/redhat-service-assurance/smart-gateway)](https://goreportcard.com/report/github.com/redhat-service-assurance/smart-gateway) [![Coverage Status](https://coveralls.io/repos/github/redhat-service-assurance/smart-gateway/badge.svg)](https://coveralls.io/github/redhat-service-assurance/smart-gateway) [![Docker Repository on Quay](https://quay.io/repository/redhat-service-assurance/smart-gateway/status "Docker Repository on Quay")](https://quay.io/repository/redhat-service-assurance/smart-gateway)
+# smart-gateway ![build status](https://travis-ci.org/infrawatch/smart-gateway.svg?branch=master) [![Go Report Card](https://goreportcard.com/badge/github.com/infrawatch/smart-gateway)](https://goreportcard.com/report/github.com/infrawatch/smart-gateway) [![Coverage Status](https://coveralls.io/repos/github/infrawatch/smart-gateway/badge.svg)](https://coveralls.io/github/infrawatch/smart-gateway) [![Docker Repository on Quay](https://quay.io/repository/infrawatch/smart-gateway/status "Docker Repository on Quay")](https://quay.io/repository/infrawatch/smart-gateway)
 
 Smart gateway for service telemetry framework. Includes applications for both
 metrics and events gathering.
@@ -15,11 +15,11 @@ this project, then obtain the dependencies with the following commands. Example
 below is built on CentOS 7.
 
 ```
-go get -u github.com/redhat-service-assurance/smart-gateway
+go get -u github.com/infrawatch/smart-gateway
 go get -u github.com/golang/dep/...
 yum install -y epel-release
 yum install -y golang qpid-proton-c-devel iproute
-cd $GOPATH/src/github.com/redhat-service-assurance/smart-gateway
+cd $GOPATH/src/github.com/infrawatch/smart-gateway
 dep ensure -v -vendor-only
 ```
 
@@ -30,7 +30,7 @@ dep ensure -v -vendor-only
 Build the `smart_gateway` with Golang using the following command.
 
 ```
-cd $GOPATH/src/github.com/redhat-service-assurance/smart-gateway
+cd $GOPATH/src/github.com/infrawatch/smart-gateway
 go build -o smart_gateway cmd/main.go
 ```
 
@@ -39,7 +39,7 @@ go build -o smart_gateway cmd/main.go
 Building the `smart-gateway` with docker using the following commands.
 
 ```
-git clone --depth=1 --branch=master https://github.com/redhat-service-assurance/smart-gateway.git smart-gateway; rm -rf ./smart-gateway/.git
+git clone --depth=1 --branch=master https://github.com/infrawatch/smart-gateway.git smart-gateway; rm -rf ./smart-gateway/.git
 cd smart-gateway
 docker build -t smart-gateway .
 ```

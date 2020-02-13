@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/amqp10"
+	"github.com/infrawatch/smart-gateway/internal/pkg/amqp10"
 	"github.com/stretchr/testify/assert"
 )
 

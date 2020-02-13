@@ -6,8 +6,8 @@ import (
 	"path"
 	"testing"
 
-	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/saconfig"
-	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/saelastic"
+	"github.com/infrawatch/smart-gateway/internal/pkg/saconfig"
+	"github.com/infrawatch/smart-gateway/internal/pkg/saelastic"
 )
 
 //COLLECTD

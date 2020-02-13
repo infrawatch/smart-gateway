@@ -24,7 +24,7 @@
 #   go-tests = true
 #   unused-packages = true
 
-ignored = ["github.com/redhat-service-assurance/smart-gateway"]
+ignored = ["github.com/infrawatch/smart-gateway"]
 
 [[constraint]]
   branch = "master"
