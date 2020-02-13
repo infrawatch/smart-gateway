@@ -15,11 +15,11 @@ import (
 	"github.com/MakeNowJust/heredoc"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/amqp10"
-	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/api"
-	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/cacheutil"
-	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/metrics/incoming"
-	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/saconfig"
+	"github.com/infrawatch/smart-gateway/internal/pkg/amqp10"
+	"github.com/infrawatch/smart-gateway/internal/pkg/api"
+	"github.com/infrawatch/smart-gateway/internal/pkg/cacheutil"
+	"github.com/infrawatch/smart-gateway/internal/pkg/metrics/incoming"
+	"github.com/infrawatch/smart-gateway/internal/pkg/saconfig"
 )
 
 var (

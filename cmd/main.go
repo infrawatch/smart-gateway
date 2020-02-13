@@ -5,8 +5,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/events"
-	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/metrics"
+	"github.com/infrawatch/smart-gateway/internal/pkg/events"
+	"github.com/infrawatch/smart-gateway/internal/pkg/metrics"
 )
 
 var metricType = "metrics"

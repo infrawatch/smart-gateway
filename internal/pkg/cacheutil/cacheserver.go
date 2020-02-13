@@ -5,8 +5,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/metrics/incoming"
-	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/saconfig"
+	"github.com/infrawatch/smart-gateway/internal/pkg/metrics/incoming"
+	"github.com/infrawatch/smart-gateway/internal/pkg/saconfig"
 )
 
 // MAXTTL to remove plugin is stale for 5

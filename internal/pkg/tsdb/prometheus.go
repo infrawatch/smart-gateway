@@ -5,7 +5,7 @@ import (
 	"regexp"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/metrics/incoming"
+	"github.com/infrawatch/smart-gateway/internal/pkg/metrics/incoming"
 )
 
 //TSDB  interface

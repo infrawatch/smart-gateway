@@ -1,7 +1,7 @@
 # --- build smart gateway ---
 FROM centos:7 AS builder
 ENV GOPATH=/go
-ENV D=/go/src/github.com/redhat-service-assurance/smart-gateway
+ENV D=/go/src/github.com/infrawatch/smart-gateway
 
 WORKDIR $D
 COPY . $D/

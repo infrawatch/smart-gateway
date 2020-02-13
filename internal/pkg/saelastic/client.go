@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/olivere/elastic"
-	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/saconfig"
+	"github.com/infrawatch/smart-gateway/internal/pkg/saconfig"
 	uuid "github.com/satori/go.uuid"
 )
 

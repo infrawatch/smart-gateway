@@ -3,7 +3,7 @@ package tests
 import (
 	"testing"
 
-	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/events/incoming"
+	"github.com/infrawatch/smart-gateway/internal/pkg/events/incoming"
 	"github.com/stretchr/testify/assert"
 )
 

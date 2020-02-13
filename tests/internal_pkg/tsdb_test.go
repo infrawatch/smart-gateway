@@ -6,8 +6,8 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	dto "github.com/prometheus/client_model/go"
-	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/metrics/incoming"
-	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/tsdb"
+	"github.com/infrawatch/smart-gateway/internal/pkg/metrics/incoming"
+	"github.com/infrawatch/smart-gateway/internal/pkg/tsdb"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/cacheutil"
-	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/metrics/incoming"
+	"github.com/infrawatch/smart-gateway/internal/pkg/cacheutil"
+	"github.com/infrawatch/smart-gateway/internal/pkg/metrics/incoming"
 	"github.com/stretchr/testify/assert"
 )
 

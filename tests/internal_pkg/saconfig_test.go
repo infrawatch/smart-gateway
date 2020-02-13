@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/redhat-service-assurance/smart-gateway/internal/pkg/saconfig"
+	"github.com/infrawatch/smart-gateway/internal/pkg/saconfig"
 	"github.com/stretchr/testify/assert"
 )
 
