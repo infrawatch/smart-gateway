@@ -7,10 +7,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/infrawatch/smart-gateway/internal/pkg/amqp10"
 	"github.com/infrawatch/smart-gateway/internal/pkg/cacheutil"
 	"github.com/infrawatch/smart-gateway/internal/pkg/saconfig"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 var debugh = func(format string, data ...interface{}) {} // Default no debugging output

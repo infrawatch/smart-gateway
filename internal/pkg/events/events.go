@@ -16,14 +16,14 @@ import (
 	"sync"
 
 	"github.com/MakeNowJust/heredoc"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/infrawatch/smart-gateway/internal/pkg/amqp10"
 	"github.com/infrawatch/smart-gateway/internal/pkg/api"
 	"github.com/infrawatch/smart-gateway/internal/pkg/cacheutil"
 	"github.com/infrawatch/smart-gateway/internal/pkg/events/incoming"
 	"github.com/infrawatch/smart-gateway/internal/pkg/saconfig"
 	"github.com/infrawatch/smart-gateway/internal/pkg/saelastic"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 const (

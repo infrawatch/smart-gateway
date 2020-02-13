@@ -9,8 +9,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/olivere/elastic"
 	"github.com/infrawatch/smart-gateway/internal/pkg/saconfig"
+	"github.com/olivere/elastic"
 	uuid "github.com/satori/go.uuid"
 )
 

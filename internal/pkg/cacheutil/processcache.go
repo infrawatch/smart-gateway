@@ -3,9 +3,9 @@ package cacheutil
 import (
 	"log"
 
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/infrawatch/smart-gateway/internal/pkg/metrics/incoming"
 	"github.com/infrawatch/smart-gateway/internal/pkg/tsdb"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 //AddHeartBeat ...
