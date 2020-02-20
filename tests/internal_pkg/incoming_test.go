@@ -122,14 +122,14 @@ func TestCollectdIncoming(t *testing.T) {
 		metricDesc := "Service Assurance exporter: 'pluginname' Type: 'collectd' Dstype: 'gauge' Dsname: 'value1'"
 		assert.Equal(t, metricDesc, sample.GetMetricDesc(0))
 		// test GetMetricName behaviour
-		metricName := "sa_collectd_pluginname_collectd_value1"
+		metricName := "collectd_pluginname_collectd_value1"
 		assert.Equal(t, metricName, sample.GetMetricName(0))
 		sample.Type = sample.Plugin
-		metricName = "sa_collectd_pluginname_value1"
+		metricName = "collectd_pluginname_value1"
 		assert.Equal(t, metricName, sample.GetMetricName(0))
 		sample.Dstypes = []string{"counter", "derive"}
-		metricName1 := "sa_collectd_pluginname_value1_total"
-		metricName2 := "sa_collectd_pluginname_value2_total"
+		metricName1 := "collectd_pluginname_value1_total"
+		metricName2 := "collectd_pluginname_value2_total"
 		assert.Equal(t, metricName1, sample.GetMetricName(0))
 		assert.Equal(t, metricName2, sample.GetMetricName(1))
 	})

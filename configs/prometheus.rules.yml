@@ -40,8 +40,8 @@
    rules:
    # Alert for any instance that is unreachable for >5 minutes.
    - alert: Collectd_down
-     #expr: absent(sa_collectd_uptime) // this cant be predicted
-     expr: sa_collectd_last_metric_for_host_status==0
+     #expr: absent(collectd_uptime) // this cant be predicted
+     expr: collectd_last_metric_for_host_status==0
      for: 20s
      labels:
        severity: critical
@@ -54,8 +54,8 @@
    rules:
    # Alert for any instance that is unreachable for >5 minutes.
    - alert: qpid_router_down
-     #expr: absent(sa_collectd_uptime)
-     expr: sa_collectd_qpid_router_status==0
+     #expr: absent(collectd_uptime)
+     expr: collectd_qpid_router_status==0
      for: 10s
      labels:
        severity: critical
@@ -68,8 +68,8 @@
    rules:
    # Alert for any instance that is unreachable for >5 minutes.
    - alert: elasticsearch_down
-     #expr: absent(sa_collectd_uptime)
-     expr: sa_collectd_elasticsearch_status==0
+     #expr: absent(collectd_uptime)
+     expr: collectd_elasticsearch_status==0
      for: 10s
      labels:
        severity: critical
@@ -82,8 +82,8 @@
    rules:
    # Alert for any instance that is unreachable for >5 minutes.
    - alert: smartgateway_listerner_slow
-     #expr: absent(sa_collectd_uptime)
-     expr: floor(sa_collectd_last_pull_timestamp_seconds)-time()>6
+     #expr: absent(collectd_uptime)
+     expr: floor(collectd_last_pull_timestamp_seconds)-time()>6
      for: 10s
      labels:
        severity: critical
@@ -96,8 +96,8 @@
    rules:
    # Alert for any instance that is unreachable for >5 minutes.
    - alert: smartgateway_listerner_down
-     #expr: absent(sa_collectd_uptime)
-     expr: absent(sa_collectd_last_pull_timestamp_seconds)
+     #expr: absent(collectd_uptime)
+     expr: absent(collectd_last_pull_timestamp_seconds)
      for: 20s
      labels:
        severity: critical
@@ -134,7 +134,7 @@
    interval: 5s
    rules:
    - alert: High CPU usage
-     expr:  (avg by (exported_instance) (irate(sa_collectd_cpu_total[5m]))) > 75
+     expr:  (avg by (exported_instance) (irate(collectd_cpu_total[5m]))) > 75
      for: 20s
      labels:
        severity: critical
