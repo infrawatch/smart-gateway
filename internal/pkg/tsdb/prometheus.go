@@ -23,7 +23,7 @@ var (
 //NewHeartBeatMetricByHost ...
 func NewHeartBeatMetricByHost(instance string, value float64) (prometheus.Metric, error) {
 	valueType := prometheus.GaugeValue
-	metricName := "sa_collectd_last_metric_for_host_status"
+	metricName := "collectd_last_metric_for_host_status"
 	help := "Status of metrics for host currently active."
 
 	plabels := prometheus.Labels{}
@@ -35,7 +35,7 @@ func NewHeartBeatMetricByHost(instance string, value float64) (prometheus.Metric
 //AddMetricsByHost ...
 func AddMetricsByHost(instance string, value float64) (prometheus.Metric, error) {
 	valueType := prometheus.GaugeValue
-	metricName := "sa_collectd_metric_per_host"
+	metricName := "collectd_metric_per_host"
 	help := "No of metrics for host currently read."
 
 	plabels := prometheus.Labels{}

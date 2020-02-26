@@ -35,19 +35,19 @@ func TestTimestamp(t *testing.T) {
 func TestCollectdMetric(t *testing.T) {
 	t.Run("Test prometeus metric values", func(t *testing.T) {
 		sample, collectdMetric, metric := GenerateCollectdMetric("hostname", "pluginname", true, 0)
-		assert.True(t, strings.HasPrefix(collectdMetric.Desc().String(), "Desc{fqName: \"sa_collectd_pluginname_collectd_value1\""))
+		assert.True(t, strings.HasPrefix(collectdMetric.Desc().String(), "Desc{fqName: \"collectd_pluginname_collectd_value1\""))
 		assert.Equal(t, sample.Values[0], metric.GetGauge().GetValue())
 		assert.Equal(t, 0.0, metric.GetCounter().GetValue())
 
 		sample, collectdMetric, metric = GenerateCollectdMetric("hostname", "pluginname", true, 1)
-		assert.True(t, strings.HasPrefix(collectdMetric.Desc().String(), "Desc{fqName: \"sa_collectd_pluginname_collectd_value2_total\""))
+		assert.True(t, strings.HasPrefix(collectdMetric.Desc().String(), "Desc{fqName: \"collectd_pluginname_collectd_value2_total\""))
 		assert.Equal(t, sample.Values[1], metric.GetCounter().GetValue())
 		assert.Equal(t, 0.0, metric.GetGauge().GetValue())
 	})
 
 	t.Run("Test heart beat metric", func(t *testing.T) {
 		collectdMetric, _ := tsdb.NewHeartBeatMetricByHost("test_heartbeat", 66.6)
-		assert.True(t, strings.HasPrefix(collectdMetric.Desc().String(), "Desc{fqName: \"sa_collectd_last_metric_for_host_status\""))
+		assert.True(t, strings.HasPrefix(collectdMetric.Desc().String(), "Desc{fqName: \"collectd_last_metric_for_host_status\""))
 		metric := dto.Metric{}
 		collectdMetric.Write(&metric)
 		assert.Equal(t, 66.6, metric.GetGauge().GetValue())
@@ -56,7 +56,7 @@ func TestCollectdMetric(t *testing.T) {
 
 	t.Run("Test metric by host", func(t *testing.T) {
 		collectdMetric, _ := tsdb.AddMetricsByHost("test_host", 666.0)
-		assert.True(t, strings.HasPrefix(collectdMetric.Desc().String(), "Desc{fqName: \"sa_collectd_metric_per_host\""))
+		assert.True(t, strings.HasPrefix(collectdMetric.Desc().String(), "Desc{fqName: \"collectd_metric_per_host\""))
 		metric := dto.Metric{}
 		collectdMetric.Write(&metric)
 		assert.Equal(t, 666.0, metric.GetGauge().GetValue())

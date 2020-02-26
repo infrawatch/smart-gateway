@@ -131,11 +131,11 @@ func NewAppStateMetricHandler(applicationHealth *cacheutil.ApplicationHealthCach
 	plabels["source"] = "Metric Listener"
 	return &MetricHandler{
 		applicationHealth: applicationHealth,
-		lastPull: prometheus.NewDesc("sa_collectd_last_pull_timestamp_seconds",
+		lastPull: prometheus.NewDesc("collectd_last_pull_timestamp_seconds",
 			"Unix timestamp of the last metrics pull in seconds.",
 			nil, plabels,
 		),
-		qpidRouterState: prometheus.NewDesc("sa_collectd_qpid_router_status",
+		qpidRouterState: prometheus.NewDesc("collectd_qpid_router_status",
 			"Metric listener router status ",
 			nil, plabels,
 		),
@@ -149,15 +149,15 @@ func NewAppStateEventMetricHandler(applicationHealth *cacheutil.ApplicationHealt
 
 	return &EventMetricHandler{
 		applicationHealth: applicationHealth,
-		lastPull: prometheus.NewDesc("sa_collectd_last_pull_timestamp_seconds",
+		lastPull: prometheus.NewDesc("collectd_last_pull_timestamp_seconds",
 			"Unix timestamp of the last event listener pull in seconds.",
 			nil, plabels,
 		),
-		qpidRouterState: prometheus.NewDesc("sa_collectd_qpid_router_status",
+		qpidRouterState: prometheus.NewDesc("collectd_qpid_router_status",
 			"Event listener router status ",
 			nil, plabels,
 		),
-		elasticSearchState: prometheus.NewDesc("sa_collectd_elasticsearch_status",
+		elasticSearchState: prometheus.NewDesc("collectd_elasticsearch_status",
 			"Event listener ElasticSearch status ",
 			nil, plabels,
 		),
