@@ -110,6 +110,12 @@ func StartMetrics() {
 		debugm = func(format string, data ...interface{}) { log.Printf(format, data...) }
 	}
 
+	if len(serverConfig.AMQP1MetricURL) == 0 {
+		log.Println("AMQP1 Metrics URL is required")
+		metricusage()
+		os.Exit(1)
+	}
+
 	//Block -starts
 	//Set up signal Go routine
 	signalCh := make(chan os.Signal, 1)
