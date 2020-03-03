@@ -7,7 +7,7 @@
 	"UseSample": false,
 	"UseTimeStamp": true,
 	"Debug": true,
-	"prefetch": 0,
+	"Prefetch": 15000,
 	"Sample": {
 		"HostCount": 10,
 		"PluginCount": 100,
