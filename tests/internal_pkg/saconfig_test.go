@@ -15,7 +15,7 @@ const (
 {
 	"AMQP1Connections": [
 		{"Url": "127.0.0.1:5672/collectd/notify", "DataSource": "collectd"},
-		{"Url": "127.0.0.1:5672/ceilometer/events", "DataSource": "ceilometer"},
+		{"Url": "127.0.0.1:5672/ceilometer/event.sample", "DataSource": "ceilometer"},
 		{"Url": "127.0.0.1:5672/universal/events", "DataSource": "universal"}
 	],
 	"AMQP1EventURL": "127.0.0.1:5672/collectd/notify",
@@ -35,7 +35,7 @@ const (
 {
 	"AMQP1Connections": [
 		{"Url": "127.0.0.1:5672/collectd/telemetry", "DataSource": "collectd"},
-		{"Url": "127.0.0.1:5672/ceilometer/telemetry", "DataSource": "ceilometer"},
+		{"Url": "127.0.0.1:5672/ceilometer/metering.sample", "DataSource": "ceilometer"},
 		{"Url": "127.0.0.1:5672/universal/telemetry", "DataSource": "universal"}
 	],
 	"AMQP1MetricURL": "127.0.0.1:5672/collectd/telemetry",
