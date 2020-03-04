@@ -58,16 +58,9 @@ func eventusage() {
 	doc := heredoc.Doc(`
   For running with config file use
 	********************* config *********************
-	$go run cmd/main.go -config sa.events.config.json -debug -servicetype events
-	**************************************************
-	For running with AMQP and Prometheus use following option
-	********************* Production *********************
-	$go run cmd/main.go -servicetype events -amqp1EventURL=10.19.110.5:5672/collectd/notify -eshost=http://10.19.110.5:9200
-	**************************************************************
-	For running with AMQP ,Prometheus,API and AlertManager use following option
-	********************* Production *********************
-	$go run cmd/main.go -servicetype events -amqp1EventURL=10.19.110.5:5672/collectd/notify -eshost=http://10.19.110.5:9200 -alertmanager=http://localhost:9090/v1/api/alert -apiurl=localhost:8082 -amqppublishurl=127.0.0.1:5672/collectd/alert
-	**************************************************************`)
+	$go run cmd/main.go -config smartgateway_config.json -servicetype events
+	**************************************************`)
+
 	fmt.Fprintln(os.Stderr, `Required command line argument missing`)
 	fmt.Fprintln(os.Stdout, doc)
 	flag.PrintDefaults()
@@ -189,17 +182,9 @@ func StartEvents() {
 
 	// set flags for parsing options
 	flag.Usage = eventusage
-	fDebug := flag.Bool("debug", false, "Enable debug")
-	fServiceType := flag.String("servicetype", "event", "event type")
-	fConfigLocation := flag.String("config", "", "Path to configuration file(optional).if provided ignores all command line options")
-	fAMQP1EventURL := flag.String("amqp1EventURL", "", "AMQP1.0 collectd events listener example 127.0.0.1:5672/collectd/notify")
-	fElasticHostURL := flag.String("eshost", "", "ElasticSearch host http://localhost:9200")
-	fAlertManagerURL := flag.String("alertmanager", "", "(Optional)AlertManager endpoint http://localhost:9090/v1/api/alert")
-	fAPIEndpointURL := flag.String("apiurl", "", "(Optional)API endpoint localhost:8082")
-	fAMQP1PublishURL := flag.String("amqppublishurl", "", "(Optional) AMQP1.0 event publish address 127.0.0.1:5672/collectd/alert")
-	fResetIndex := flag.Bool("resetIndex", false, "Optional Clean all index before on start (default false)")
-	fPrefetch := flag.Int("prefetch", 0, "AMQP1.0 option: Enable prefetc and set capacity(0 is disabled,>0 enabled with capacity of >0) (OPTIONAL)")
-	fUniqueName := flag.String("uname", "metrics-"+strconv.Itoa(rand.Intn(100)), "Unique name across application")
+	fServiceType := flag.String("servicetype", "event", "Event type")
+	fConfigLocation := flag.String("config", "", "Path to configuration file.")
+	fUniqueName := flag.String("uname", "events-"+strconv.Itoa(rand.Intn(100)), "Unique name across application")
 	flag.Parse()
 
 	//load configuration from given config file or from cmdline parameters
@@ -211,24 +196,9 @@ func StartEvents() {
 		}
 		serverConfig = conf.(*saconfig.EventConfiguration)
 		serverConfig.ServiceType = *fServiceType
-		if *fDebug {
-			serverConfig.Debug = true
-		}
 	} else {
-		serverConfig = &saconfig.EventConfiguration{
-			AMQP1EventURL:   *fAMQP1EventURL,
-			ElasticHostURL:  *fElasticHostURL,
-			AlertManagerURL: *fAlertManagerURL,
-			Prefetch:        *fPrefetch,
-			ServiceType:     *fServiceType,
-			API: saconfig.EventAPIConfig{
-				APIEndpointURL:  *fAPIEndpointURL,
-				AMQP1PublishURL: *fAMQP1PublishURL,
-			},
-			ResetIndex: *fResetIndex,
-			Debug:      *fDebug,
-			UniqueName: *fUniqueName,
-		}
+		eventusage()
+		os.Exit(1)
 	}
 
 	if serverConfig.Debug {

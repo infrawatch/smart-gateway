@@ -76,14 +76,9 @@ func (c *cacheHandler) Collect(ch chan<- prometheus.Metric) {
 // metricusage and command-line flags
 func metricusage() {
 	doc := heredoc.Doc(`
-  For running with config file use
 	********************* config *********************
-	$go run cmd/main.go -config sa.metrics.config.json -debug -servicetype metrics
-	**************************************************
-	For running with AMQP and Prometheus use following option
-	********************* Production *********************
-	$go run cmd/main.go -servicetype metrics -mhost=localhost -mport=8081 -amqp1MetricURL=10.19.110.5:5672/collectd/telemetry
-	**************************************************************`)
+	$go run cmd/main.go -config smartgateway_config.json -servicetype metrics
+	**************************************************`)
 
 	fmt.Fprintln(os.Stderr, `Required commandline argument missing`)
 	fmt.Fprintln(os.Stdout, doc)
@@ -94,16 +89,8 @@ func metricusage() {
 func StartMetrics() {
 	// set flags for parsing options
 	flag.Usage = metricusage
-	fDebug := flag.Bool("debug", false, "Enable debug")
-	fServiceType := flag.String("servicetype", "metrics", "metric type")
-	fConfigLocation := flag.String("config", "", "Path to configuration file(optional).if provided ignores all command line options")
-	fIncludeStats := flag.Bool("cpustats", false, "Include cpu usage info in http requests (degrades performance)")
-	fExporterhost := flag.String("mhost", "localhost", "Metrics url for Prometheus to export. ")
-	fExporterport := flag.Int("mport", 8081, "Metrics port for Prometheus to export (http://localhost:<port>/metrics) ")
-	fAMQP1MetricURL := flag.String("amqp1MetricURL", "", "AMQP1.0 metrics listener example 127.0.0.1:5672/collectd/telemetry")
-	fCount := flag.Int("count", -1, "Stop after receiving this many messages in total(-1 forever) (OPTIONAL)")
-	fPrefetch := flag.Int("prefetch", 0, "AMQP1.0 option: Enable prefetc and set capacity(0 is disabled,>0 enabled with capacity of >0) (OPTIONAL)")
-	fUsetimestamp := flag.Bool("usetimestamp", true, "Use source time stamp instead of promethues.(default true,OPTIONAL)")
+	fServiceType := flag.String("servicetype", "metrics", "Metric type")
+	fConfigLocation := flag.String("config", "", "Path to configuration file.")
 	fUniqueName := flag.String("uname", "metrics-"+strconv.Itoa(rand.Intn(100)), "Unique name across application")
 	flag.Parse()
 
@@ -115,23 +102,9 @@ func StartMetrics() {
 		}
 		serverConfig = conf.(*saconfig.MetricConfiguration)
 		serverConfig.ServiceType = *fServiceType
-		if *fDebug {
-			serverConfig.Debug = true
-		}
 	} else {
-		serverConfig = &saconfig.MetricConfiguration{
-			AMQP1MetricURL: *fAMQP1MetricURL,
-			CPUStats:       *fIncludeStats,
-			Exporterhost:   *fExporterhost,
-			Exporterport:   *fExporterport,
-			DataCount:      *fCount, //-1 for ever which is default
-			UseTimeStamp:   *fUsetimestamp,
-			Debug:          *fDebug,
-			Prefetch:       *fPrefetch,
-			ServiceType:    *fServiceType,
-			UniqueName:     *fUniqueName,
-		}
-
+		metricusage()
+		os.Exit(1)
 	}
 	if serverConfig.Debug {
 		debugm = func(format string, data ...interface{}) { log.Printf(format, data...) }

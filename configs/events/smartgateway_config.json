@@ -4,7 +4,7 @@
 	"AlertManagerURL": "http://localhost:9093/api/v1/alerts",
 	"ResetIndex": false,
 	"Debug": true,
-	"prefetch": 0,
+	"Prefetch": 0,
 	"API":  {
 		"APIEndpointURL": "localhost:9999",
 		"AMQP1PublishURL": "localhost:5672/collectd/alert2"

@@ -15,7 +15,7 @@ const (
 {
 	"AMQP1Connections": [
 		{"Url": "127.0.0.1:5672/collectd/notify", "DataSource": "collectd"},
-		{"Url": "127.0.0.1:5672/ceilometer/events", "DataSource": "ceilometer"},
+		{"Url": "127.0.0.1:5672/ceilometer/event.sample", "DataSource": "ceilometer"},
 		{"Url": "127.0.0.1:5672/universal/events", "DataSource": "universal"}
 	],
 	"AMQP1EventURL": "127.0.0.1:5672/collectd/notify",
@@ -35,7 +35,7 @@ const (
 {
 	"AMQP1Connections": [
 		{"Url": "127.0.0.1:5672/collectd/telemetry", "DataSource": "collectd"},
-		{"Url": "127.0.0.1:5672/ceilometer/telemetry", "DataSource": "ceilometer"},
+		{"Url": "127.0.0.1:5672/ceilometer/metering.sample", "DataSource": "ceilometer"},
 		{"Url": "127.0.0.1:5672/universal/telemetry", "DataSource": "universal"}
 	],
 	"AMQP1MetricURL": "127.0.0.1:5672/collectd/telemetry",
@@ -158,7 +158,7 @@ func TestUnstructuredData(t *testing.T) {
 	}
 }
 
-func TestStructuredData(t *testing.T) {
+func TestEventStructuredData(t *testing.T) {
 	confPath, err := GenerateTestConfig(EventsConfig)
 	if err != nil {
 		t.Fatal(err)
@@ -177,9 +177,32 @@ func TestStructuredData(t *testing.T) {
 	t.Run("Test structured AMQP connections", func(t *testing.T) {
 		connStruct := []saconfig.AMQPConnection{
 			saconfig.AMQPConnection{URL: "127.0.0.1:5672/collectd/notify", DataSource: "collectd", DataSourceID: 1},
-			saconfig.AMQPConnection{URL: "127.0.0.1:5672/ceilometer/events", DataSource: "ceilometer", DataSourceID: 2},
+			saconfig.AMQPConnection{URL: "127.0.0.1:5672/ceilometer/event.sample", DataSource: "ceilometer", DataSourceID: 2},
 			saconfig.AMQPConnection{URL: "127.0.0.1:5672/universal/events", DataSource: "universal", DataSourceID: 0},
 		}
 		assert.Equal(t, connStruct, cfg.(*saconfig.EventConfiguration).AMQP1Connections)
 	})
 }
+
+/* enable this after implementing []AMQP1Connections in metrics.go
+func TestMetricStructuredData(t *testing.T) {
+	confPath, err := GenerateTestConfig(MetricsConfig)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(confPath)
+	cfg, err := saconfig.LoadConfiguration(confPath, "metric")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("Test structured AMQP connections", func(t *testing.T) {
+		connStruct := []saconfig.AMQPConnection{
+			saconfig.AMQPConnection{URL: "127.0.0.1:5672/collectd/telemetry", DataSource: "collectd", DataSourceID: 1},
+			saconfig.AMQPConnection{URL: "127.0.0.1:5672/ceilometer/metering.sample", DataSource: "ceilometer", DataSourceID: 2},
+			saconfig.AMQPConnection{URL: "127.0.0.1:5672/universal/metrics", DataSource: "universal", DataSourceID: 0},
+		}
+		assert.Equal(t, connStruct, cfg.(*saconfig.MetricConfiguration).AMQP1Connections)
+	})
+}
+*/
