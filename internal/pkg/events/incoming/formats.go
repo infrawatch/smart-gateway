@@ -85,7 +85,7 @@ func (alert *PrometheusAlert) SetSummary() {
 	}
 }
 
-//NewFromDataSource creates empty EventDataFormat accorging to given DataSource
+//NewFromDataSource creates empty EventDataFormat according to given DataSource
 func NewFromDataSource(source saconfig.DataSource) EventDataFormat {
 	switch source {
 	case saconfig.DataSourceCollectd:
