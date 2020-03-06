@@ -52,7 +52,11 @@ func (evt *CeilometerEvent) GetIndexName() string {
 			switch rec := val.(type) {
 			case string:
 				parts := strings.Split(rec, ".")
-				result = strings.ReplaceAll(strings.Join(parts[:len(parts)-1], "_"), "-", "_")
+				if len(parts) > 1 {
+					result = strings.ReplaceAll(strings.Join(parts[:len(parts)-1], "_"), "-", "_")
+				} else {
+					result = fmt.Sprintf("%v", parts[0])
+				}
 				if !strings.HasPrefix(result, "ceilometer_") {
 					result = fmt.Sprintf("ceilometer_%s", result)
 				}
