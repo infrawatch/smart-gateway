@@ -34,6 +34,7 @@ var (
 	}
 )
 
+//AlertKeySurrogate translates case for fields for AlertManager
 type AlertKeySurrogate struct {
 	Parsed string
 	Label  string
