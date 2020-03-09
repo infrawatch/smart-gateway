@@ -239,7 +239,7 @@ func TestTls(t *testing.T) {
 }
 
 func TestStoreCeilometerEvent(t *testing.T) {
-	t.Run("Test write ceilometer event to elastic search", func(t *testing.T) {
+	t.Run("Store event with differing trait types", func(t *testing.T) {
 		config := saconfig.EventConfiguration{
 			Debug:          false,
 			ElasticHostURL: elastichost,
