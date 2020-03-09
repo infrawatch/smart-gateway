@@ -16,10 +16,10 @@ const (
 	procEventData1        = "[{\"labels\":{\"alertname\":\"collectd_procevent_gauge\",\"instance\":\"d60b3c68f23e\",\"procevent\":\"bla.py\",\"type\":\"process_status\",\"severity\":\"FAILURE\",\"service\":\"collectd\"},\"annotations\":{\"summary\":\"\",\"ves\":\"{\\\"domain\\\":\\\"fault\\\",\\\"eventId\\\":3,\\\"eventName\\\":\\\"process bla.py (8537) down\\\",\\\"lastEpochMicrosec\\\":1518791119579620,\\\"priority\\\":\\\"high\\\",\\\"reportingEntityName\\\":\\\"collectd procevent plugin\\\",\\\"sequence\\\":0,\\\"sourceName\\\":\\\"bla.py\\\",\\\"startEpochMicrosec\\\":1518791111336973,\\\"version\\\":1.0,\\\"faultFields\\\":{\\\"alarmCondition\\\":\\\"process bla.py (8537) state change\\\",\\\"alarmInterfaceA\\\":\\\"bla.py\\\",\\\"eventSeverity\\\":\\\"CRITICAL\\\",\\\"eventSourceType\\\":\\\"process\\\",\\\"faultFieldsVersion\\\":1.0,\\\"specificProblem\\\":\\\"process bla.py (8537) down\\\",\\\"vfStatus\\\":\\\"Ready to terminate\\\"}}\"},\"startsAt\":\"2018-02-16T14:25:19.579573212Z\"}]"
 	procEventData2        = `[{"labels":{"alertname":"collectd_interface_if_octets","instance":"localhost.localdomain","interface":"lo","severity":"FAILURE","service":"collectd"},"annotations":{"summary":"Host localhost.localdomain, plugin interface (instance lo) type if_octets: Data source \"rx\" is currently 43596.224329. That is above the failure threshold of 0.000000.","DataSource":"rx","CurrentValue":"43596.2243286703","WarningMin":"nan","WarningMax":"nan","FailureMin":"nan","FailureMax":"0"},"startsAt":"2019-09-18T21:11:19.281603240Z"}]`
 	ovsEventData          = `[{"labels":{"alertname":"collectd_ovs_events_gauge","instance":"nfvha-comp-03","ovs_events":"br0","type":"link_status","severity":"OKAY","service":"collectd"},"annotations":{"summary":"link state of \"br0\" interface has been changed to \"UP\"","uuid":"c52f2aca-3cb1-48e3-bba3-100b54303d84"},"startsAt":"2018-02-22T20:12:19.547955618Z"}]`
-	// ceilometer messag
-
-	ceiloEventData           = `{"request":{"oslo.version":"2.0","oslo.message":"{\"message_id\":\"7936fc72-21ac-4536-b7a4-02ef4729f37e\",\"publisher_id\":\"compute.host1\",\"timestamp\":\"2020-01-06 20:22:42.094902\",\"priority\":\"warn\",\"event_type\":\"compute.create_instance.start\",\"payload\":{\"instance_id\":\"foobar\"}}"},"context":{}}}`
-	ceiloEventDataWithTraits = `{"request": {"oslo.version": "2.0", "oslo.message": "{\"message_id\": \"eb531e17-0de6-484e-8f9d-847e80bc9b71\", \"publisher_id\": \"telemetry.publisher.controller-0.redhat.local\", \"event_type\": \"event\", \"priority\": \"SAMPLE\", \"payload\": [{\"message_id\": \"e2e33d23-93c0-46a8-b070-0952168e9030\", \"event_type\": \"image.delete\", \"generated\": \"2020-03-06T14:30:18.659662\", \"traits\": [[\"service\", 1, \"image.localhost\"], [\"size\", 2, 13287936]], \"raw\": {}, \"message_signature\": \"8f9eb5eab5dd651f45e5adddc251ac88b969d77a18fae5b00df39e441a87cb49\"}], \"timestamp\": \"2020-03-06 14:30:19.972801\"}"}, "context": {}}}`
+	// ceilometer messages
+	ceiloEventData           = `{"request":{"oslo.version":"2.0","oslo.message":"{\"message_id\":\"7936fc72-21ac-4536-b7a4-02ef4729f37e\",\"publisher_id\":\"compute.host1\",\"timestamp\":\"2020-01-06 20:22:42.094902\",\"priority\":\"warn\",\"event_type\":\"compute.create_instance.start\",\"payload\":[{\"instance_id\":\"foobar\"}]}"}],"context":{}}}`
+	ceiloEventDataWithTraits = `{"request": {"oslo.version": "2.0", "oslo.message": "{\"message_id\": \"4c9fbb58-c82d-4ca5-9f4c-2c61d0693214\", \"publisher_id\": \"telemetry.publisher.controller-0.redhat.local\", \"event_type\": \"event\", \"priority\": \"SAMPLE\", \"payload\": [{\"message_id\": \"084c0bca-0d19-40c0-a724-9916e4815845\", \"event_type\": \"image.delete\", \"generated\": \"2020-03-06T14:13:29.497096\", \"traits\": [[\"service\", 1, \"image.localhost\"], [\"project_id\", 1, \"0f500647077b47f08a8ca9181e9b7aef\"], [\"user_id\", 1, \"0f500647077b47f08a8ca9181e9b7aef\"], [\"resource_id\", 1, \"c4f7e00b-df85-4b77-9e1a-26a1de4d5735\"], [\"name\", 1, \"cirros\"], [\"status\", 1, \"deleted\"], [\"created_at\", 4, \"2020-03-06T14:01:07\"], [\"deleted_at\", 4, \"2020-03-06T14:13:29\"], [\"size\", 2, 13287936]], \"raw\": {}, \"message_signature\": \"77e798b842991f9c0c35bda265fdf86075b4a1e58309db1d2adbf89386a3859e\"}], \"timestamp\": \"2020-03-06 14:13:30.057411\"}"}, "context": {}}}`
+	// generic messages
 )
 
 var (
@@ -126,42 +126,40 @@ var (
 		"startsAt": "2018-02-22T20:12:19.547955618Z",
 	}
 	// ceilometer events
-	// ceiloEvent = map[string]interface{}{
-	// 	"message_id":   "7936fc72-21ac-4536-b7a4-02ef4729f37e",
-	// 	"publisher_id": "compute.host1",
-	// 	"timestamp":    "2020-01-06 20:22:42.094902",
-	// 	"priority":     "warn",
-	// 	"event_type":   "compute.create_instance.start",
-	// 	"payload":      map[string]interface{}{"instance_id": "foobar"},
-	// }
-
-	ceiloEventWithTraits = map[string]interface{}{
-		"message_id":   "eb531e17-0de6-484e-8f9d-847e80bc9b71",
-		"publisher_id": "telemetry.publisher.controller-0.redhat.local",
-		"event_type":   "event",
-		"priority":     "SAMPLE",
-		"payload": []interface{}{
-			map[string]interface{}{
-				"message_id": "e2e33d23-93c0-46a8-b070-0952168e9030",
-				"event_type": "image.delete",
-				"generated":  "2020-03-06T14:30:18.659662",
-				"traits": []interface{}{
-					[]interface{}{
-						"service",
-						float64(1),
-						"image.localhost",
-					},
-					[]interface{}{
-						"size",
-						float64(2),
-						float64(13287936),
-					},
-				},
-				"raw":               map[string]interface{}{},
-				"message_signature": "8f9eb5eab5dd651f45e5adddc251ac88b969d77a18fae5b00df39e441a87cb49",
-			},
+	ceiloEvent = map[string]interface{}{
+		"message_id":   "7936fc72-21ac-4536-b7a4-02ef4729f37e",
+		"publisher_id": "compute.host1",
+		"timestamp":    "2020-01-06 20:22:42.094902",
+		"priority":     "warn",
+		"event_type":   "compute.create_instance.start",
+		"payload": map[string]interface{}{
+			"instance_id": "foobar",
 		},
-		"timestamp": "2020-03-06 14:30:19.972801",
+	}
+	ceiloEventWithTraits = map[string]interface{}{
+		"message_id":   "4c9fbb58-c82d-4ca5-9f4c-2c61d0693214",
+		"publisher_id": "telemetry.publisher.controller-0.redhat.local",
+		"timestamp":    "2020-03-06 14:13:30.057411",
+		"priority":     "SAMPLE",
+		"event_type":   "event",
+		"payload": map[string]interface{}{
+			"message_id": "084c0bca-0d19-40c0-a724-9916e4815845",
+			"event_type": "image.delete",
+			"generated":  "2020-03-06T14:13:29.497096",
+			"traits": map[string]interface{}{
+				"service":     "image.localhost",
+				"project_id":  "0f500647077b47f08a8ca9181e9b7aef",
+				"user_id":     "0f500647077b47f08a8ca9181e9b7aef",
+				"resource_id": "c4f7e00b-df85-4b77-9e1a-26a1de4d5735",
+				"name":        "cirros",
+				"status":      "deleted",
+				"created_at":  "2020-03-06T14:01:07",
+				"deleted_at":  "2020-03-06T14:13:29",
+				"size":        float64(13287936),
+			},
+			"raw":               map[string]interface{}{},
+			"message_signature": "77e798b842991f9c0c35bda265fdf86075b4a1e58309db1d2adbf89386a3859e",
+		},
 	}
 	// generic events
 )
@@ -191,6 +189,7 @@ func TestEventDataParsing(t *testing.T) {
 		EventDataParsingTestRun{
 			saconfig.DataSourceCeilometer,
 			[]EventDataParsingTestMatrix{
+				//EventDataParsingTestMatrix{ceiloEventData, ceiloEvent, "ceilometer_compute_create_instance"},
 				EventDataParsingTestMatrix{ceiloEventDataWithTraits, ceiloEventWithTraits, "ceilometer_event"},
 			},
 		},
@@ -198,7 +197,10 @@ func TestEventDataParsing(t *testing.T) {
 	for _, run := range testRuns {
 		for _, testCase := range run.Matrix {
 			evt := incoming.NewFromDataSource(run.Source)
-			evt.ParseEvent(testCase.Dirty)
+			err := evt.ParseEvent(testCase.Dirty)
+			if err != nil {
+				t.Errorf("Failed event parsing case: %s", err.Error())
+			}
 			assert.Equal(t, testCase.Parsed, evt.GetRawData())
 			assert.Equal(t, testCase.IndexName, evt.GetIndexName())
 		}
