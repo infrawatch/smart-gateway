@@ -249,14 +249,12 @@ func TestStoreCeilometerEvent(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to connect to elastic: %s", err)
 		}
-		// write to elastic
 		event := incoming.NewFromDataSource(saconfig.DataSourceCeilometer)
-		event.ParseEvent(ceiloEventData)
+		event.ParseEvent(ceiloEventDataWithTraits)
 		resp, err := client.Create(event.GetIndexName(), "event", event.GetSanitized())
 		if err != nil {
 			t.Fatalf("Failed to store index to elastic search: %ss", err)
 		}
-		fmt.Printf("Index ID: %s", resp)
 		result, err := client.Get(event.GetIndexName(), "event", resp)
 		if err != nil {
 			t.Fatalf("Error querying Elastic Search: %s", err)
