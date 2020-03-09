@@ -126,16 +126,6 @@ var (
 		"startsAt": "2018-02-22T20:12:19.547955618Z",
 	}
 	// ceilometer events
-	ceiloEvent = map[string]interface{}{
-		"message_id":   "7936fc72-21ac-4536-b7a4-02ef4729f37e",
-		"publisher_id": "compute.host1",
-		"timestamp":    "2020-01-06 20:22:42.094902",
-		"priority":     "warn",
-		"event_type":   "compute.create_instance.start",
-		"payload": map[string]interface{}{
-			"instance_id": "foobar",
-		},
-	}
 	ceiloEventWithTraits = map[string]interface{}{
 		"message_id":   "4c9fbb58-c82d-4ca5-9f4c-2c61d0693214",
 		"publisher_id": "telemetry.publisher.controller-0.redhat.local",
@@ -189,7 +179,6 @@ func TestEventDataParsing(t *testing.T) {
 		EventDataParsingTestRun{
 			saconfig.DataSourceCeilometer,
 			[]EventDataParsingTestMatrix{
-				//EventDataParsingTestMatrix{ceiloEventData, ceiloEvent, "ceilometer_compute_create_instance"},
 				EventDataParsingTestMatrix{ceiloEventDataWithTraits, ceiloEventWithTraits, "ceilometer_event"},
 			},
 		},

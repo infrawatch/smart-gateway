@@ -116,7 +116,7 @@ func (evt *CeilometerEvent) ParseEvent(data string) error {
 					for _, value := range traits {
 						if typedValue, ok := value.([]interface{}); ok {
 							if len(typedValue) != 3 {
-								return fmt.Errorf("Parsed invalid trait (%v) in event: %s", value, data)
+								return fmt.Errorf("parsed invalid trait (%v) in event: %s", value, data)
 							}
 							if traitType, ok := typedValue[1].(float64); ok {
 								switch traitType {
@@ -126,10 +126,10 @@ func (evt *CeilometerEvent) ParseEvent(data string) error {
 									newTraits[typedValue[0].(string)] = typedValue[2].(string)
 								}
 							} else {
-								return fmt.Errorf("Parsed invalid trait (%v) in event: %s", value, data)
+								return fmt.Errorf("parsed invalid trait (%v) in event: %s", value, data)
 							}
 						} else {
-							return fmt.Errorf("Parsed invalid trait (%v) in event: %s", value, data)
+							return fmt.Errorf("parsed invalid trait (%v) in event: %s", value, data)
 						}
 					}
 					newPayload["traits"] = newTraits
