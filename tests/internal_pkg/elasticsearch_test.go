@@ -1,7 +1,6 @@
 package tests
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
@@ -259,7 +258,6 @@ func TestStoreCeilometerEvent(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error querying Elastic Search: %s", err)
 		}
-		fmt.Printf("Index found: %s", result.Index)
 		if !result.Found {
 			t.Fatal("Stored index not found")
 		}
