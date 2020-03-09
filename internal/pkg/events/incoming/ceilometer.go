@@ -14,16 +14,19 @@ import (
 const ceilometerGenericIndex = "ceilometer_generic"
 
 var (
+	rexForPayload           = regexp.MustCompile(`\"payload\"\s*:\s*\[(.*)\]`)
 	rexForOsloMessage       = regexp.MustCompile(`"oslo.message"\s*:\s*"({.*})"`)
 	ceilometerAlertSeverity = map[string]string{
 		"audit":    "info",
 		"info":     "info",
+		"sample":   "info",
 		"warn":     "warning",
 		"warning":  "warning",
 		"critical": "critical",
 		"error":    "critical",
 		"AUDIT":    "info",
 		"INFO":     "info",
+		"SAMPLE":   "info",
 		"WARN":     "warning",
 		"WARNING":  "warning",
 		"CRITICAL": "critical",
@@ -80,13 +83,18 @@ func (evt *CeilometerEvent) GetSanitized() string {
 //sanitize search and removes all known issues in received data.
 func (evt *CeilometerEvent) sanitize(jsondata string) string {
 	sanitized := jsondata
-	sub := rexForOsloMessage.FindStringSubmatch(jsondata)
+	// parse only relevant data
+	sub := rexForOsloMessage.FindStringSubmatch(sanitized)
 	if len(sub) == 2 {
 		sanitized = rexForNestedQuote.ReplaceAllString(sub[1], `"`)
 	} else {
 		log.Printf("Failed to find oslo.message in Ceilometer event: %s\n", jsondata)
 	}
-	fmt.Println(sanitized)
+	// avoid getting payload data wrapped in array
+	item := rexForPayload.FindStringSubmatch(sanitized)
+	if len(item) == 2 {
+		sanitized = rexForPayload.ReplaceAllString(sanitized, fmt.Sprintf(`"payload":%s`, item[1]))
+	}
 	return sanitized
 }
 
@@ -98,6 +106,45 @@ func (evt *CeilometerEvent) ParseEvent(data string) error {
 		log.Fatal(err)
 		return err
 	}
+	// transforms traits key into map[string]interface{}
+	if payload, ok := evt.parsed["payload"]; ok {
+		newPayload := make(map[string]interface{})
+		if typedPayload, ok := payload.(map[string]interface{}); ok {
+			if traitData, ok := typedPayload["traits"]; ok {
+				if traits, ok := traitData.([]interface{}); ok {
+					newTraits := make(map[string]interface{})
+					for _, value := range traits {
+						if typedValue, ok := value.([]interface{}); ok {
+							if len(typedValue) != 3 {
+								return fmt.Errorf("parsed invalid trait (%v) in event: %s", value, data)
+							}
+							if traitType, ok := typedValue[1].(float64); ok {
+								switch traitType {
+								case 2:
+									newTraits[typedValue[0].(string)] = typedValue[2].(float64)
+								default:
+									newTraits[typedValue[0].(string)] = typedValue[2].(string)
+								}
+							} else {
+								return fmt.Errorf("parsed invalid trait (%v) in event: %s", value, data)
+							}
+						} else {
+							return fmt.Errorf("parsed invalid trait (%v) in event: %s", value, data)
+						}
+					}
+					newPayload["traits"] = newTraits
+				}
+			}
+			for key, value := range typedPayload {
+				if key != "traits" {
+					newPayload[key] = value
+				}
+			}
+			fmt.Printf("newPayload: %v\n", newPayload)
+		}
+		(*evt).parsed["payload"] = newPayload
+	}
+
 	return nil
 }
 
