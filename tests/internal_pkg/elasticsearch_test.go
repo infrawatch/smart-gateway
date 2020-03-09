@@ -1,11 +1,13 @@
 package tests
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
 	"testing"
 
+	"github.com/infrawatch/smart-gateway/internal/pkg/events/incoming"
 	"github.com/infrawatch/smart-gateway/internal/pkg/saconfig"
 	"github.com/infrawatch/smart-gateway/internal/pkg/saelastic"
 )
@@ -234,6 +236,36 @@ func TestTls(t *testing.T) {
 		}
 	})
 
+}
+
+func TestStoreCeilometerEvent(t *testing.T) {
+	t.Run("Test write ceilometer event to elastic search", func(t *testing.T) {
+		config := saconfig.EventConfiguration{
+			Debug:          false,
+			ElasticHostURL: elastichost,
+			UseTLS:         false,
+		}
+		client, err := saelastic.CreateClient(config)
+		if err != nil {
+			t.Fatalf("Failed to connect to elastic: %s", err)
+		}
+		// write to elastic
+		event := incoming.NewFromDataSource(saconfig.DataSourceCeilometer)
+		event.ParseEvent(ceiloEventData)
+		resp, err := client.Create(event.GetIndexName(), "event", event.GetSanitized())
+		if err != nil {
+			t.Fatalf("Failed to store index to elastic search: %ss", err)
+		}
+		fmt.Printf("Index ID: %s", resp)
+		result, err := client.Get(event.GetIndexName(), "event", resp)
+		if err != nil {
+			t.Fatalf("Error querying Elastic Search: %s", err)
+		}
+		fmt.Printf("Index found: %s", result.Index)
+		if !result.Found {
+			t.Fatal("Stored index not found")
+		}
+	})
 }
 
 /*func TestIndexCheckConnectivity(t *testing.T) {
