@@ -138,7 +138,7 @@ func genUUIDv4() string {
 }
 
 //Create ...  it can be BodyJson or BodyString.. BodyJson needs struct defined
-func (ec *ElasticClient) Create(indexname string, indextype string, jsondata string) (string, error) {
+func (ec *ElasticClient) Create(indexname string, indextype string, jsondata interface{}) (string, error) {
 	ctx := ec.ctx
 	id := genUUIDv4()
 	debuges("Debug:Printing body %s\n", jsondata)
@@ -146,7 +146,7 @@ func (ec *ElasticClient) Create(indexname string, indextype string, jsondata str
 		Index(string(indexname)).
 		Type(string(indextype)).
 		Id(id).
-		BodyString(jsondata).
+		BodyJson(jsondata).
 		Do(ctx)
 	if err != nil {
 		// Handle error

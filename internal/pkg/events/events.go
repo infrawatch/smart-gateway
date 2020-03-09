@@ -318,7 +318,7 @@ func StartEvents() {
 					log.Printf("Failed to parse received event:\n- error: %s\n- event: %s\n", err, event)
 				}
 
-				record, err := elasticClient.Create(event.GetIndexName(), EVENTSINDEXTYPE, event.GetSanitized())
+				record, err := elasticClient.Create(event.GetIndexName(), EVENTSINDEXTYPE, event.GetRawData())
 				if err != nil {
 					applicationHealth.ElasticSearchState = 0
 					log.Printf("Failed to save event to Elasticsearch DB:\n- error: %s\n- event: %s\n", err, event)
