@@ -51,19 +51,31 @@ type CeilometerEvent struct {
 func (evt *CeilometerEvent) GetIndexName() string {
 	if evt.indexName == "" {
 		result := ceilometerGenericIndex
-		if val, ok := evt.parsed["event_type"]; ok {
-			switch rec := val.(type) {
-			case string:
-				parts := strings.Split(rec, ".")
-				if len(parts) > 1 {
-					result = strings.ReplaceAll(strings.Join(parts[:len(parts)-1], "_"), "-", "_")
-				} else {
-					result = fmt.Sprintf("%v", parts[0])
-				}
-				if !strings.HasPrefix(result, "ceilometer_") {
-					result = fmt.Sprintf("ceilometer_%s", result)
+		// use event_type from payload or fallback to message's event_type if N/A
+		if payload, ok := evt.parsed["payload"]; ok {
+			if typedPayload, ok := payload.(map[string]interface{}); ok {
+				if val, ok := typedPayload["event_type"]; ok {
+					if strVal, ok := val.(string); ok {
+						result = strVal
+					}
 				}
 			}
+		}
+		if result == ceilometerGenericIndex {
+			if val, ok := evt.parsed["event_type"]; ok {
+				if strVal, ok := val.(string); ok {
+					result = strVal
+				}
+			}
+		}
+		// replace dotted notation and dashes with underscores
+		parts := strings.Split(result, ".")
+		if len(parts) > 1 {
+			result = strings.Join(parts[:len(parts)-1], "_")
+		}
+		result = strings.ReplaceAll(result, "-", "_")
+		if !strings.HasPrefix(result, "ceilometer_") {
+			result = fmt.Sprintf("ceilometer_%s", result)
 		}
 		evt.indexName = result
 	}

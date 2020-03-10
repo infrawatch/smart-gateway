@@ -179,7 +179,7 @@ func TestEventDataParsing(t *testing.T) {
 		EventDataParsingTestRun{
 			saconfig.DataSourceCeilometer,
 			[]EventDataParsingTestMatrix{
-				EventDataParsingTestMatrix{ceiloEventDataWithTraits, ceiloEventWithTraits, "ceilometer_event"},
+				EventDataParsingTestMatrix{ceiloEventDataWithTraits, ceiloEventWithTraits, "ceilometer_image"},
 			},
 		},
 	}
