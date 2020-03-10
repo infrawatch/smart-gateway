@@ -11,8 +11,8 @@ services:
 
 env:
   global:
-    - ELASTIC_VERSION=6.0.1
-    - QDROUTERD_VERSION=1.7.0
+    - ELASTIC_VERSION=7.5.1
+    - QDROUTERD_VERSION=1.8.0
     - secure: biIvVwFaTdbJythty17sCNsKKU7R9m4cusvV/jiOTwPMTaXuxMgC4XWFsvwFcLO0Nze2RewswxOg5i6hkLpqPTcZLR9GZdXpRG24nuwImHPpgdbpwX35kUnnK4jLY5kOcwndTVHZoqpetxejBxgtKo839dhA7sfFKx4HI+xti3FJvjZgdc/7A2QABGG5wu08XZDo50p1vx7BR9IxgEnK7i34Gq9qXbeeltYChqXIZ4M1rCpevWgvUcvgtyRkcNAtEXjiVTzb+XocHvyjuLBAwu5xzg5xPjiLHJvo3CvxdPb3VsYNHFmxv1g0vJUMR5dELLydhmcIcWAJQGUcDm3FnYQbd8EEuRHvefSubjG+aagNc/8rDAP0yIvTGpIZ9mwDb5x/ps0urOOGLC34ik33sYz2IGlazn2cM4RaGv78TPgibEdQEBCyY0E0zuKo3QejOlG0qkqKF3joZfS90PuKBBPWSEgFrXp357BRBtz/e45FfrwOUwqDYTlj0ivJ99Cnam+GUnlgkn0a2aVQhwAE9XTtrj+Q8JtnhUeTIskN+/OTsYFn8wVWePRK9LhoosFsOoMzA0QQTRn+O2EAN8V5LWY44ghJkGoLNMrvla4Lwc/oPyMqQvDbwJRXeoJ3Fz38TIcTw6HnxRj5DiBlidbl6GxOy/9K8iohkDQ6Z5OzvuI=
 
 # setup dependencies required for testing

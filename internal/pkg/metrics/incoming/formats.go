@@ -17,7 +17,7 @@ type MetricDataFormat interface {
 	ISNew() bool
 }
 
-//NewFromDataSource creates empty DataType accorging to given DataSource
+//NewFromDataSource creates empty DataType according to given DataSource
 func NewFromDataSource(source saconfig.DataSource) MetricDataFormat {
 	switch source {
 	case saconfig.DataSourceCollectd:

@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/infrawatch/smart-gateway/internal/pkg/events/incoming"
+	"github.com/infrawatch/smart-gateway/internal/pkg/saconfig"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -16,6 +17,8 @@ const (
 	procEventData2        = `[{"labels":{"alertname":"collectd_interface_if_octets","instance":"localhost.localdomain","interface":"lo","severity":"FAILURE","service":"collectd"},"annotations":{"summary":"Host localhost.localdomain, plugin interface (instance lo) type if_octets: Data source \"rx\" is currently 43596.224329. That is above the failure threshold of 0.000000.","DataSource":"rx","CurrentValue":"43596.2243286703","WarningMin":"nan","WarningMax":"nan","FailureMin":"nan","FailureMax":"0"},"startsAt":"2019-09-18T21:11:19.281603240Z"}]`
 	ovsEventData          = `[{"labels":{"alertname":"collectd_ovs_events_gauge","instance":"nfvha-comp-03","ovs_events":"br0","type":"link_status","severity":"OKAY","service":"collectd"},"annotations":{"summary":"link state of \"br0\" interface has been changed to \"UP\"","uuid":"c52f2aca-3cb1-48e3-bba3-100b54303d84"},"startsAt":"2018-02-22T20:12:19.547955618Z"}]`
 	// ceilometer messages
+	ceiloEventData           = `{"request":{"oslo.version":"2.0","oslo.message":"{\"message_id\":\"7936fc72-21ac-4536-b7a4-02ef4729f37e\",\"publisher_id\":\"compute.host1\",\"timestamp\":\"2020-01-06 20:22:42.094902\",\"priority\":\"warn\",\"event_type\":\"compute.create_instance.start\",\"payload\":[{\"instance_id\":\"foobar\"}]}"}],"context":{}}}`
+	ceiloEventDataWithTraits = `{"request": {"oslo.version": "2.0", "oslo.message": "{\"message_id\": \"4c9fbb58-c82d-4ca5-9f4c-2c61d0693214\", \"publisher_id\": \"telemetry.publisher.controller-0.redhat.local\", \"event_type\": \"event\", \"priority\": \"SAMPLE\", \"payload\": [{\"message_id\": \"084c0bca-0d19-40c0-a724-9916e4815845\", \"event_type\": \"image.delete\", \"generated\": \"2020-03-06T14:13:29.497096\", \"traits\": [[\"service\", 1, \"image.localhost\"], [\"project_id\", 1, \"0f500647077b47f08a8ca9181e9b7aef\"], [\"user_id\", 1, \"0f500647077b47f08a8ca9181e9b7aef\"], [\"resource_id\", 1, \"c4f7e00b-df85-4b77-9e1a-26a1de4d5735\"], [\"name\", 1, \"cirros\"], [\"status\", 1, \"deleted\"], [\"created_at\", 4, \"2020-03-06T14:01:07\"], [\"deleted_at\", 4, \"2020-03-06T14:13:29\"], [\"size\", 2, 13287936]], \"raw\": {}, \"message_signature\": \"77e798b842991f9c0c35bda265fdf86075b4a1e58309db1d2adbf89386a3859e\"}], \"timestamp\": \"2020-03-06 14:13:30.057411\"}"}, "context": {}}}`
 	// generic messages
 )
 
@@ -123,27 +126,73 @@ var (
 		"startsAt": "2018-02-22T20:12:19.547955618Z",
 	}
 	// ceilometer events
+	ceiloEventWithTraits = map[string]interface{}{
+		"message_id":   "4c9fbb58-c82d-4ca5-9f4c-2c61d0693214",
+		"publisher_id": "telemetry.publisher.controller-0.redhat.local",
+		"timestamp":    "2020-03-06 14:13:30.057411",
+		"priority":     "SAMPLE",
+		"event_type":   "event",
+		"payload": map[string]interface{}{
+			"message_id": "084c0bca-0d19-40c0-a724-9916e4815845",
+			"event_type": "image.delete",
+			"generated":  "2020-03-06T14:13:29.497096",
+			"traits": map[string]interface{}{
+				"service":     "image.localhost",
+				"project_id":  "0f500647077b47f08a8ca9181e9b7aef",
+				"user_id":     "0f500647077b47f08a8ca9181e9b7aef",
+				"resource_id": "c4f7e00b-df85-4b77-9e1a-26a1de4d5735",
+				"name":        "cirros",
+				"status":      "deleted",
+				"created_at":  "2020-03-06T14:01:07",
+				"deleted_at":  "2020-03-06T14:13:29",
+				"size":        float64(13287936),
+			},
+			"raw":               map[string]interface{}{},
+			"message_signature": "77e798b842991f9c0c35bda265fdf86075b4a1e58309db1d2adbf89386a3859e",
+		},
+	}
 	// generic events
 )
 
 type EventDataParsingTestMatrix struct {
 	Dirty     string
-	Sanitized map[string]interface{}
+	Parsed    map[string]interface{}
 	IndexName string
 }
 
+type EventDataParsingTestRun struct {
+	Source saconfig.DataSource
+	Matrix []EventDataParsingTestMatrix
+}
+
 func TestEventDataParsing(t *testing.T) {
-	collectdMatrix := []EventDataParsingTestMatrix{
-		{procEventData1, procEvent1, "collectd_procevent"},
-		{procEventData2, procEvent2, "collectd_interface_if"},
-		{ovsEventData, ovsEvent, "collectd_ovs_events"},
-		{connectivityEventData, connectivityEvent, "collectd_connectivity"},
+	testRuns := []EventDataParsingTestRun{
+		EventDataParsingTestRun{
+			saconfig.DataSourceCollectd,
+			[]EventDataParsingTestMatrix{
+				EventDataParsingTestMatrix{procEventData1, procEvent1, "collectd_procevent"},
+				EventDataParsingTestMatrix{procEventData2, procEvent2, "collectd_interface_if"},
+				EventDataParsingTestMatrix{ovsEventData, ovsEvent, "collectd_ovs_events"},
+				EventDataParsingTestMatrix{connectivityEventData, connectivityEvent, "collectd_connectivity"},
+			},
+		},
+		EventDataParsingTestRun{
+			saconfig.DataSourceCeilometer,
+			[]EventDataParsingTestMatrix{
+				EventDataParsingTestMatrix{ceiloEventDataWithTraits, ceiloEventWithTraits, "ceilometer_image"},
+			},
+		},
 	}
-	for _, testCase := range collectdMatrix {
-		evt := incoming.CollectdEvent{}
-		evt.ParseEvent(testCase.Dirty)
-		assert.Equal(t, testCase.Sanitized, evt.GetRawData())
-		assert.Equal(t, testCase.IndexName, evt.GetIndexName())
+	for _, run := range testRuns {
+		for _, testCase := range run.Matrix {
+			evt := incoming.NewFromDataSource(run.Source)
+			err := evt.ParseEvent(testCase.Dirty)
+			if err != nil {
+				t.Errorf("Failed event parsing case: %s", err.Error())
+			}
+			assert.Equal(t, testCase.Parsed, evt.GetRawData())
+			assert.Equal(t, testCase.IndexName, evt.GetIndexName())
+		}
 	}
 }
 
@@ -152,53 +201,81 @@ type EventAlertDataMatrix struct {
 	Expected string
 }
 
+type EventAlertTestRun struct {
+	Source            saconfig.DataSource
+	Event             string
+	LabelsMatrix      []EventAlertDataMatrix
+	AnnotationsMatrix []EventAlertDataMatrix
+	Timestamp         string
+}
+
 func TestGenerateAlert(t *testing.T) {
-	// mock event
-	evt := incoming.CollectdEvent{}
-	evt.ParseEvent(eventForAlert)
-	// mock alert
-	eventAlert := evt.GeneratePrometheusAlert("https://this/is/test")
-	// prepare test matrix for Alerts.Labels and verify it
-	data := []EventAlertDataMatrix{
-		{"alertname", "collectd_connectivity_gauge"},
-		{"instance", "nfvha-comp-03"},
-		{"connectivity", "eno2"},
-		{"type", "interface_status"},
-		{"severity", "info"},
-		//AlertDataMatrix{"service", "collectd"},
-		{"domain", "stateChange"},
-		{"eventId", "39996"},
-		{"eventName", "interface eno2 up"},
-		{"lastEpochMicrosec", "1523292316174821"},
-		{"priority", "high"},
-		{"reportingEntityName", "collectd connectivity plugin"},
-		{"sourceName", "eno2"},
-		{"version", "1"},
-		{"newState", "inService"},
-		{"oldState", "outOfService"},
-		{"stateChangeFieldsVersion", "1"},
-		{"stateInterface", "eno2"},
-		{"summary", ""},
-		{"name", "collectd_connectivity_gauge_eno2_nfvha-comp-03_collectd_interface_status"},
-		{"slicetest", "item1,item2,item3"},
+	testRuns := []EventAlertTestRun{
+		EventAlertTestRun{
+			saconfig.DataSourceCollectd,
+			eventForAlert,
+			[]EventAlertDataMatrix{
+				{"alertname", "collectd_connectivity_gauge"},
+				{"instance", "nfvha-comp-03"},
+				{"connectivity", "eno2"},
+				{"type", "interface_status"},
+				{"severity", "info"},
+				//AlertDataMatrix{"service", "collectd"},
+				{"domain", "stateChange"},
+				{"eventId", "39996"},
+				{"eventName", "interface eno2 up"},
+				{"lastEpochMicrosec", "1523292316174821"},
+				{"priority", "high"},
+				{"reportingEntityName", "collectd connectivity plugin"},
+				{"sourceName", "eno2"},
+				{"version", "1"},
+				{"newState", "inService"},
+				{"oldState", "outOfService"},
+				{"stateChangeFieldsVersion", "1"},
+				{"stateInterface", "eno2"},
+				{"summary", ""},
+				{"name", "collectd_connectivity_gauge_eno2_nfvha-comp-03_collectd_interface_status"},
+				{"slicetest", "item1,item2,item3"},
+			},
+			[]EventAlertDataMatrix{
+				{"summary", "eno2 interface_status interface eno2 up"},
+				{"description", "collectd_connectivity_gauge eno2 nfvha-comp-03 collectd info interface_status"},
+			},
+			"2018-04-09T16:45:16Z",
+		},
+		EventAlertTestRun{
+			saconfig.DataSourceCeilometer,
+			ceiloEventData,
+			[]EventAlertDataMatrix{
+				{"alertname", "ceilometer_compute_create_instance"},
+				{"instance", "compute.host1"},
+				{"type", "compute.create_instance.start"},
+				{"severity", "warning"},
+			},
+			[]EventAlertDataMatrix{
+				{"instance_id", "foobar"},
+			},
+			"2020-01-06T20:22:42Z",
+		},
 	}
-	t.Run("Verify proper parsing of event data to Labels", func(t *testing.T) {
-		for _, testCase := range data {
-			assert.Equalf(t, testCase.Expected, eventAlert.Labels[testCase.Label], "Unexpected label for %s", testCase.Label)
-		}
-	})
-	// prepare test matrix for Alerts.Annotation and verify it
-	data = []EventAlertDataMatrix{
-		{"summary", "eno2 interface_status interface eno2 up"},
-		{"description", "collectd_connectivity_gauge eno2 nfvha-comp-03 collectd info interface_status"},
+	for _, run := range testRuns {
+		// mock event
+		evt := incoming.NewFromDataSource(run.Source)
+		evt.ParseEvent(run.Event)
+		// mock alert
+		eventAlert := evt.GeneratePrometheusAlert("https://this/is/test")
+		t.Run("Verify proper parsing of event data to Labels", func(t *testing.T) {
+			for _, testCase := range run.LabelsMatrix {
+				assert.Equalf(t, testCase.Expected, eventAlert.Labels[testCase.Label], "Unexpected label for %s", testCase.Label)
+			}
+		})
+		t.Run("Verify proper parsing of event data to Annotations", func(t *testing.T) {
+			for _, testCase := range run.AnnotationsMatrix {
+				assert.Equalf(t, testCase.Expected, eventAlert.Annotations[testCase.Label], "Unexpected annotation for %s", testCase.Label)
+			}
+		})
+		t.Run("Verify proper parsing of rest of data", func(t *testing.T) {
+			assert.Equal(t, run.Timestamp, eventAlert.StartsAt)
+		})
 	}
-	t.Run("Verify proper parsing of event data to Annotations", func(t *testing.T) {
-		for _, testCase := range data {
-			assert.Equalf(t, testCase.Expected, eventAlert.Annotations[testCase.Label], "Unexpected annotation for %s", testCase.Label)
-		}
-	})
-	t.Run("Verify proper parsing of rest of data", func(t *testing.T) {
-		assert.Equal(t, "2018-04-09T16:45:16Z", eventAlert.StartsAt)
-		assert.Equal(t, "https://this/is/test", eventAlert.GeneratorURL)
-	})
 }

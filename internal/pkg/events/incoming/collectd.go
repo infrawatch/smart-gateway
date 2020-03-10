@@ -9,9 +9,9 @@ import (
 	"time"
 )
 
-//GENERICINDEX value represents ElasticSearch index name for data from which it
+//collectdGenericIndex value represents ElasticSearch index name for data from which it
 // is not possible to clearly construct indexs name
-const GENERICINDEX = "collectd_generic"
+const collectdGenericIndex = "collectd_generic"
 
 var (
 	rexForNestedQuote     = regexp.MustCompile(`\\\"`)
@@ -33,7 +33,7 @@ type CollectdEvent struct {
 //GetIndexName returns Elasticsearch index to which this event is or should be saved.
 func (evt *CollectdEvent) GetIndexName() string {
 	if evt.indexName == "" {
-		result := GENERICINDEX
+		result := collectdGenericIndex
 		if val, ok := evt.parsed["labels"]; ok {
 			switch rec := val.(type) {
 			case map[string]interface{}:
@@ -120,7 +120,7 @@ func (evt *CollectdEvent) GeneratePrometheusAlert(generatorURL string) Prometheu
 	assimilateMap(evt.parsed["annotations"].(map[string]interface{}), &alert.Annotations)
 	if value, ok := evt.parsed["startsAt"].(string); ok {
 		// ensure timestamps is in RFC3339
-		for _, layout := range []string{time.RFC3339, time.RFC3339Nano, time.ANSIC} {
+		for _, layout := range []string{time.RFC3339, time.RFC3339Nano, time.ANSIC, isoTimeLayout} {
 			stamp, err := time.Parse(layout, value)
 			if err == nil {
 				alert.StartsAt = stamp.Format(time.RFC3339)
@@ -132,8 +132,13 @@ func (evt *CollectdEvent) GeneratePrometheusAlert(generatorURL string) Prometheu
 	if value, ok := alert.Labels["severity"]; ok {
 		if severity, ok := collectdAlertSeverity[value]; ok {
 			alert.Labels["severity"] = severity
+		} else {
+			alert.Labels["severity"] = unknownSeverity
 		}
+	} else {
+		alert.Labels["severity"] = unknownSeverity
 	}
+
 	alert.SetName()
 	assimilateMap(evt.parsed["annotations"].(map[string]interface{}), &alert.Labels)
 	alert.SetSummary()
