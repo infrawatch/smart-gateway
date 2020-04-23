@@ -3,8 +3,10 @@ package tsdb
 import (
 	"fmt"
 	"regexp"
+	"time"
 
 	"github.com/infrawatch/smart-gateway/internal/pkg/metrics/incoming"
+	"github.com/infrawatch/smart-gateway/internal/pkg/saconfig"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -45,33 +47,70 @@ func AddMetricsByHost(instance string, value float64) (prometheus.Metric, error)
 }
 
 //NewCollectdMetric converts one data source of a value list to a Prometheus metric.
-func NewCollectdMetric(usetimestamp bool, collectd incoming.CollectdMetric, index int) (prometheus.Metric, error) {
-	var value float64
-	var valueType prometheus.ValueType
+func NewPrometheusMetric(usetimestamp bool, format string, metric incoming.MetricDataFormat, index int) (prometheus.Metric, error) {
+	var (
+		timestamp        time.Time
+		valueType        prometheus.ValueType
+		metricName, help string
+		labels           map[string]string
+		value            float64
+	)
 
-	switch collectd.Dstypes[index] {
-	case "gauge":
-		value = float64(collectd.Values[index])
-		valueType = prometheus.GaugeValue
-	case "derive", "counter":
-		value = float64(collectd.Values[index])
-		valueType = prometheus.CounterValue
-	default:
-		return nil, fmt.Errorf("unknown name of value type: %s", collectd.Dstypes[index])
+	if format == saconfig.DataSourceCollectd.String() {
+		collectd := metric.(*incoming.CollectdMetric)
+		switch collectd.Dstypes[index] {
+		case "gauge":
+			valueType = prometheus.GaugeValue
+		case "derive", "counter":
+			valueType = prometheus.CounterValue
+		default:
+			return nil, fmt.Errorf("unknown name of value type: %s", collectd.Dstypes[index])
+		}
+		timestamp = collectd.Time.Time()
+		help = collectd.GetMetricDesc(index)
+		metricName = metricNameRe.ReplaceAllString(collectd.GetMetricName(index), "_")
+		labels = collectd.GetLabels()
+		value = collectd.Values[index]
+	} else if format == saconfig.DataSourceCeilometer.String() {
+		//////////////////////////////////<-finish this
+		ceilometer := metric.(*incoming.CeilometerMetric)
+		if ctype, ok := ceilometer.Payload["counter_type"]; ok {
+			if counterType, ok := ctype.(string); ok {
+				switch counterType {
+				case "gauge":
+					valueType = prometheus.GaugeValue
+				default:
+					valueType = prometheus.CounterValue
+				}
+			} else {
+				return nil, fmt.Errorf("Invalid counter_type in metric payload: %s", ceilometer.Payload)
+			}
+		} else {
+			return nil, fmt.Errorf("Did not find counter_type in metric payload: %s", ceilometer.Payload)
+		}
+		if ts, ok := ceilometer.Payload["timestamp"]; ok {
+			if tsp, err := time.Parse(time.RFC3339, ts.(string)); err == nil {
+				timestamp = tsp
+			} else {
+				return nil, fmt.Errorf("Invalid timestamp in metric payload: %s", ceilometer.Payload)
+			}
+		} else {
+			return nil, fmt.Errorf("Did not find timestamp in metric payload: %s", ceilometer.Payload)
+		}
+		help = ceilometer.GetMetricDesc(index)
+		metricName = metricNameRe.ReplaceAllString(ceilometer.GetMetricName(index), "_")
+		labels = ceilometer.GetLabels()
+		value = ceilometer.Values[index]
 	}
-	labels := collectd.GetLabels()
+
 	plabels := prometheus.Labels{}
 	for key, value := range labels {
 		plabels[key] = value
 	}
-
-	help := fmt.Sprintf("Service Assurance exporter: '%s' Type: '%s' Dstype: '%s' Dsname: '%s'",
-		collectd.Plugin, collectd.Type, collectd.Dstypes[index], collectd.DSName(index))
-	metricName := metricNameRe.ReplaceAllString(collectd.GetMetricName(index), "_")
 	desc := prometheus.NewDesc(metricName, help, []string{}, plabels)
 	if usetimestamp {
 		return prometheus.NewMetricWithTimestamp(
-			collectd.Time.Time(),
+			timestamp,
 			prometheus.MustNewConstMetric(desc, valueType, value),
 		), nil
 	}

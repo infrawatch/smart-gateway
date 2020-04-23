@@ -15,6 +15,11 @@ type MetricDataFormat interface {
 	GetInterval() float64
 	SetNew(new bool)
 	ISNew() bool
+	GetValues() []float64
+}
+
+type WithDataSource struct {
+	DataSource saconfig.DataSource
 }
 
 //NewFromDataSource creates empty DataType according to given DataSource
@@ -30,11 +35,15 @@ func NewFromDataSource(source saconfig.DataSource) MetricDataFormat {
 
 //newCollectd  -- avoid calling this . Use factory method in incoming package
 func newCollectdMetric() *CollectdMetric {
-	return new(CollectdMetric)
+	metric := new(CollectdMetric)
+	metric.DataSource = saconfig.DataSourceCollectd
+	return metric
 }
 
 func newCeilometerMetric() *CeilometerMetric {
-	return new(CeilometerMetric)
+	metric := new(CeilometerMetric)
+	metric.DataSource = saconfig.DataSourceCeilometer
+	return metric
 }
 
 //ParseByte  parse incoming data

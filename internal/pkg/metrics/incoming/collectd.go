@@ -11,6 +11,7 @@ import (
 
 // CollectdMetric struct represents metric data formated and sent by collectd
 type CollectdMetric struct {
+	WithDataSource
 	Values         []float64   `json:"values"`
 	Dstypes        []string    `json:"dstypes"`
 	Dsnames        []string    `json:"dsnames"`
@@ -25,6 +26,11 @@ type CollectdMetric struct {
 }
 
 /*************************** MetricDataFormat interface ****************************/
+
+// GetValues implement interface
+func (c CollectdMetric) GetValues() []float64 {
+	return c.Values
+}
 
 // GetName implement interface
 func (c CollectdMetric) GetName() string {
@@ -155,7 +161,7 @@ func (c CollectdMetric) GetLabels() map[string]string {
 
 //GetMetricDesc   newDesc converts one data source of a value list to a Prometheus description.
 func (c CollectdMetric) GetMetricDesc(index int) string {
-	help := fmt.Sprintf("Service Assurance exporter: '%s' Type: '%s' Dstype: '%s' Dsname: '%s'",
+	help := fmt.Sprintf("Service Telemetry exporter: '%s' Type: '%s' Dstype: '%s' Dsname: '%s'",
 		c.Plugin, c.Type, c.Dstypes[index], c.DSName(index))
 	return help
 }

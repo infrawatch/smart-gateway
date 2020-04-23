@@ -16,7 +16,7 @@ import (
 //GenerateSampleCacheData  ....
 func GenerateCollectdMetric(hostname string, pluginname string, useTimestamp bool, index int) (*incoming.CollectdMetric, prometheus.Metric, dto.Metric) {
 	sample := GenerateSampleCollectdData(hostname, pluginname)
-	collectdMetric, _ := tsdb.NewCollectdMetric(useTimestamp, *sample, index)
+	collectdMetric, _ := tsdb.NewPrometheusMetric(useTimestamp, "collectd", sample, index)
 	metric := dto.Metric{}
 	collectdMetric.Write(&metric)
 	return sample, collectdMetric, metric
