@@ -18,6 +18,7 @@ type MetricDataFormat interface {
 	GetValues() []float64
 }
 
+//WithDataSource is composition struct for adding DataSource parameter
 type WithDataSource struct {
 	DataSource saconfig.DataSource
 }

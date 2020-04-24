@@ -46,7 +46,7 @@ func AddMetricsByHost(instance string, value float64) (prometheus.Metric, error)
 	return prometheus.NewConstMetric(desc, valueType, value)
 }
 
-//NewCollectdMetric converts one data source of a value list to a Prometheus metric.
+//NewPrometheusMetric converts one data source of a value list to a Prometheus metric.
 func NewPrometheusMetric(usetimestamp bool, format string, metric incoming.MetricDataFormat, index int) (prometheus.Metric, error) {
 	var (
 		timestamp        time.Time
@@ -72,7 +72,6 @@ func NewPrometheusMetric(usetimestamp bool, format string, metric incoming.Metri
 		labels = collectd.GetLabels()
 		value = collectd.Values[index]
 	} else if format == saconfig.DataSourceCeilometer.String() {
-		//////////////////////////////////<-finish this
 		ceilometer := metric.(*incoming.CeilometerMetric)
 		if ctype, ok := ceilometer.Payload["counter_type"]; ok {
 			if counterType, ok := ctype.(string); ok {

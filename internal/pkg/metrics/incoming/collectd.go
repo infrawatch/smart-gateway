@@ -27,7 +27,8 @@ type CollectdMetric struct {
 
 /*************************** MetricDataFormat interface ****************************/
 
-// GetValues implement interface
+//GetValues returns Values. The purpose of this method is to be able to get metric Values
+//from the interface object itself
 func (c CollectdMetric) GetValues() []float64 {
 	return c.Values
 }

@@ -51,6 +51,8 @@ func (c *CeilometerMetric) GetName() string {
 	return c.Plugin
 }
 
+//GetValues returns Values. The purpose of this method is to be able to get metric Values
+//from the interface object itself
 func (c *CeilometerMetric) GetValues() []float64 {
 	return c.Values
 }
@@ -112,7 +114,7 @@ func (c *CeilometerMetric) ParseInputJSON(data string) ([]MetricDataFormat, erro
 	var json = jsoniter.ConfigCompatibleWithStandardLibrary
 	err := json.Unmarshal([]byte(sanitized), &c)
 	if err != nil {
-		return output, fmt.Errorf("Error parsing json: %s", err)
+		return output, fmt.Errorf("error parsing json: %s", err)
 	}
 	c.SetNew(true)
 	c.SetData(c)

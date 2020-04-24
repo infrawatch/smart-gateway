@@ -1,5 +1,16 @@
 package tests
 
+import (
+	"io/ioutil"
+	"os"
+	"path"
+	"testing"
+
+	"github.com/infrawatch/smart-gateway/internal/pkg/events/incoming"
+	"github.com/infrawatch/smart-gateway/internal/pkg/saconfig"
+	"github.com/infrawatch/smart-gateway/internal/pkg/saelastic"
+)
+
 //COLLECTD
 const (
 	elastichost = "http://127.0.0.1:9200"
@@ -154,7 +165,7 @@ func TestMain(t *testing.T) {
 	})
 }
 */
-/*
+
 func TestTls(t *testing.T) {
 	dir, err := ioutil.TempDir("", "sg-test-tls")
 	if err != nil {
@@ -252,7 +263,7 @@ func TestStoreCeilometerEvent(t *testing.T) {
 		}
 	})
 }
-*/
+
 /*func TestIndexCheckConnectivity(t *testing.T) {
 	indexName, indexType, err := saelastic.GetIndexNameType(connectivitydata)
 	if err != nil {
