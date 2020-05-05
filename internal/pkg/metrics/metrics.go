@@ -8,8 +8,9 @@ import (
 	"net/http"
 	"net/http/pprof"
 	"os"
-	"os/signal"
+	"reflect"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/MakeNowJust/heredoc"
@@ -21,6 +22,16 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
+
+const MetricHandlerHTML = `
+<html>
+		<head><title>Collectd Exporter</title></head>
+		<body>
+			<h1>Collectd Exporter</h1>
+			<p><a href='/metrics'>Metrics</a></p>
+		</body>
+</html>
+`
 
 var (
 	debugm = func(format string, data ...interface{}) {} // Default no debugging output
@@ -87,6 +98,11 @@ func metricusage() {
 
 //StartMetrics ... entry point to metrics
 func StartMetrics() {
+	var wg sync.WaitGroup
+	finish := make(chan bool)
+
+	amqp10.SpawnSignalHandler(finish, os.Interrupt)
+
 	// set flags for parsing options
 	flag.Usage = metricusage
 	fServiceType := flag.String("servicetype", "metrics", "Metric type")
@@ -110,33 +126,33 @@ func StartMetrics() {
 		debugm = func(format string, data ...interface{}) { log.Printf(format, data...) }
 	}
 
-	if len(serverConfig.AMQP1MetricURL) == 0 {
-		log.Println("AMQP1 Metrics URL is required")
+	if len(serverConfig.AMQP1MetricURL) == 0 && len(serverConfig.AMQP1Connections) == 0 {
+		log.Println("Configuration option 'AMQP1MetricURL' or 'AMQP1Connections' is required")
 		metricusage()
 		os.Exit(1)
 	}
 
-	//Block -starts
-	//Set up signal Go routine
-	signalCh := make(chan os.Signal, 1)
-	signal.Notify(signalCh, os.Interrupt)
-	go func() {
-		for sig := range signalCh {
-			// sig is a ^C, handle it
-			log.Printf("caught sig: %+v", sig)
-			log.Println("Wait for 2 second to finish processing")
-			time.Sleep(2 * time.Second)
-			os.Exit(0)
+	if len(serverConfig.AMQP1MetricURL) > 0 {
+		serverConfig.AMQP1Connections = []saconfig.AMQPConnection{
+			saconfig.AMQPConnection{
+				URL:          serverConfig.AMQP1MetricURL,
+				DataSourceID: saconfig.DataSourceCollectd,
+				DataSource:   "collectd",
+			},
 		}
-	}()
+	}
 
+	for _, conn := range serverConfig.AMQP1Connections {
+		log.Printf("AMQP1.0 %s listen address configured at %s\n", conn.DataSource, conn.URL)
+	}
+
+	applicationHealth := cacheutil.NewApplicationHealthCache()
+	metricHandler := api.NewAppStateMetricHandler(applicationHealth)
+	amqpHandler := amqp10.NewAMQPHandler("Metric Consumer")
 	//Cache sever to process and serve the exporter
 	cacheServer := cacheutil.NewCacheServer(cacheutil.MAXTTL, serverConfig.Debug)
-	applicationHealth := cacheutil.NewApplicationHealthCache()
-	appStateHandler := api.NewAppStateMetricHandler(applicationHealth)
-	myHandler := &cacheHandler{useTimestamp: serverConfig.UseTimeStamp, cache: cacheServer.GetCache(), appstate: appStateHandler}
-	amqpHandler := amqp10.NewAMQPHandler("Metric Consumer")
-	prometheus.MustRegister(myHandler, amqpHandler)
+	cacheHandler := &cacheHandler{useTimestamp: serverConfig.UseTimeStamp, cache: cacheServer.GetCache(), appstate: metricHandler}
+	prometheus.MustRegister(cacheHandler, amqpHandler)
 
 	if !serverConfig.CPUStats {
 		// Including these stats kills performance when Prometheus polls with multiple targets
@@ -147,13 +163,7 @@ func StartMetrics() {
 	handler := http.NewServeMux()
 	handler.Handle("/metrics", promhttp.Handler())
 	handler.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(`<html>
-                                <head><title>Collectd Exporter</title></head>
-                                <body>cacheutil
-                                <h1>Collectd Exporter</h1>
-                                <p><a href='/metrics'>Metrics</a></p>
-                                </body>
-                                </html>`))
+		w.Write([]byte(MetricHandlerHTML))
 	})
 	// Register pprof handlers
 	handler.HandleFunc("/debug/pprof/", pprof.Index)
@@ -163,7 +173,7 @@ func StartMetrics() {
 	handler.HandleFunc("/debug/pprof/trace", pprof.Trace)
 
 	debugm("Debug: Config %#v\n", serverConfig)
-	//run exporter fro prometheus to scrape
+	//run exporter for prometheus to scrape
 	go func() {
 		metricsURL := fmt.Sprintf("%s:%d", serverConfig.Exporterhost, serverConfig.Exporterport)
 		log.Printf("Metric server at : %s\n", metricsURL)
@@ -172,31 +182,36 @@ func StartMetrics() {
 	time.Sleep(2 * time.Second)
 	log.Println("HTTP server is ready....")
 
-	///Metric Listener
-	amqpMetricsurl := fmt.Sprintf("amqp://%s", serverConfig.AMQP1MetricURL)
-	log.Printf("Connecting to AMQP1 : %s\n", amqpMetricsurl)
-	amqpMetricServer := amqp10.NewAMQPServer(amqpMetricsurl, serverConfig.Debug, serverConfig.DataCount, serverConfig.Prefetch, amqpHandler, *fUniqueName)
-	log.Printf("Listening.....\n")
+	// AMQP connection(s)
+	processingCases, qpidStatusCases, amqpServers := amqp10.CreateMessageLoopComponents(serverConfig, finish, amqpHandler, *fUniqueName)
+	amqp10.SpawnQpidStatusReporter(&wg, applicationHealth, qpidStatusCases)
 
-msgloop:
-	for {
-		select {
-		case data := <-amqpMetricServer.GetNotifier():
-			amqpMetricServer.GetHandler().IncTotalMsgProcessed()
-			debugm("Debug: Getting incoming data from notifier channel : %#v\n", data)
-			incomingType := incoming.NewFromDataSource(saconfig.DataSourceCollectd)
-			metrics, _ := incomingType.ParseInputJSON(data)
-			for _, m := range metrics {
-				amqpMetricServer.UpdateMinCollectInterval(m.GetInterval())
-				cacheServer.Put(m)
+	// spawn metric processor
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		finishCase := len(processingCases) - 1
+	processingLoop:
+		for {
+			switch index, msg, _ := reflect.Select(processingCases); index {
+			case finishCase:
+				break processingLoop
+			default:
+				debugm("Debug: Getting incoming data from notifier channel : %#v\n", msg)
+				metric := incoming.NewFromDataSource(amqpServers[index].DataSource)
+				amqpServers[index].Server.GetHandler().IncTotalMsgProcessed()
+				metrics, _ := metric.ParseInputJSON(msg.String())
+				for _, m := range metrics {
+					amqpServers[index].Server.UpdateMinCollectInterval(m.GetInterval())
+					cacheServer.Put(m)
+				}
+				debugs(len(metrics))
 			}
-			debugs(len(metrics))
-			continue // priority channel
-		case status := <-amqpMetricServer.GetStatus():
-			applicationHealth.QpidRouterState = status
-		case <-amqpMetricServer.GetDoneChan():
-			break msgloop
 		}
-	}
-	//TODO: to close cache server on keyboard interrupt
+		log.Println("Closing event processor.")
+	}()
+
+	// do not end until all loop goroutines ends
+	wg.Wait()
+	log.Println("Exiting")
 }

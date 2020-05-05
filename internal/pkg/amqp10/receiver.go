@@ -23,8 +23,13 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/signal"
+	"reflect"
 	"strings"
+	"sync"
 
+	"github.com/infrawatch/smart-gateway/internal/pkg/cacheutil"
+	"github.com/infrawatch/smart-gateway/internal/pkg/saconfig"
 	"github.com/prometheus/client_golang/prometheus"
 	"qpid.apache.org/amqp"
 	"qpid.apache.org/electron"
@@ -47,6 +52,12 @@ type AMQPServer struct {
 	uniqueName      string
 	reconnect       bool
 	collectinterval float64
+}
+
+//AMQPServerItem hold information about data source which is AMQPServer listening to.
+type AMQPServerItem struct {
+	Server     *AMQPServer
+	DataSource saconfig.DataSource
 }
 
 //AMQPHandler ...
@@ -297,4 +308,90 @@ func fatalIf(err error) {
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+//SpawnSignalHandler spawns goroutine which will wait for interruption signal(s)
+// and end smart gateway in case any of the signal is received
+func SpawnSignalHandler(finish chan bool, watchedSignals ...os.Signal) {
+	interruptChannel := make(chan os.Signal, 1)
+	signal.Notify(interruptChannel, watchedSignals...)
+	go func() {
+	signalLoop:
+		for sig := range interruptChannel {
+			log.Printf("Stopping execution on caught signal: %+v\n", sig)
+			close(finish)
+			break signalLoop
+		}
+	}()
+}
+
+//SpawnQpidStatusReporter builds dynamic select for reporting status of AMQP connections
+func SpawnQpidStatusReporter(wg *sync.WaitGroup, applicationHealth *cacheutil.ApplicationHealthCache, qpidStatusCases []reflect.SelectCase) {
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		finishCase := len(qpidStatusCases) - 1
+	statusLoop:
+		for {
+			switch index, status, _ := reflect.Select(qpidStatusCases); index {
+			case finishCase:
+				break statusLoop
+			default:
+				// Note: status here is always very low integer, so we don't need to be afraid of int64>int conversion
+				applicationHealth.QpidRouterState = int(status.Int())
+			}
+		}
+		log.Println("Closing QPID status reporter")
+	}()
+}
+
+//CreateMessageLoopComponents creates signal select cases for configured AMQP1.0 connections and connects to all of thos
+func CreateMessageLoopComponents(config interface{}, finish chan bool, amqpHandler *AMQPHandler, uniqueName string) ([]reflect.SelectCase, []reflect.SelectCase, []AMQPServerItem) {
+	var (
+		debug       bool
+		prefetch    int
+		connections []saconfig.AMQPConnection
+	)
+	switch config.(type) {
+	case *saconfig.EventConfiguration:
+		conf := config.(*saconfig.EventConfiguration)
+		debug = conf.Debug
+		prefetch = conf.Prefetch
+		connections = conf.AMQP1Connections
+	case *saconfig.MetricConfiguration:
+		conf := config.(*saconfig.MetricConfiguration)
+		debug = conf.Debug
+		prefetch = conf.Prefetch
+		connections = conf.AMQP1Connections
+	default:
+		panic("Invalid type of configuration file struct.")
+	}
+
+	processingCases := make([]reflect.SelectCase, 0, len(connections))
+	qpidStatusCases := make([]reflect.SelectCase, 0, len(connections))
+	amqpServers := make([]AMQPServerItem, 0, len(connections))
+	for _, conn := range connections {
+		amqpServer := NewAMQPServer(conn.URL, debug, -1, prefetch, amqpHandler, uniqueName)
+		//create select case for this listener
+		processingCases = append(processingCases, reflect.SelectCase{
+			Dir:  reflect.SelectRecv,
+			Chan: reflect.ValueOf(amqpServer.GetNotifier()),
+		})
+		qpidStatusCases = append(qpidStatusCases, reflect.SelectCase{
+			Dir:  reflect.SelectRecv,
+			Chan: reflect.ValueOf(amqpServer.GetStatus()),
+		})
+		amqpServers = append(amqpServers, AMQPServerItem{amqpServer, conn.DataSourceID})
+	}
+	log.Println("Listening for AMQP1.0 messages")
+	// include also case for finishing the loops
+	processingCases = append(processingCases, reflect.SelectCase{
+		Dir:  reflect.SelectRecv,
+		Chan: reflect.ValueOf(finish),
+	})
+	qpidStatusCases = append(qpidStatusCases, reflect.SelectCase{
+		Dir:  reflect.SelectRecv,
+		Chan: reflect.ValueOf(finish),
+	})
+	return processingCases, qpidStatusCases, amqpServers
 }

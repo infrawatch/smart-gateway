@@ -10,7 +10,6 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
-	"os/signal"
 	"reflect"
 	"strconv"
 	"sync"
@@ -46,12 +45,6 @@ const (
 `
 )
 
-//AMQPServerItem hold information about data source which is AMQPServer listening to.
-type AMQPServerItem struct {
-	Server     *amqp10.AMQPServer
-	DataSource saconfig.DataSource
-}
-
 /*************** main routine ***********************/
 // eventusage and command-line flags
 func eventusage() {
@@ -67,21 +60,6 @@ func eventusage() {
 }
 
 var debuge = func(format string, data ...interface{}) {} // Default no debugging output
-
-//spawnSignalHandler spawns goroutine which will wait for interruption signal(s)
-// and end smart gateway in case any of the signal is received
-func spawnSignalHandler(finish chan bool, watchedSignals ...os.Signal) {
-	interruptChannel := make(chan os.Signal, 1)
-	signal.Notify(interruptChannel, watchedSignals...)
-	go func() {
-	signalLoop:
-		for sig := range interruptChannel {
-			log.Printf("Stopping execution on caught signal: %+v\n", sig)
-			close(finish)
-			break signalLoop
-		}
-	}()
-}
 
 //spawnAPIServer spawns goroutine which provides http API for alerts and metrics statistics for Prometheus
 func spawnAPIServer(wg *sync.WaitGroup, finish chan bool, serverConfig saconfig.EventConfiguration, metricHandler *api.EventMetricHandler, amqpHandler *amqp10.AMQPHandler) {
@@ -122,26 +100,6 @@ func spawnAPIServer(wg *sync.WaitGroup, finish chan bool, serverConfig saconfig.
 	}()
 }
 
-//spawnQpidStatusReporter builds dynamic select for reporting status of AMQP connections
-func spawnQpidStatusReporter(wg *sync.WaitGroup, applicationHealth *cacheutil.ApplicationHealthCache, qpidStatusCases []reflect.SelectCase) {
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		finishCase := len(qpidStatusCases) - 1
-	statusLoop:
-		for {
-			switch index, status, _ := reflect.Select(qpidStatusCases); index {
-			case finishCase:
-				break statusLoop
-			default:
-				// Note: status here is always very low integer, so we don't need to be afraid of int64>int conversion
-				applicationHealth.QpidRouterState = int(status.Int())
-			}
-		}
-		log.Println("Closing QPID status reporter")
-	}()
-}
-
 //notifyAlertManager generates alert from event for Prometheus Alert Manager
 func notifyAlertManager(wg *sync.WaitGroup, serverConfig saconfig.EventConfiguration, event *incoming.EventDataFormat, record string) {
 	wg.Add(1)
@@ -177,7 +135,7 @@ func StartEvents() {
 	var wg sync.WaitGroup
 	finish := make(chan bool)
 
-	spawnSignalHandler(finish, os.Interrupt)
+	amqp10.SpawnSignalHandler(finish, os.Interrupt)
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
 	// set flags for parsing options
@@ -272,33 +230,9 @@ func StartEvents() {
 	}
 
 	// AMQP connection(s)
-	processingCases := make([]reflect.SelectCase, 0, len(serverConfig.AMQP1Connections))
-	qpidStatusCases := make([]reflect.SelectCase, 0, len(serverConfig.AMQP1Connections))
-	amqpServers := make([]AMQPServerItem, 0, len(serverConfig.AMQP1Connections))
-	for _, conn := range serverConfig.AMQP1Connections {
-		amqpServer := amqp10.NewAMQPServer(conn.URL, serverConfig.Debug, -1, serverConfig.Prefetch, amqpHandler, *fUniqueName)
-		//create select case for this listener
-		processingCases = append(processingCases, reflect.SelectCase{
-			Dir:  reflect.SelectRecv,
-			Chan: reflect.ValueOf(amqpServer.GetNotifier()),
-		})
-		qpidStatusCases = append(qpidStatusCases, reflect.SelectCase{
-			Dir:  reflect.SelectRecv,
-			Chan: reflect.ValueOf(amqpServer.GetStatus()),
-		})
-		amqpServers = append(amqpServers, AMQPServerItem{amqpServer, conn.DataSourceID})
-	}
-	log.Println("Listening for AMQP1.0 messages")
-	// include also case for finishing the loops
-	processingCases = append(processingCases, reflect.SelectCase{
-		Dir:  reflect.SelectRecv,
-		Chan: reflect.ValueOf(finish),
-	})
-	qpidStatusCases = append(qpidStatusCases, reflect.SelectCase{
-		Dir:  reflect.SelectRecv,
-		Chan: reflect.ValueOf(finish),
-	})
-	spawnQpidStatusReporter(&wg, applicationHealth, qpidStatusCases)
+	processingCases, qpidStatusCases, amqpServers := amqp10.CreateMessageLoopComponents(serverConfig, finish, amqpHandler, *fUniqueName)
+	amqp10.SpawnQpidStatusReporter(&wg, applicationHealth, qpidStatusCases)
+
 	// spawn event processor
 	wg.Add(1)
 	go func() {
