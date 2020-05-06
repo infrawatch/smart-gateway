@@ -107,7 +107,7 @@ func assimilateMap(theMap map[string]interface{}, destination *map[string]string
 				}
 			}
 			(*destination)[key] = strings.Join(aList, ",")
-		case float64,float32:
+		case float64, float32:
 			(*destination)[key] = fmt.Sprintf("%f", value)
 		case int:
 			(*destination)[key] = fmt.Sprintf("%d", value)
