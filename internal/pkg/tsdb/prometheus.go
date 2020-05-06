@@ -82,19 +82,19 @@ func NewPrometheusMetric(usetimestamp bool, format string, metric incoming.Metri
 					valueType = prometheus.CounterValue
 				}
 			} else {
-				return nil, fmt.Errorf("Invalid counter_type in metric payload: %s", ceilometer.Payload)
+				return nil, fmt.Errorf("invalid counter_type in metric payload: %s", ceilometer.Payload)
 			}
 		} else {
-			return nil, fmt.Errorf("Did not find counter_type in metric payload: %s", ceilometer.Payload)
+			return nil, fmt.Errorf("did not find counter_type in metric payload: %s", ceilometer.Payload)
 		}
 		if ts, ok := ceilometer.Payload["timestamp"]; ok {
 			if tsp, err := time.Parse(time.RFC3339, ts.(string)); err == nil {
 				timestamp = tsp
 			} else {
-				return nil, fmt.Errorf("Invalid timestamp in metric payload: %s", ceilometer.Payload)
+				return nil, fmt.Errorf("invalid timestamp in metric payload: %s", ceilometer.Payload)
 			}
 		} else {
-			return nil, fmt.Errorf("Did not find timestamp in metric payload: %s", ceilometer.Payload)
+			return nil, fmt.Errorf("did not find timestamp in metric payload: %s", ceilometer.Payload)
 		}
 		help = ceilometer.GetMetricDesc(index)
 		metricName = metricNameRe.ReplaceAllString(ceilometer.GetMetricName(index), "_")

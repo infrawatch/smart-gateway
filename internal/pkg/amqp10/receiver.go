@@ -352,14 +352,12 @@ func CreateMessageLoopComponents(config interface{}, finish chan bool, amqpHandl
 		prefetch    int
 		connections []saconfig.AMQPConnection
 	)
-	switch config.(type) {
+	switch conf := config.(type) {
 	case *saconfig.EventConfiguration:
-		conf := config.(*saconfig.EventConfiguration)
 		debug = conf.Debug
 		prefetch = conf.Prefetch
 		connections = conf.AMQP1Connections
 	case *saconfig.MetricConfiguration:
-		conf := config.(*saconfig.MetricConfiguration)
 		debug = conf.Debug
 		prefetch = conf.Prefetch
 		connections = conf.AMQP1Connections

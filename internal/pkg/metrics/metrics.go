@@ -23,6 +23,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
+//MetricHandlerHTML contains HTML for default endpoint
 const MetricHandlerHTML = `
 <html>
 		<head><title>Collectd Exporter</title></head>
