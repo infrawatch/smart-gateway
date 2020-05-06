@@ -90,7 +90,7 @@ func (evt *CollectdEvent) ParseEvent(data string) error {
 func assimilateMap(theMap map[string]interface{}, destination *map[string]string) {
 	defer func() { //recover from any panic
 		if r := recover(); r != nil {
-			fmt.Println("Recovered in assimilateMap", r)
+			log.Printf("Panic:recovered in assimilateMap %v\n", r)
 		}
 	}()
 	for key, val := range theMap {
