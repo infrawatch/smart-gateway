@@ -3,8 +3,6 @@ package cacheutil
 import (
 	"log"
 
-	"github.com/infrawatch/smart-gateway/internal/pkg/metrics/incoming"
-	"github.com/infrawatch/smart-gateway/internal/pkg/saconfig"
 	"github.com/infrawatch/smart-gateway/internal/pkg/tsdb"
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -34,17 +32,10 @@ func (shard *ShardedIncomingDataCache) FlushPrometheusMetric(usetimestamp bool, 
 	minMetricCreated := 0 //..minimum of one metrics created
 
 	for _, dataInterface := range shard.plugin {
-		format := saconfig.DataSourceUniversal.String()
-		switch metric := dataInterface.(type) {
-		case *incoming.CollectdMetric:
-			format = metric.DataSource.String()
-		case *incoming.CeilometerMetric:
-			format = metric.DataSource.String()
-		}
 		if dataInterface.ISNew() {
 			dataInterface.SetNew(false)
 			for index := range dataInterface.GetValues() {
-				m, err := tsdb.NewPrometheusMetric(usetimestamp, format, dataInterface, index)
+				m, err := tsdb.NewPrometheusMetric(usetimestamp, dataInterface.GetDataSourceName(), dataInterface, index)
 				if err != nil {
 					log.Printf("newMetric: %v", err)
 					continue

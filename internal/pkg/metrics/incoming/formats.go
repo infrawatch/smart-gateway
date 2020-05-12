@@ -16,11 +16,17 @@ type MetricDataFormat interface {
 	SetNew(new bool)
 	ISNew() bool
 	GetValues() []float64
+	GetDataSourceName() string
 }
 
 //WithDataSource is composition struct for adding DataSource parameter
 type WithDataSource struct {
 	DataSource saconfig.DataSource
+}
+
+//GetDataSourceName returns string representation of DataSource
+func (ds *WithDataSource) GetDataSourceName() string {
+	return ds.DataSource.String()
 }
 
 //NewFromDataSource creates empty DataType according to given DataSource
