@@ -15,7 +15,7 @@ var (
 	rexForNestedQuote = regexp.MustCompile(`\\\"`)
 )
 
-const defaultCeilometerInterval = 5.0
+const defaultCeilometerInterval = 30.0
 
 // CeilometerMetric struct represents metric data formated and sent by Ceilometer
 type CeilometerMetric struct {
@@ -61,30 +61,36 @@ func (c *CeilometerMetric) GetValues() []float64 {
 func (c *CeilometerMetric) SetData(data MetricDataFormat) {
 	// example: counter_name=compute.instance.booting.time, resource_id=456
 	// get Plugin -> compute
-	plugParts := strings.Split(c.getwholeID(), ".")
-	c.Plugin = plugParts[0]
-	// get PluginInstance -> 456
-	if resource, ok := c.Payload["resource_id"]; ok {
-		c.PluginInstance = resource.(string)
-	}
-	// get Type -> instance
-	if len(plugParts) > 1 {
-		c.Type = plugParts[1]
-	} else {
-		c.Type = plugParts[0]
-	}
-	// get TypeInstance -> booting
-	if len(plugParts) > 2 {
-		c.TypeInstance = plugParts[2]
-	}
+	if ceilo, ok := data.(*CeilometerMetric); ok {
+		c.Payload = ceilo.Payload
+		c.Publisher = ceilo.Publisher
 
-	values := make([]float64, 0, 1)
-	if val, ok := c.Payload["counter_volume"]; ok {
-		values = append(values, val.(float64))
-	} else {
-		log.Printf("Did not find counter_volume in metric payload: %v\n", c.Payload)
+		plugParts := strings.Split(ceilo.getwholeID(), ".")
+		c.Plugin = plugParts[0]
+		// get PluginInstance -> 456
+		if resource, ok := ceilo.Payload["resource_id"]; ok {
+			c.PluginInstance = resource.(string)
+		}
+		// get Type -> instance
+		if len(plugParts) > 1 {
+			c.Type = plugParts[1]
+		} else {
+			c.Type = plugParts[0]
+		}
+		// get TypeInstance -> booting
+		if len(plugParts) > 2 {
+			c.TypeInstance = plugParts[2]
+		}
+
+		values := make([]float64, 0, 1)
+		if val, ok := ceilo.Payload["counter_volume"]; ok {
+			values = append(values, val.(float64))
+		} else {
+			log.Printf("Did not find counter_volume in metric payload: %v\n", ceilo.Payload)
+		}
+		c.Values = values
+		c.SetNew(true)
 	}
-	c.Values = values
 }
 
 //sanitize search and removes all known issues in received data.
@@ -123,7 +129,7 @@ func (c *CeilometerMetric) ParseInputJSON(data string) ([]MetricDataFormat, erro
 }
 
 //GetKey ...
-func (c *CeilometerMetric) GetKey() string {
+func (c CeilometerMetric) GetKey() string {
 	return c.Publisher
 }
 

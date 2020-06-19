@@ -25,7 +25,7 @@ type WithDataSource struct {
 }
 
 //GetDataSourceName returns string representation of DataSource
-func (ds *WithDataSource) GetDataSourceName() string {
+func (ds WithDataSource) GetDataSourceName() string {
 	return ds.DataSource.String()
 }
 
@@ -35,6 +35,17 @@ func NewFromDataSource(source saconfig.DataSource) MetricDataFormat {
 	case saconfig.DataSourceCollectd:
 		return newCollectdMetric( /*...*/ )
 	case saconfig.DataSourceCeilometer:
+		return newCeilometerMetric()
+	}
+	return nil
+}
+
+//NewFromDataSource creates empty DataType according to given DataSource
+func NewFromDataSourceName(source string) MetricDataFormat {
+	switch source {
+	case saconfig.DataSourceCollectd.String():
+		return newCollectdMetric( /*...*/ )
+	case saconfig.DataSourceCeilometer.String():
 		return newCeilometerMetric()
 	}
 	return nil

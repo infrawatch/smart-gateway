@@ -62,7 +62,6 @@ func (c *cacheHandler) Collect(ch chan<- prometheus.Metric) {
 	defer lock.Unlock()
 	debugm("Debug:Prometheus is requesting to scrape metrics...")
 	for key, plugin := range allHosts {
-		//fmt.Fprintln(w, hostname)
 		debugm("Debug:Getting metrics for host %s  with total plugin size %d\n", key, plugin.Size())
 		metricCount = plugin.FlushPrometheusMetric(c.useTimestamp, ch)
 		if metricCount > 0 {
