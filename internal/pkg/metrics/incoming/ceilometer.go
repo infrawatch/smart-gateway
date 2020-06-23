@@ -122,6 +122,7 @@ func (c *CeilometerMetric) ParseInputJSON(data string) ([]MetricDataFormat, erro
 	if err != nil {
 		return output, fmt.Errorf("error parsing json: %s", err)
 	}
+	c.DataSource.SetFromString("ceilometer")
 	c.SetNew(true)
 	c.SetData(c)
 	output = append(output, c)

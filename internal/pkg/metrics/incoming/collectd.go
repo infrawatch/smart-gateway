@@ -125,6 +125,7 @@ func (c *CollectdMetric) ParseInputJSON(jsonString string) ([]MetricDataFormat, 
 	}
 	retDtype := make([]MetricDataFormat, len(collect))
 	for index, rt := range collect {
+		rt.DataSource.SetFromString("collectd")
 		retDtype[index] = &rt
 	}
 	return retDtype, nil

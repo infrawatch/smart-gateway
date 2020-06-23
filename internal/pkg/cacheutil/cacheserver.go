@@ -191,12 +191,10 @@ func (cs *CacheServer) Put(incomingData incoming.MetricDataFormat) {
 	case buffer = <-freeList:
 		//go one from buffer
 	default:
-		buffer = new(IncomingBuffer)
+		buffer = &IncomingBuffer{}
 	}
 	buffer.data = incomingData
-
 	cs.ch <- buffer
-
 }
 
 func (cs CacheServer) loop() {
