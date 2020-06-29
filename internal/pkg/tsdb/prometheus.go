@@ -10,6 +10,11 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
+const (
+	isoTimeLayout = "2006-01-02 15:04:05.000000"
+	RFC3339Python = "2006-01-02T15:04:05.000000"
+)
+
 //TSDB  interface
 type TSDB interface {
 	//prometheus specific reflect
@@ -88,9 +93,12 @@ func NewPrometheusMetric(usetimestamp bool, format string, metric incoming.Metri
 			return nil, fmt.Errorf("did not find counter_type in metric payload: %s", ceilometer.Payload)
 		}
 		if ts, ok := ceilometer.Payload["timestamp"]; ok {
-			if tsp, err := time.Parse(time.RFC3339, ts.(string)); err == nil {
-				timestamp = tsp
-			} else {
+ 			for _, layout := range []string{time.RFC3339, time.RFC3339Nano, time.ANSIC, RFC3339Python, isoTimeLayout} {
+				if stamp, err := time.Parse(layout, ts.(string)); err == nil {
+					timestamp = stamp
+					break
+			}
+			if timestamp.IsZero() {
 				return nil, fmt.Errorf("invalid timestamp in metric payload: %s", ceilometer.Payload)
 			}
 		} else {
