@@ -10,6 +10,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
+// Additional timestamp formats possibly used by sources of metric data
 const (
 	isoTimeLayout = "2006-01-02 15:04:05.000000"
 	RFC3339Python = "2006-01-02T15:04:05.000000"
@@ -93,10 +94,11 @@ func NewPrometheusMetric(usetimestamp bool, format string, metric incoming.Metri
 			return nil, fmt.Errorf("did not find counter_type in metric payload: %s", ceilometer.Payload)
 		}
 		if ts, ok := ceilometer.Payload["timestamp"]; ok {
- 			for _, layout := range []string{time.RFC3339, time.RFC3339Nano, time.ANSIC, RFC3339Python, isoTimeLayout} {
+			for _, layout := range []string{time.RFC3339, time.RFC3339Nano, time.ANSIC, RFC3339Python, isoTimeLayout} {
 				if stamp, err := time.Parse(layout, ts.(string)); err == nil {
 					timestamp = stamp
 					break
+				}
 			}
 			if timestamp.IsZero() {
 				return nil, fmt.Errorf("invalid timestamp in metric payload: %s", ceilometer.Payload)
