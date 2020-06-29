@@ -40,7 +40,7 @@ func NewFromDataSource(source saconfig.DataSource) MetricDataFormat {
 	return nil
 }
 
-//NewFromDataSource creates empty DataType according to given DataSource
+//NewFromDataSourceName creates empty DataType according to given name of DataSource
 func NewFromDataSourceName(source string) MetricDataFormat {
 	switch source {
 	case saconfig.DataSourceCollectd.String():
