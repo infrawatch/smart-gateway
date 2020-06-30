@@ -15,7 +15,7 @@ var (
 	rexForNestedQuote = regexp.MustCompile(`\\\"`)
 )
 
-const defaultCeilometerInterval = 30.0
+const defaultCeilometerInterval = 5.0
 
 // CeilometerMetric struct represents metric data formated and sent by Ceilometer
 type CeilometerMetric struct {

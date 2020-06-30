@@ -152,7 +152,6 @@ func (evt *CeilometerEvent) ParseEvent(data string) error {
 					newPayload[key] = value
 				}
 			}
-			fmt.Printf("newPayload: %v\n", newPayload)
 		}
 		(*evt).parsed["payload"] = newPayload
 	}
