@@ -22,8 +22,8 @@ const (
 )
 
 //String returns human readable data type identification.
-func (src *DataSource) String() string {
-	return []string{"universal", "collectd", "ceilometer"}[*src]
+func (src DataSource) String() string {
+	return []string{"universal", "collectd", "ceilometer"}[src]
 }
 
 //SetFromString resets value according to given human readable identification. Returns false if invalid identification was given.

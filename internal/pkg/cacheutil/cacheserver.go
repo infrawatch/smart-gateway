@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/infrawatch/smart-gateway/internal/pkg/metrics/incoming"
-	"github.com/infrawatch/smart-gateway/internal/pkg/saconfig"
 )
 
 // MAXTTL to remove plugin is stale for 5
@@ -122,7 +121,6 @@ func (i IncomingDataCache) GetShard(key string) *ShardedIncomingDataCache {
 	if i.hosts[key] == nil {
 		i.Put(key)
 	}
-
 	return i.hosts[key]
 }
 
@@ -148,20 +146,16 @@ func (shard *ShardedIncomingDataCache) Size() int {
 }
 
 //SetData ...
-//TODO : add generic
-//TODO(mmagr): either don't export or maybe make sure data.Host has the same
 //value as is saved under in DataCache
 func (shard *ShardedIncomingDataCache) SetData(data incoming.MetricDataFormat) error {
 	shard.lock.Lock()
 	defer shard.lock.Unlock()
 	if shard.plugin[data.GetItemKey()] == nil {
-		//TODO: change this to more generic later
-		shard.plugin[data.GetItemKey()] = incoming.NewFromDataSource(saconfig.DataSourceCollectd)
+		shard.plugin[data.GetItemKey()] = incoming.NewFromDataSourceName(data.GetDataSourceName())
 	}
 	shard.lastAccess = time.Now().Unix()
-	collectd := shard.plugin[data.GetItemKey()]
-	collectd.SetData(data)
-
+	metric := shard.plugin[data.GetItemKey()]
+	metric.SetData(data)
 	return nil
 }
 
@@ -197,11 +191,10 @@ func (cs *CacheServer) Put(incomingData incoming.MetricDataFormat) {
 	case buffer = <-freeList:
 		//go one from buffer
 	default:
-		buffer = new(IncomingBuffer)
+		buffer = &IncomingBuffer{}
 	}
 	buffer.data = incomingData
 	cs.ch <- buffer
-
 }
 
 func (cs CacheServer) loop() {

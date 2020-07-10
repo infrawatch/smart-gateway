@@ -19,6 +19,10 @@ type IncommingCollecdDataMatrix struct {
 	Expected string
 }
 
+const (
+	ceilometerSampleMetricData = `{"request": {"oslo.version": "2.0", "oslo.message": "{\"message_id\": \"499e0dda-9298-4b03-a49c-d7affcedb6b9\", \"publisher_id\": \"telemetry.publisher.controller-0.redhat.local\", \"event_type\": \"metering\", \"priority\": \"SAMPLE\", \"payload\": [{\"source\": \"openstack\", \"counter_name\": \"disk.device.read.bytes\", \"counter_type\": \"cumulative\", \"counter_unit\": \"B\", \"counter_volume\": 18872832, \"user_id\": \"5df14d3577ff4c61b0837c268a8f4c70\", \"project_id\": \"5dfb98560ce74cf780c21fb18a5ad1de\", \"resource_id\": \"285778e1-c81b-427a-826a-ebb72467b665-vda\", \"timestamp\": \"2020-04-15T13:24:02.108816\", \"resource_metadata\": {\"display_name\": \"cirros\", \"name\": \"instance-00000001\", \"instance_id\": \"285778e1-c81b-427a-826a-ebb72467b665\", \"instance_type\": \"tiny\", \"host\": \"072f98fd91b8eec8d518aa8632f013438b587cee415dc944b39c5363\", \"instance_host\": \"compute-0.redhat.local\", \"flavor\": {\"id\": \"53e3164c-3dc0-4bd3-bb22-36a55aadd3fb\", \"name\": \"tiny\", \"vcpus\": 1, \"ram\": 256, \"disk\": 0, \"ephemeral\": 0, \"swap\": 0}, \"status\": \"active\", \"state\": \"running\", \"task_state\": \"\", \"image\": {\"id\": \"64f5d56e-e61d-43c1-af03-45b1faa89e99\"}, \"image_ref\": \"64f5d56e-e61d-43c1-af03-45b1faa89e99\", \"image_ref_url\": null, \"architecture\": \"x86_64\", \"os_type\": \"hvm\", \"vcpus\": 1, \"memory_mb\": 256, \"disk_gb\": 0, \"ephemeral_gb\": 0, \"root_gb\": 0, \"disk_name\": \"vda\"}, \"message_id\": \"5f312a0e-7f1c-11ea-a7a1-525400023f45\", \"monotonic_time\": null, \"message_signature\": \"8a47fa24471558f0af6963064e7ca1409237032c6c72a505f0acd51752f8f828\"}], \"timestamp\": \"2020-04-15 13:24:02.114844\"}"}}`
+)
+
 /*----------------------------- helper functions -----------------------------*/
 //GenerateSampleCollectdData ...
 func GenerateSampleCollectdData(hostname string, pluginname string) *incoming.CollectdMetric {
@@ -119,7 +123,7 @@ func TestCollectdIncoming(t *testing.T) {
 		assert.Contains(t, labels, sample.Plugin)
 		assert.Contains(t, labels, "instance")
 		// test GetMetricDesc behaviour
-		metricDesc := "Service Assurance exporter: 'pluginname' Type: 'collectd' Dstype: 'gauge' Dsname: 'value1'"
+		metricDesc := "Service Telemetry exporter: 'pluginname' Type: 'collectd' Dstype: 'gauge' Dsname: 'value1'"
 		assert.Equal(t, metricDesc, sample.GetMetricDesc(0))
 		// test GetMetricName behaviour
 		metricName := "collectd_pluginname_collectd_value1"
@@ -133,4 +137,44 @@ func TestCollectdIncoming(t *testing.T) {
 		assert.Equal(t, metricName1, sample.GetMetricName(0))
 		assert.Equal(t, metricName2, sample.GetMetricName(1))
 	})
+}
+
+func TestCeilometerIncoming(t *testing.T) {
+	cm := incoming.NewFromDataSource(saconfig.DataSourceCeilometer)
+	metric := cm.(*incoming.CeilometerMetric)
+
+	t.Run("Test parsing of Ceilometer message", func(t *testing.T) {
+		_, err := metric.ParseInputJSON(ceilometerSampleMetricData)
+		if err != nil {
+			t.Errorf("Ceilometer message parsing failed: %s\n", err)
+		}
+		// parameters
+		assert.Equal(t, "telemetry.publisher.controller-0.redhat.local", metric.Publisher)
+		assert.Equal(t, "disk", metric.Plugin)
+		assert.Equal(t, "285778e1-c81b-427a-826a-ebb72467b665-vda", metric.PluginInstance)
+		assert.Equal(t, "device", metric.Type)
+		assert.Equal(t, "read", metric.TypeInstance)
+		assert.Equal(t, []float64{float64(18872832)}, metric.Values)
+		assert.Equal(t, saconfig.DataSourceCeilometer, metric.DataSource)
+		// methods
+		assert.Equal(t, 5.0, metric.GetInterval())
+		assert.Equal(t, "disk_device_285778e1-c81b-427a-826a-ebb72467b665-vda_read", metric.GetItemKey())
+		assert.Equal(t, "telemetry.publisher.controller-0.redhat.local", metric.GetKey())
+		expectedLabels := map[string]string{
+			"disk":      "read",
+			"publisher": "telemetry.publisher.controller-0.redhat.local",
+			"type":      "cumulative",
+			"project":   "5dfb98560ce74cf780c21fb18a5ad1de",
+			"resource":  "285778e1-c81b-427a-826a-ebb72467b665-vda",
+			"unit":      "B",
+			"counter":   "disk.device.read.bytes",
+		}
+		assert.Equal(t, expectedLabels, metric.GetLabels())
+		assert.Equal(t, "Service Telemetry exporter: 'disk' Type: 'device' Dstype: 'cumulative' Dsname: 'disk.device.read.bytes'", metric.GetMetricDesc(0))
+		assert.Equal(t, "ceilometer_disk_device_read", metric.GetMetricName(0))
+		assert.Equal(t, "disk", metric.GetName())
+		assert.Equal(t, []float64{float64(18872832)}, metric.GetValues())
+		assert.Equal(t, true, metric.ISNew())
+	})
+
 }

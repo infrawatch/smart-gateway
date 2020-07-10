@@ -10,10 +10,11 @@ export PATH=$PATH:$GOPATH/bin
 # get dependencies
 sed -i '/^tsflags=.*/a ip_resolve=4' /etc/yum.conf
 yum install -y epel-release
-yum install -y https://centos7.iuscommunity.org/ius-release.rpm
-yum remove -y git*
-yum install -y git216-all
-yum install -y golang qpid-proton-c-devel iproute
+# below is not available currently
+#yum install -y https://centos7.iuscommunity.org/ius-release.rpm
+#yum remove -y git*
+#yum install -y git216-all
+yum install -y git golang qpid-proton-c-devel iproute
 go get -u golang.org/x/tools/cmd/cover
 go get -u github.com/mattn/goveralls
 go get -u golang.org/x/lint/golint
