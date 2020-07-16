@@ -1,5 +1,5 @@
 # --- build smart gateway ---
-FROM centos:7 AS builder
+FROM centos:8 AS builder
 ENV GOPATH=/go
 ENV D=/go/src/github.com/infrawatch/smart-gateway
 
@@ -10,13 +10,11 @@ RUN yum install epel-release -y && \
         yum update -y --setopt=tsflags=nodocs && \
         yum install qpid-proton-c-devel git golang --setopt=tsflags=nodocs -y && \
         yum clean all && \
-        go get -u github.com/golang/dep/... && \
-        /go/bin/dep ensure -v -vendor-only && \
         go build -o smart_gateway cmd/main.go && \
         mv smart_gateway /tmp/
 
 # --- end build, create smart gateway layer ---
-FROM centos:7
+FROM centos:8
 
 LABEL io.k8s.display-name="Smart Gateway" \
       io.k8s.description="A component of the Service Telemetry Framework on the server side that ingests data from AMQP 1.x and provides a metrics scrape endpoint for Prometheus, and forwards events to ElasticSearch" \
