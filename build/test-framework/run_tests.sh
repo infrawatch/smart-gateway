@@ -16,12 +16,12 @@ go get -u github.com/mattn/goveralls
 go get -u golang.org/x/lint/golint
 go get -u honnef.co/go/tools/cmd/staticcheck
 
+# get vendor code
+go mod vendor
+
 # run code validation tools
 echo " *** Running pre-commit code validation"
 ./build/test-framework/pre-commit
-
-# get vendor code
-go mod vendor
 
 # run unit tests
 echo " *** Running test suite"

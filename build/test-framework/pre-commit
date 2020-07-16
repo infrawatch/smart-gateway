@@ -85,7 +85,7 @@ run_govet() {
     log_error "go vet failed for the following reasons:
 $GOVET_ERRORS
 
-please run 'go tool vet ./*.go' on your changes before committing."
+please run 'go vet ./...' on your changes before committing."
     GOVET_OK=0
   fi
 }
