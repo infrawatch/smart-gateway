@@ -20,6 +20,9 @@ go get -u honnef.co/go/tools/cmd/staticcheck
 echo " *** Running pre-commit code validation"
 ./build/test-framework/pre-commit
 
+# get vendor code
+go mod vendor
+
 # run unit tests
 echo " *** Running test suite"
 # TODO: re-enable the test suite once supporting changes result in tests to pass
