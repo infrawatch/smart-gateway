@@ -2,8 +2,11 @@ package saelastic
 
 import (
 	"context"
+	"crypto/sha1"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/hex"
+	"encoding/json"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -137,10 +140,25 @@ func genUUIDv4() string {
 	return id.String()
 }
 
+// Generate an id based on the data itself to prevent duplicate events from multiple (HA) instances of the SG
+func genHashedID(jsondata interface{}) string {
+	dataBytes, err := json.Marshal(jsondata)
+	if err != nil {
+		log.Printf("Error during event encoding: %v\n", err)
+		uuid := genUUIDv4()
+		log.Printf("Will return a UUID string instead (duplicate events may occur): %v\n", uuid)
+		return uuid
+	}
+	eventHashBytes := sha1.Sum(dataBytes)
+	eventHashHex := hex.EncodeToString(eventHashBytes[:])
+	return eventHashHex
+}
+
 //Create ...  it can be BodyJson or BodyString.. BodyJson needs struct defined
 func (ec *ElasticClient) Create(indexname string, indextype string, jsondata interface{}) (string, error) {
 	ctx := ec.ctx
-	id := genUUIDv4()
+	id := genHashedID(jsondata)
+
 	debuges("Debug:Printing body %s\n", jsondata)
 	result, err := ec.client.Index().
 		Index(string(indexname)).
