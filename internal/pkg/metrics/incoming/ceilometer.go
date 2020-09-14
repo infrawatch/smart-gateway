@@ -17,7 +17,7 @@ var (
 
 const defaultCeilometerInterval = 5.0
 
-// CeilometerMetric struct represents metric data formated and sent by Ceilometer
+// CeilometerMetric struct represents a single instance of metric data formated and sent by Ceilometer
 type CeilometerMetric struct {
 	WithDataSource
 	Publisher string                 `json:"publisher_id"`
@@ -107,26 +107,42 @@ func (c *CeilometerMetric) sanitize(data string) string {
 	// avoid getting payload data wrapped in array
 	item := rexForPayload.FindStringSubmatch(sanitized)
 	if len(item) == 2 {
-		sanitized = rexForPayload.ReplaceAllString(sanitized, fmt.Sprintf(`"payload":%s`, item[1]))
+		sanitized = rexForPayload.ReplaceAllString(sanitized, fmt.Sprintf(`"payload": [%s]`, strings.Join(item[1:], ",")))
 	}
 	return sanitized
 }
 
-//ParseInputJSON ...
+//ParseInputJSON ... make this function type agnostic
 func (c *CeilometerMetric) ParseInputJSON(data string) ([]MetricDataFormat, error) {
-	output := make([]MetricDataFormat, 0)
+	dataPoints := make([]MetricDataFormat, 0)
 	sanitized := c.sanitize(data)
-	// parse only relevant data
+	message := make(map[string]interface{})
+
 	var json = jsoniter.ConfigCompatibleWithStandardLibrary
-	err := json.Unmarshal([]byte(sanitized), &c)
+	err := json.Unmarshal([]byte(sanitized), &message)
 	if err != nil {
-		return output, fmt.Errorf("error parsing json: %s", err)
+		return nil, fmt.Errorf("error parsing json: %s", err)
 	}
-	c.DataSource.SetFromString("ceilometer")
-	c.SetNew(true)
-	c.SetData(c)
-	output = append(output, c)
-	return output, nil
+
+	for _, pl := range message["payload"].([]interface{}) {
+		dP := CeilometerMetric{}
+		if _, ok := message["publisher_id"].(string); !ok {
+			return nil, fmt.Errorf("\"publisher_id\" not of type string")
+		}
+		if _, ok := pl.(map[string]interface{}); !ok {
+			return nil, fmt.Errorf("ceilometer metric payload not of type map[string]interface{}")
+		}
+
+		dP.Publisher = message["publisher_id"].(string)
+		dP.Payload = pl.(map[string]interface{})
+
+		dP.DataSource.SetFromString("ceilometer")
+		dP.SetNew(true)
+		dP.SetData(&dP)
+		dataPoints = append(dataPoints, &dP)
+	}
+
+	return dataPoints, nil
 }
 
 //GetKey ...

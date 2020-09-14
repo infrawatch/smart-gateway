@@ -1,0 +1,134 @@
+{
+  "CeilometerMetrics": {
+    "description": "test ceilometer metric parsing",
+    "testInput": {
+      "request": {
+        "oslo.version": "2.0",
+        "oslo.message": "{\"message_id\": \"37f64423-db31-4cfb-8c9d-06f9c0fad04a\", \"publisher_id\": \"telemetry.publisher.controller-0.redhat.local\", \"event_type\": \"metering\", \"priority\": \"SAMPLE\", \"payload\": [{\"source\": \"openstack\", \"counter_name\": \"disk.ephemeral.size\", \"counter_type\": \"gauge\", \"counter_unit\": \"GB\", \"counter_volume\": 0, \"user_id\": \"3ee72fcd74aa4439bb07fa69f1bc7169\", \"project_id\": \"e56191ef77744c599dbcecae6af176bb\", \"resource_id\": \"d8bd99b6-6fd8-4c02-a2e3-efbf596df636\", \"timestamp\": \"2020-09-14T16:12:49.939250+00:00\", \"resource_metadata\": {\"host\": \"compute-0.redhat.local\", \"flavor_id\": \"71cd0af1-afd3-4ee4-b918-cec05bf89578\", \"flavor_name\": \"m1.tiny\", \"display_name\": \"new-instance\", \"image_ref\": \"45333e02-643d-4f4f-a817-065060753983\", \"launched_at\": \"2020-09-14T16:12:49.839122\", \"created_at\": \"2020-09-14 16:12:39+00:00\"}, \"message_id\": \"22a54880-f6a5-11ea-b0f2-525400971e97\", \"monotonic_time\": null, \"message_signature\": \"be55d63bd5d876a62ab52824104128eedfa0619386e8569e326ccef4dcf0d9db\"}, {\"source\": \"openstack\", \"counter_name\": \"disk.root.size\", \"counter_type\": \"gauge\", \"counter_unit\": \"GB\", \"counter_volume\": 1, \"user_id\": \"3ee72fcd74aa4439bb07fa69f1bc7169\", \"project_id\": \"e56191ef77744c599dbcecae6af176bb\", \"resource_id\": \"d8bd99b6-6fd8-4c02-a2e3-efbf596df636\", \"timestamp\": \"2020-09-14T16:12:49.939250+00:00\", \"resource_metadata\": {\"host\": \"compute-0.redhat.local\", \"flavor_id\": \"71cd0af1-afd3-4ee4-b918-cec05bf89578\", \"flavor_name\": \"m1.tiny\", \"display_name\": \"new-instance\", \"image_ref\": \"45333e02-643d-4f4f-a817-065060753983\", \"launched_at\": \"2020-09-14T16:12:49.839122\", \"created_at\": \"2020-09-14 16:12:39+00:00\"}, \"message_id\": \"22a55c80-f6a5-11ea-b0f2-525400971e97\", \"monotonic_time\": null, \"message_signature\": \"bc0b987d71fe9f0d5d902347f22a0a20b2d975344b4c948572cae4dae553e960\"}, {\"source\": \"openstack\", \"counter_name\": \"compute.instance.booting.time\", \"counter_type\": \"gauge\", \"counter_unit\": \"sec\", \"counter_volume\": 10.839122, \"user_id\": null, \"project_id\": \"e56191ef77744c599dbcecae6af176bb\", \"resource_id\": \"d8bd99b6-6fd8-4c02-a2e3-efbf596df636\", \"timestamp\": \"2020-09-14T16:12:49.939250+00:00\", \"resource_metadata\": {\"host\": \"compute-0.redhat.local\", \"flavor_id\": \"71cd0af1-afd3-4ee4-b918-cec05bf89578\", \"flavor_name\": \"m1.tiny\", \"display_name\": \"new-instance\", \"image_ref\": \"45333e02-643d-4f4f-a817-065060753983\", \"launched_at\": \"2020-09-14T16:12:49.839122\", \"created_at\": \"2020-09-14 16:12:39+00:00\"}, \"message_id\": \"22a574d6-f6a5-11ea-b0f2-525400971e97\", \"monotonic_time\": null, \"message_signature\": \"fd7f1e2fdb34b7beb836d0ead178289f7c36f39bcd68acfd0719848667c58a13\"}, {\"source\": \"openstack\", \"counter_name\": \"vcpus\", \"counter_type\": \"gauge\", \"counter_unit\": \"vcpu\", \"counter_volume\": 2, \"user_id\": \"3ee72fcd74aa4439bb07fa69f1bc7169\", \"project_id\": \"e56191ef77744c599dbcecae6af176bb\", \"resource_id\": \"d8bd99b6-6fd8-4c02-a2e3-efbf596df636\", \"timestamp\": \"2020-09-14T16:12:49.939250+00:00\", \"resource_metadata\": {\"host\": \"compute-0.redhat.local\", \"flavor_id\": \"71cd0af1-afd3-4ee4-b918-cec05bf89578\", \"flavor_name\": \"m1.tiny\", \"display_name\": \"new-instance\", \"image_ref\": \"45333e02-643d-4f4f-a817-065060753983\", \"launched_at\": \"2020-09-14T16:12:49.839122\", \"created_at\": \"2020-09-14 16:12:39+00:00\"}, \"message_id\": \"22a5821e-f6a5-11ea-b0f2-525400971e97\", \"monotonic_time\": null, \"message_signature\": \"d3f107c2ef6bb1b06e1a9975d1f1ff0bdc51432adff39403db2a1f6a9773b99d\"}, {\"source\": \"openstack\", \"counter_name\": \"memory\", \"counter_type\": \"gauge\", \"counter_unit\": \"MB\", \"counter_volume\": 512, \"user_id\": \"3ee72fcd74aa4439bb07fa69f1bc7169\", \"project_id\": \"e56191ef77744c599dbcecae6af176bb\", \"resource_id\": \"d8bd99b6-6fd8-4c02-a2e3-efbf596df636\", \"timestamp\": \"2020-09-14T16:12:49.939250+00:00\", \"resource_metadata\": {\"host\": \"compute-0.redhat.local\", \"flavor_id\": \"71cd0af1-afd3-4ee4-b918-cec05bf89578\", \"flavor_name\": \"m1.tiny\", \"display_name\": \"new-instance\", \"image_ref\": \"45333e02-643d-4f4f-a817-065060753983\", \"launched_at\": \"2020-09-14T16:12:49.839122\", \"created_at\": \"2020-09-14 16:12:39+00:00\"}, \"message_id\": \"22a591dc-f6a5-11ea-b0f2-525400971e97\", \"monotonic_time\": null, \"message_signature\": \"9dcf78e3cd43e7fcd66cda5cf33511150e79a086a634bd9d087bb567e4985980\"}], \"timestamp\": \"2020-09-14 16:12:49.954128\"}"
+      },
+      "context": {}
+    },
+    "validatedResults": [
+      {
+        "publisher": "telemetry.publisher.controller-0.redhat.local",
+        "plugin": "disk",
+        "plugin_instance": "d8bd99b6-6fd8-4c02-a2e3-efbf596df636",
+        "type": "ephemeral",
+        "values": [
+          0
+        ],
+        "name": "disk",
+        "key": "telemetry.publisher.controller-0.redhat.local",
+        "item_key": "disk_ephemeral_d8bd99b6-6fd8-4c02-a2e3-efbf596df636_size",
+        "type_instance": "size",
+        "labels": {
+          "publisher": "telemetry.publisher.controller-0.redhat.local",
+          "disk": "size",
+          "type": "gauge",
+          "project": "e56191ef77744c599dbcecae6af176bb",
+          "resource": "d8bd99b6-6fd8-4c02-a2e3-efbf596df636",
+          "unit": "GB",
+          "counter": "disk.ephemeral.size"
+        },
+        "description": "Service Telemetry exporter: 'disk' Type: 'ephemeral' Dstype: 'gauge' Dsname: 'disk.ephemeral.size'",
+        "metric_name": "ceilometer_disk_ephemeral_size"
+      },
+      {
+        "publisher": "telemetry.publisher.controller-0.redhat.local",
+        "plugin": "disk",
+        "plugin_instance": "d8bd99b6-6fd8-4c02-a2e3-efbf596df636",
+        "type": "root",
+        "values": [
+          1
+        ],
+        "name": "disk",
+        "key": "telemetry.publisher.controller-0.redhat.local",
+        "item_key": "disk_root_d8bd99b6-6fd8-4c02-a2e3-efbf596df636_size",
+        "type_instance": "size",
+        "labels": {
+          "publisher": "telemetry.publisher.controller-0.redhat.local",
+          "disk": "size",
+          "type": "gauge",
+          "project": "e56191ef77744c599dbcecae6af176bb",
+          "resource": "d8bd99b6-6fd8-4c02-a2e3-efbf596df636",
+          "unit": "GB",
+          "counter": "disk.root.size"
+        },
+        "description": "Service Telemetry exporter: 'disk' Type: 'root' Dstype: 'gauge' Dsname: 'disk.root.size'",
+        "metric_name": "ceilometer_disk_root_size"
+      },
+      {
+        "publisher": "telemetry.publisher.controller-0.redhat.local",
+        "plugin": "compute",
+        "plugin_instance": "d8bd99b6-6fd8-4c02-a2e3-efbf596df636",
+        "type": "instance",
+        "values": [
+          10.839122
+        ],
+        "name": "compute",
+        "key": "telemetry.publisher.controller-0.redhat.local",
+        "item_key": "compute_instance_d8bd99b6-6fd8-4c02-a2e3-efbf596df636_booting",
+        "type_instance": "booting",
+        "labels": {
+          "publisher": "telemetry.publisher.controller-0.redhat.local",
+          "compute": "booting",
+          "type": "gauge",
+          "project": "e56191ef77744c599dbcecae6af176bb",
+          "resource": "d8bd99b6-6fd8-4c02-a2e3-efbf596df636",
+          "unit": "sec",
+          "counter": "compute.instance.booting.time"
+        },
+        "description": "Service Telemetry exporter: 'compute' Type: 'instance' Dstype: 'gauge' Dsname: 'compute.instance.booting.time'",
+        "metric_name": "ceilometer_compute_instance_booting"
+      },
+      {
+        "publisher": "telemetry.publisher.controller-0.redhat.local",
+        "plugin": "vcpus",
+        "plugin_instance": "d8bd99b6-6fd8-4c02-a2e3-efbf596df636",
+        "type": "vcpus",
+        "values": [
+          2
+        ],
+        "name": "vcpus",
+        "key": "telemetry.publisher.controller-0.redhat.local",
+        "item_key": "vcpus_d8bd99b6-6fd8-4c02-a2e3-efbf596df636",
+        "type_instance": "",
+        "labels": {
+          "publisher": "telemetry.publisher.controller-0.redhat.local",
+          "vcpus": "d8bd99b6-6fd8-4c02-a2e3-efbf596df636",
+          "type": "gauge",
+          "project": "e56191ef77744c599dbcecae6af176bb",
+          "resource": "d8bd99b6-6fd8-4c02-a2e3-efbf596df636",
+          "unit": "vcpu",
+          "counter": "vcpus"
+        },
+        "description": "Service Telemetry exporter: 'vcpus' Type: 'vcpus' Dstype: 'gauge' Dsname: 'vcpus'",
+        "metric_name": "ceilometer_vcpus"
+      },
+      {
+        "publisher": "telemetry.publisher.controller-0.redhat.local",
+        "plugin": "memory",
+        "plugin_instance": "d8bd99b6-6fd8-4c02-a2e3-efbf596df636",
+        "type": "memory",
+        "values": [
+          512
+        ],
+        "name": "memory",
+        "key": "telemetry.publisher.controller-0.redhat.local",
+        "item_key": "memory_d8bd99b6-6fd8-4c02-a2e3-efbf596df636",
+        "type_instance": "",
+        "labels": {
+          "publisher": "telemetry.publisher.controller-0.redhat.local",
+          "memory": "d8bd99b6-6fd8-4c02-a2e3-efbf596df636",
+          "type": "gauge",
+          "project": "e56191ef77744c599dbcecae6af176bb",
+          "resource": "d8bd99b6-6fd8-4c02-a2e3-efbf596df636",
+          "unit": "MB",
+          "counter": "memory"
+        },
+        "description": "Service Telemetry exporter: 'memory' Type: 'memory' Dstype: 'gauge' Dsname: 'memory'",
+        "metric_name": "ceilometer_memory"
+      }
+    ]
+  }
+}
