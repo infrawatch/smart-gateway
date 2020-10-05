@@ -14,6 +14,8 @@ import (
 const collectdGenericIndex = "collectd_generic"
 
 var (
+	rexForInvalidVesStr   = regexp.MustCompile(`":"[^",\\]+"[^",\\]+"`)
+	rexForRemainedNested  = regexp.MustCompile(`":"[^",]+\\\\\"[^",]+"`)
 	rexForNestedQuote     = regexp.MustCompile(`\\\"`)
 	rexForVes             = regexp.MustCompile(`"ves":"{(.*)}"`)
 	collectdAlertSeverity = map[string]string{
@@ -67,8 +69,17 @@ func (evt *CollectdEvent) sanitize(jsondata string) string {
 	vesCleaned := jsondata
 	sub := rexForVes.FindStringSubmatch(jsondata)
 	if len(sub) == 2 {
-		nested := rexForNestedQuote.ReplaceAllString(sub[1], `"`)
-		vesCleaned = rexForVes.ReplaceAllString(jsondata, fmt.Sprintf(`"ves":{%s}`, nested))
+		substr := sub[1]
+		for {
+			cleaned := rexForNestedQuote.ReplaceAllString(substr, `"`)
+			if rexForInvalidVesStr.FindString(cleaned) == "" {
+				substr = cleaned
+			}
+			if rexForRemainedNested.FindString(cleaned) == "" {
+				break
+			}
+		}
+		vesCleaned = rexForVes.ReplaceAllString(jsondata, fmt.Sprintf(`"ves":{%s}`, substr))
 	}
 	// 2) event is received wrapped in array, so we remove it
 	almostFinal := strings.TrimLeft(vesCleaned, "[")
