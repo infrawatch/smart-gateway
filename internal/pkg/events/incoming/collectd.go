@@ -79,7 +79,7 @@ func (evt *CollectdEvent) sanitize(jsondata string) string {
 				break
 			}
 		}
-		vesCleaned = rexForVes.ReplaceAllString(jsondata, fmt.Sprintf(`"ves":{%s}`, substr))
+		vesCleaned = rexForVes.ReplaceAllLiteralString(jsondata, fmt.Sprintf(`"ves":{%s}`, substr))
 	}
 	// 2) event is received wrapped in array, so we remove it
 	almostFinal := strings.TrimLeft(vesCleaned, "[")
