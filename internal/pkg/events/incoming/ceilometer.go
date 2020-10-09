@@ -105,7 +105,7 @@ func (evt *CeilometerEvent) sanitize(jsondata string) string {
 	// avoid getting payload data wrapped in array
 	item := rexForPayload.FindStringSubmatch(sanitized)
 	if len(item) == 2 {
-		sanitized = rexForPayload.ReplaceAllString(sanitized, fmt.Sprintf(`"payload":%s`, item[1]))
+		sanitized = rexForPayload.ReplaceAllLiteralString(sanitized, fmt.Sprintf(`"payload":%s`, item[1]))
 	}
 	return sanitized
 }
