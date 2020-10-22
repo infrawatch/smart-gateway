@@ -54,6 +54,11 @@ type EventAPIConfig struct {
 	AMQP1PublishURL string `json:"AMQP1PublishURL"` // new amqp address to send notifications
 }
 
+type HandlerPath struct {
+	Path       string `json:"Path"`
+	DataSource string `json:"DataSource"`
+}
+
 //EventConfiguration ...
 type EventConfiguration struct {
 	Debug               bool             `json:"Debug"`
@@ -78,6 +83,7 @@ type EventConfiguration struct {
 	TLSClientCert       string           `json:"TlsClientCert"`
 	TLSClientKey        string           `json:"TlsClientKey"`
 	TLSCaCert           string           `json:"TlsCaCert"`
+	HandlerPlugins      []HandlerPath    `json:"HandlerPlugin"`
 }
 
 /******************** MetricConfiguration implementation *********************/
