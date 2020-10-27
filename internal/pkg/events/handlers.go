@@ -37,7 +37,7 @@ func NewEventHandlerManager(config saconfig.EventConfiguration) (*EventHandlerMa
 	for _, pluginPath := range config.HandlerPlugins {
 		var ds saconfig.DataSource
 		if ok := ds.SetFromString(pluginPath.DataSource); !ok {
-			return &manager, fmt.Errorf("Unknown datasource ''%s' for given event handler", pluginPath.DataSource)
+			return &manager, fmt.Errorf("unknown datasource ''%s' for given event handler", pluginPath.DataSource)
 		}
 		manager.LoadHandlers(ds, pluginPath.Path)
 	}
