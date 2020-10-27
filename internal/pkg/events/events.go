@@ -235,7 +235,7 @@ func StartEvents() {
 	amqp10.SpawnQpidStatusReporter(&wg, applicationHealth, qpidStatusCases)
 
 	// spawn handler manager
-	handlerManager, err := NewEventHadlerManager(*serverConfig)
+	handlerManager, err := NewEventHandlerManager(*serverConfig)
 	if err != nil {
 		log.Fatal(err.Error())
 	}

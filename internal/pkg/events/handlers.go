@@ -26,8 +26,8 @@ type EventHandlerManager struct {
 	Handlers map[saconfig.DataSource][]EventHandler
 }
 
-//NewEventHadlerManager loads all even handler plugins stated in events configuration
-func NewEventHadlerManager(config saconfig.EventConfiguration) (*EventHandlerManager, error) {
+//NewEventHandlerManager loads all even handler plugins stated in events configuration
+func NewEventHandlerManager(config saconfig.EventConfiguration) (*EventHandlerManager, error) {
 	manager := EventHandlerManager{}
 	manager.Handlers = make(map[saconfig.DataSource][]EventHandler)
 	for _, ds := range []saconfig.DataSource{saconfig.DataSourceCollectd, saconfig.DataSourceCeilometer, saconfig.DataSourceUniversal} {
@@ -79,12 +79,12 @@ func (hand ContainerHealthCheckHandler) Handle(event incoming.EventDataFormat, e
 						if err := json.Unmarshal([]byte(output.(string)), &outData); err == nil {
 							// surrogate output key with just one item and save it to ES
 							for _, item := range outData {
-								singleOut, err := json.Marshal(item)
-								if err == nil {
-									annotations["output"] = string(singleOut)
-									_, err = elasticClient.Create(hand.ElasticIndex, EVENTSINDEXTYPE, rawData)
+								annotations["output"] = item
+								if _, err := elasticClient.Create(hand.ElasticIndex, EVENTSINDEXTYPE, rawData); err != nil {
+									// saving the splitted output failed for some reason, so we will play save
+									// and try to process event outside of handler
+									return true, err
 								}
-								return false, err
 							}
 						} else {
 							// We most probably received single item output, so we just proceed and save the event
