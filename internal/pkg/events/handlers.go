@@ -66,34 +66,63 @@ type containerHealthCheckItem struct {
 	Healthy   int    `json:"healthy"`
 }
 
+type list struct {
+	Next *list
+	Key  string
+}
+
+//recursivle search for output field based on path
+func getOutputObject(path *list, data interface{}) (string, error) {
+	var obj map[string]interface{}
+	var ok bool
+
+	if obj, ok = data.(map[string]interface{}); !ok {
+		return "", fmt.Errorf("cannot search non-map objects")
+	}
+	if path.Next == nil {
+		if output, ok := obj[path.Key].(string); ok {
+			return output, nil
+		}
+		return "", fmt.Errorf("output should be of type 'string'")
+	}
+	if newData, ok := obj[path.Key]; ok {
+		return getOutputObject(path.Next, newData)
+	}
+	return "", fmt.Errorf("input data does not contain path")
+}
+
 //Handle saves the event as separate document to ES in case the result output contains more than one item.
 //Returns true if event processing should continue (eg. event should be saved to ES) or false if otherwise.
 func (hand ContainerHealthCheckHandler) Handle(event incoming.EventDataFormat, elasticClient *saelastic.ElasticClient) (bool, error) {
+	pathList := &list{
+		Key: "annotations",
+	}
+	pathList.Next = &list{
+		Key: "output",
+	}
+
 	if evt, ok := event.(*incoming.CollectdEvent); ok {
 		rawData := evt.GetRawData()
-		if data, ok := rawData.(map[string]interface{}); ok {
-			if rawAnnot, ok := data["annotations"]; ok {
-				if annotations, ok := rawAnnot.(map[string]interface{}); ok {
-					if output, ok := annotations["output"]; ok {
-						var outData []containerHealthCheckItem
-						if err := json.Unmarshal([]byte(output.(string)), &outData); err == nil {
-							// surrogate output key with just one item and save it to ES
-							for _, item := range outData {
-								annotations["output"] = item
-								if _, err := elasticClient.Create(hand.ElasticIndex, EVENTSINDEXTYPE, rawData); err != nil {
-									// saving the splitted output failed for some reason, so we will play save
-									// and try to process event outside of handler
-									return true, err
-								}
-							}
-						} else {
-							// We most probably received single item output, so we just proceed and save the event
-							if _, err := elasticClient.Create(hand.ElasticIndex, EVENTSINDEXTYPE, rawData); err != nil {
-								return false, err
-							}
-						}
-					}
+		output, err := getOutputObject(pathList, rawData)
+		if err != nil {
+			return false, err
+		}
+
+		var outData []containerHealthCheckItem
+		rawDataMap := rawData.(map[string]interface{})
+		if err := json.Unmarshal([]byte(output), &outData); err == nil {
+			for _, item := range outData {
+				rawDataMap["annotations"].(map[string]interface{})["output"] = item
+				if _, err := elasticClient.Create(hand.ElasticIndex, EVENTSINDEXTYPE, rawDataMap); err != nil {
+					// saving the splitted output failed for some reason, so we will play safe
+					// and try to process event outside of handler
+					return true, err
 				}
+			}
+		} else {
+			// We most probably received single item output, so we just proceed and save the event
+			if _, err := elasticClient.Create(hand.ElasticIndex, EVENTSINDEXTYPE, rawData); err != nil {
+				return false, err
 			}
 		}
 	}
