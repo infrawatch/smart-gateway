@@ -12,7 +12,7 @@ sed -i '/^tsflags=.*/a ip_resolve=4' /etc/yum.conf
 yum install -y epel-release
 yum install -y git golang qpid-proton-c-devel iproute
 go get -u golang.org/x/tools/cmd/cover
-go get -u github.com/mattn/goveralls
+GO111MODULE=off go get -u github.com/mattn/goveralls
 go get -u golang.org/x/lint/golint
 go get -u honnef.co/go/tools/cmd/staticcheck
 
@@ -30,17 +30,8 @@ go test -v ./...
 
 # check test coverage
 echo " *** Running code coverage tooling"
-
-# TODO: disable exiting on non-zero return because not all internal/pkg/*
-#       contents have a corresponding Testing package
-set +e
-
-echo "mode: set" > coverage.out
-for pkg in $(go list ./internal/pkg/...)
-do
-    go test -cover -coverpkg "$pkg" -coverprofile coverfragment.out ./tests/internal_pkg/* && grep -h -v "mode: set" coverfragment.out >> coverage.out
-done
+go test ./... -race -covermode=atomic -coverprofile=coverage.txt
 
 # upload coverage report
 echo " *** Uploading coverage report to coveralls"
-goveralls -service=travis-ci -coverprofile=coverage.out
+goveralls -coverprofile=coverage.txt
