@@ -1,26 +1,27 @@
 # smart-gateway ![build status](https://travis-ci.org/infrawatch/smart-gateway.svg?branch=master) [![Go Report Card](https://goreportcard.com/badge/github.com/infrawatch/smart-gateway)](https://goreportcard.com/report/github.com/infrawatch/smart-gateway) [![Coverage Status](https://coveralls.io/repos/github/infrawatch/smart-gateway/badge.svg)](https://coveralls.io/github/infrawatch/smart-gateway) [![Docker Repository on Quay](https://quay.io/repository/infrawatch/smart-gateway/status "Docker Repository on Quay")](https://quay.io/repository/infrawatch/smart-gateway)
 
-Smart gateway for service telemetry framework. Includes applications for both
+Smart Gateway for Service Telemetry Framework. Includes applications for both
 metrics and events gathering.
+
+See also https://github.com/infrawatch/sg-bridge and https://github.com/infrawatch/sg-core
 
 Provides middleware that connects to an AMQP 1.0 message bus, pulling data off
 the bus and exposing it as a scrape target for Prometheus. Metrics are provided
-via the OPNFV Barometer project (collectd). Events are provided by the various
-event plugins for collectd, including connectivity, procevent and sysevent.
+via the OPNFV Barometer project (collectd) and Ceilometer (OpenStack). Events
+are provided by the various event plugins for collectd, including connectivity,
+procevent and sysevent, and Ceilometer.
 
 # Dependencies
 
-Dependencies are managed using [`dep`](https://github.com/golang/dep). Clone
-this project, then obtain the dependencies with the following commands. Example
-below is built on CentOS 7.
+Dependencies are managed using golang modules. Clone this project, then obtain
+the dependencies with the following commands. Example below is built on CentOS
+8.
 
 ```
 go get -u github.com/infrawatch/smart-gateway
-go get -u github.com/golang/dep/...
-yum install -y epel-release
-yum install -y golang qpid-proton-c-devel iproute
+sudo curl -L https://trunk.rdoproject.org/centos8-master/delorean-deps.repo -o /etc/yum.repos.d/delorean-deps.repo
+dnf install -y golang qpid-proton-c-devel iproute
 cd $GOPATH/src/github.com/infrawatch/smart-gateway
-dep ensure -v -vendor-only
 ```
 
 # Building Smart Gateway
@@ -55,15 +56,15 @@ go test -v ./...
 ```
 
 > **A note about test layout in Smart Gateway**
-> 
+>
 > Generally tests are shipped in Golang directly within the packages as
 > `<implementation>_test.go`, for example, `alerts.go` will have a
 > corresponding `alerts_test.go` within the `alerts` package.
-> 
+>
 > In the Smart Gateway, we've purposely taken a separate approach by moving the
 > tests into their own package, located within the `tests/` subdirectory. The
 > reason for this is two-fold:
-> 
+>
 > 1. It is the recommended workaround for avoiding falling into cyclic
 >    dependencies / ciclical import problems.
 > 1. Test implementer loses access to private logic, so has to think about the
