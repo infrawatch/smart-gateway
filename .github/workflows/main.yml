@@ -1,0 +1,35 @@
+name: CI
+env:
+  ELASTIC_VERSION: 7.5.1
+  QDROUTERD_VERSION: 1.8.0
+  COVERALLS_TOKEN: ${{ secrets.COVERALLS_TOKEN }}
+on: push
+
+jobs:
+  test-framework:
+    name: Base testing
+    runs-on: ubuntu-20.04
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Start ElasticSearch
+        run: |
+          docker run -p 9200:9200 --name elastic -p 9300:9300 -e "discovery.type=single-node" -d docker.elastic.co/elasticsearch/elasticsearch:$ELASTIC_VERSION
+
+      - name: Start QDR
+        run: |
+          docker run -p 5672:5672 -d quay.io/interconnectedcloud/qdrouterd:$QDROUTERD_VERSION
+
+      - name: Run unit testing and code coverage
+        run: |
+          docker run -eCOVERALLS_TOKEN -uroot --network host -i --volume $GITHUB_WORKSPACE:/go/src/github.com/infrawatch/smart-gateway:z --workdir /go/src/github.com/infrawatch/smart-gateway centos:8 /bin/sh -c 'sh ./build/test-framework/run_tests.sh'
+
+      - name: Verify image builds
+        run: |
+          docker build --tag infrawatch/smart_gateway:latest .
+
+      - name: List images
+        run: |
+          docker images
