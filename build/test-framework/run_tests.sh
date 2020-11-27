@@ -9,8 +9,8 @@ export PATH=$PATH:$GOPATH/bin
 
 # get dependencies
 sed -i '/^tsflags=.*/a ip_resolve=4' /etc/yum.conf
-yum install -y epel-release
-yum install -y git golang qpid-proton-c-devel iproute
+cp build/repos/opstools.repo /etc/yum.repos.d/opstools.repo
+dnf install -y git golang qpid-proton-c-devel iproute
 go get -u golang.org/x/tools/cmd/cover
 GO111MODULE=off go get -u github.com/mattn/goveralls
 go get -u golang.org/x/lint/golint
