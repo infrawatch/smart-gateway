@@ -218,6 +218,7 @@ func StartEvents() {
 
 	// Elastic connection
 	elasticClient, err := saelastic.CreateClient(*serverConfig)
+
 	if err != nil {
 		log.Fatal(err.Error())
 	}
@@ -232,6 +233,12 @@ func StartEvents() {
 	// AMQP connection(s)
 	processingCases, qpidStatusCases, amqpServers := amqp10.CreateMessageLoopComponents(serverConfig, finish, amqpHandler, *fUniqueName)
 	amqp10.SpawnQpidStatusReporter(&wg, applicationHealth, qpidStatusCases)
+
+	// spawn handler manager
+	handlerManager, err := NewEventHandlerManager(*serverConfig)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 
 	// spawn event processor
 	wg.Add(1)
@@ -252,15 +259,29 @@ func StartEvents() {
 					log.Printf("Failed to parse received event:\n- error: %s\n- event: %s\n", err, event)
 				}
 
-				record, err := elasticClient.Create(event.GetIndexName(), EVENTSINDEXTYPE, event.GetRawData())
-				if err != nil {
-					applicationHealth.ElasticSearchState = 0
-					log.Printf("Failed to save event to Elasticsearch DB:\n- error: %s\n- event: %s\n", err, event)
-				} else {
-					applicationHealth.ElasticSearchState = 1
+				process := true
+				for _, handler := range handlerManager.Handlers[amqpServers[index].DataSource] {
+					if handler.Relevant(event) {
+						process, err = handler.Handle(event, elasticClient)
+						if !process {
+							if err != nil {
+								log.Print(err.Error())
+							}
+							break
+						}
+					}
 				}
-				if serverConfig.AlertManagerEnabled {
-					notifyAlertManager(&wg, *serverConfig, &event, record)
+				if process {
+					record, err := elasticClient.Create(event.GetIndexName(), EVENTSINDEXTYPE, event.GetRawData())
+					if err != nil {
+						applicationHealth.ElasticSearchState = 0
+						log.Printf("Failed to save event to Elasticsearch DB:\n- error: %s\n- event: %s\n", err, event)
+					} else {
+						applicationHealth.ElasticSearchState = 1
+					}
+					if serverConfig.AlertManagerEnabled {
+						notifyAlertManager(&wg, *serverConfig, &event, record)
+					}
 				}
 			}
 		}
