@@ -224,3 +224,22 @@ func TestCeilometerIncoming(t *testing.T) {
 		}
 	})
 }
+
+func TestCeilometerGetLabels(t *testing.T) {
+	// test data
+	cm := incoming.CeilometerMetric{
+		Payload: map[string]interface{}{},
+	}
+
+	t.Run("Missing fields", func(t *testing.T) {
+		cm.GetLabels()
+	})
+
+	t.Run("Wrong field type", func(t *testing.T) {
+		cm.Payload["project_id"] = nil
+		cm.Payload["resource_id"] = nil
+		cm.Payload["counter_unit"] = nil
+		cm.Payload["counter_name"] = nil
+		cm.GetLabels()
+	})
+}
