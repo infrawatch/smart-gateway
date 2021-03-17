@@ -58,7 +58,6 @@ func createTLSClient(serverName string, certFile string, keyFile string, caFile 
 	} else {
 		tlsConfig.ServerName = serverName
 	}
-	tlsConfig.BuildNameToCertificate()
 	debuges("InsecureSkipVerify is set to %t", tlsConfig.InsecureSkipVerify)
 
 	return &http.Client{
