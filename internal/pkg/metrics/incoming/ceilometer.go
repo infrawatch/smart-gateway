@@ -201,22 +201,22 @@ func (c *CeilometerMetric) GetLabels() map[string]string {
 		labels[c.Plugin] = c.PluginInstance
 	}
 	labels["publisher"] = c.Publisher
-	if ctype, ok := c.Payload["counter_type"]; ok {
-		labels["type"] = ctype.(string)
+	if ctype, ok := c.Payload["counter_type"].(string); ok {
+		labels["type"] = ctype
 	} else {
 		labels["type"] = "base"
 	}
-	if cproj, ok := c.Payload["project_id"]; ok {
-		labels["project"] = cproj.(string)
+	if cproj, ok := c.Payload["project_id"].(string); ok {
+		labels["project"] = cproj
 	}
-	if cres, ok := c.Payload["resource_id"]; ok {
-		labels["resource"] = cres.(string)
+	if cres, ok := c.Payload["resource_id"].(string); ok {
+		labels["resource"] = cres
 	}
-	if cunit, ok := c.Payload["counter_unit"]; ok {
-		labels["unit"] = cunit.(string)
+	if cunit, ok := c.Payload["counter_unit"].(string); ok {
+		labels["unit"] = cunit
 	}
-	if cname, ok := c.Payload["counter_name"]; ok {
-		labels["counter"] = cname.(string)
+	if cname, ok := c.Payload["counter_name"].(string); ok {
+		labels["counter"] = cname
 	}
 	return labels
 }
