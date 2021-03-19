@@ -161,9 +161,9 @@ func (c *CeilometerMetric) GetItemKey() string {
 		parts = append(parts, c.PluginInstance)
 	}
 
-	if c.TypeInstance != "" {
-		parts = append(parts, c.TypeInstance)
-	}
+	// if c.TypeInstance != "" {
+	// 	parts = append(parts, c.TypeInstance)
+	// }
 	return strings.Join(parts, "_")
 }
 
