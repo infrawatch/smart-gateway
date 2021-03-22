@@ -78,11 +78,11 @@ def generateResultsFromJSON(data):
                 'values': [pl['counter_volume']],
                 'name': plugin,
                 'key': publisher,
-                'item_key': genItemKey(plugin, pluginInstance,pt, typeInstance),
+                'item_key': genItemKey(pl, pluginInstance),
                 'type_instance': typeInstance,
                 'labels': genLabels(pl, plugin, typeInstance, pluginInstance,publisher),
                 'description': genDescription(pl, plugin, pt),
-                'metric_name': genMetricName(plugin, pt, typeInstance),
+                'metric_name': genMetricName(pluginAttr),
             }
 
             results.append(metricGenerated)
@@ -96,12 +96,9 @@ def generateResultsFromJSON(data):
             print("---------")
             print(e.absolute_schema_path)
 
-def genMetricName(plugin, typ, typeInstance):
-    name = ["ceilometer", plugin]
-    if plugin != typ:
-        name.append(typ)
-    if typeInstance:
-        name.append(typeInstance)
+def genMetricName(cNameParts):
+    name = ["ceilometer"]
+    name = name + cNameParts
     return '_'.join(name)
 
 
@@ -113,16 +110,11 @@ def genDescription(payload, plugin, typ):
     return "Service Telemetry exporter: '{plugin}' Type: '{Type}' Dstype: '{Dstype}' Dsname: '{ID}'".format(plugin=plugin, Type=typ, Dstype=dstype, ID=id)
 
 
-def genItemKey(plugin, pluginInstance, tpe, typeInstance):
-    parts = [plugin]
-
-    if plugin != tpe:
-        parts.append(tpe)
+def genItemKey(payload, pluginInstance):
+    key = [payload["counter_name"]]
     if pluginInstance:
-        parts.append(pluginInstance)
-    if typeInstance:
-        parts.append(typeInstance)
-    return "_".join(parts)
+       key.append(pluginInstance) 
+    return "_".join(key)
 
 def genLabels(payload, plugin, typeInstance, pluginInstance, publisher):
     labels = {"publisher": publisher}
