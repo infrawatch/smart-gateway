@@ -152,15 +152,9 @@ func (c CeilometerMetric) GetKey() string {
 
 //GetItemKey returns name cache key analogically to CollectdMetric implementation
 func (c *CeilometerMetric) GetItemKey() string {
-	parts := []string{c.Plugin}
-	if c.Plugin != c.Type {
-		parts = append(parts, c.Type)
-	}
+	parts := []string{c.getwholeID()}
 	if c.PluginInstance != "" {
 		parts = append(parts, c.PluginInstance)
-	}
-	if c.TypeInstance != "" {
-		parts = append(parts, c.TypeInstance)
 	}
 	return strings.Join(parts, "_")
 }
@@ -223,13 +217,9 @@ func (c *CeilometerMetric) GetLabels() map[string]string {
 
 //GetMetricName ...
 func (c *CeilometerMetric) GetMetricName(index int) string {
-	nameParts := []string{"ceilometer", c.Plugin}
-	if c.Plugin != c.Type {
-		nameParts = append(nameParts, c.Type)
-	}
-	if c.TypeInstance != "" {
-		nameParts = append(nameParts, c.TypeInstance)
-	}
+	nameParts := []string{"ceilometer"}
+	cNameShards := strings.Split(c.getwholeID(), ".")
+	nameParts = append(nameParts, cNameShards...)
 	return strings.Join(nameParts, "_")
 }
 
