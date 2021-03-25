@@ -19,7 +19,7 @@
         ],
         "name": "disk",
         "key": "telemetry.publisher.controller-0.redhat.local",
-        "item_key": "disk_ephemeral_d8bd99b6-6fd8-4c02-a2e3-efbf596df636_size",
+        "item_key": "disk.ephemeral.size_d8bd99b6-6fd8-4c02-a2e3-efbf596df636",
         "type_instance": "size",
         "labels": {
           "publisher": "telemetry.publisher.controller-0.redhat.local",
@@ -43,7 +43,7 @@
         ],
         "name": "disk",
         "key": "telemetry.publisher.controller-0.redhat.local",
-        "item_key": "disk_root_d8bd99b6-6fd8-4c02-a2e3-efbf596df636_size",
+        "item_key": "disk.root.size_d8bd99b6-6fd8-4c02-a2e3-efbf596df636",
         "type_instance": "size",
         "labels": {
           "publisher": "telemetry.publisher.controller-0.redhat.local",
@@ -67,7 +67,7 @@
         ],
         "name": "compute",
         "key": "telemetry.publisher.controller-0.redhat.local",
-        "item_key": "compute_instance_d8bd99b6-6fd8-4c02-a2e3-efbf596df636_booting",
+        "item_key": "compute.instance.booting.time_d8bd99b6-6fd8-4c02-a2e3-efbf596df636",
         "type_instance": "booting",
         "labels": {
           "publisher": "telemetry.publisher.controller-0.redhat.local",
@@ -79,7 +79,7 @@
           "counter": "compute.instance.booting.time"
         },
         "description": "Service Telemetry exporter: 'compute' Type: 'instance' Dstype: 'gauge' Dsname: 'compute.instance.booting.time'",
-        "metric_name": "ceilometer_compute_instance_booting"
+        "metric_name": "ceilometer_compute_instance_booting_time"
       },
       {
         "publisher": "telemetry.publisher.controller-0.redhat.local",

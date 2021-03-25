@@ -106,7 +106,8 @@ func NewPrometheusMetric(usetimestamp bool, format string, metric incoming.Metri
 		} else {
 			return nil, fmt.Errorf("did not find timestamp in metric payload: %s", ceilometer.Payload)
 		}
-		help = ceilometer.GetMetricDesc(index)
+		//help = ceilometer.GetMetricDesc(index)
+		help = ""
 		metricName = metricNameRe.ReplaceAllString(ceilometer.GetMetricName(index), "_")
 		labels = ceilometer.GetLabels()
 		value = ceilometer.Values[index]
