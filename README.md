@@ -3,7 +3,9 @@
 Smart Gateway for Service Telemetry Framework. Includes applications for both
 metrics and events gathering.
 
-See also https://github.com/infrawatch/sg-bridge and https://github.com/infrawatch/sg-core
+> **WARNING** 
+> 
+> This repository contains the legacy Smart Gateway, no longer in use as of STF 1.3 and will no longer be released once STF 1.4 is available and STF 1.2 moves to EOL. If this code base looks interesting or useful for your project, you are strongly encouraged to use sg-bridge and sg-core which have significantly better performance and integration capabilities. See https://github.com/infrawatch/sg-bridge and https://github.com/infrawatch/sg-core
 
 Provides middleware that connects to an AMQP 1.0 message bus, pulling data off
 the bus and exposing it as a scrape target for Prometheus. Metrics are provided
