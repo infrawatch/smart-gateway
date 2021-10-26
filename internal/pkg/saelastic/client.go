@@ -12,9 +12,9 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gofrs/uuid"
 	"github.com/infrawatch/smart-gateway/internal/pkg/saconfig"
 	"github.com/olivere/elastic"
-	uuid "github.com/satori/go.uuid"
 )
 
 var debuges = func(format string, data ...interface{}) {} // Default no debugging output
